@@ -80,6 +80,32 @@ export const SWATCHES: Record<SwatchName, ColorSwatch> = {
     surface: '#191024', surfaceAlt: '#241734',
     ink: '#F4ECFA', inkMuted: '#B098C5', line: '#3A2A4F',
   },
+
+  // ── Bold & Neon ───────────────────────────────────────
+  electric: {
+    name: 'electric', label: 'Electric', mode: 'light',
+    primary: '#1A5FFF', accent: '#FF5C00',
+    surface: '#F0F4FF', surfaceAlt: '#FFFFFF',
+    ink: '#080E2E', inkMuted: '#3A4E90', line: '#C4D3FC',
+  },
+  punch: {
+    name: 'punch', label: 'Punch', mode: 'light',
+    primary: '#E0005E', accent: '#AEFF00',
+    surface: '#FFF3F8', surfaceAlt: '#FFFFFF',
+    ink: '#280010', inkMuted: '#7A2050', line: '#F7C0D8',
+  },
+  neon: {
+    name: 'neon', label: 'Neon', mode: 'dark',
+    primary: '#00FF88', accent: '#FF3CAC',
+    surface: '#050A08', surfaceAlt: '#0D1A12',
+    ink: '#DFFFEE', inkMuted: '#70BF94', line: '#0A3020',
+  },
+  aurora: {
+    name: 'aurora', label: 'Aurora', mode: 'dark',
+    primary: '#00D4FF', accent: '#CC00FF',
+    surface: '#060810', surfaceAlt: '#0C1422',
+    ink: '#E4F4FF', inkMuted: '#6AA8CC', line: '#0D2040',
+  },
 }
 
 export const SWATCH_LIST: ColorSwatch[] = Object.values(SWATCHES)

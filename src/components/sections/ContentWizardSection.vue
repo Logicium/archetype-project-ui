@@ -153,8 +153,8 @@ function clearAll() {
 }
 
 // ─── Menu helpers ─────────────────────────────────────────────────────────────
-function addMenuItem(catIdx: number) { form.menuCategories[catIdx].items.push(blankMenuItem()) }
-function removeMenuItem(catIdx: number, itemIdx: number) { form.menuCategories[catIdx].items.splice(itemIdx, 1) }
+function addMenuItem(catIdx: number) { form.menuCategories[catIdx]!.items.push(blankMenuItem()) }
+function removeMenuItem(catIdx: number, itemIdx: number) { form.menuCategories[catIdx]!.items.splice(itemIdx, 1) }
 function addMenuCategory() { form.menuCategories.push({ name: '', items: [blankMenuItem()] }) }
 
 // ─── Config export ────────────────────────────────────────────────────────────
@@ -356,7 +356,7 @@ function getPhotoAlt(slotFilename: string): string {
   if (slotFilename === 'about.jpg') return form.aboutPhoto.alt
   if (slotFilename === 'storefront.jpg') return form.storefrontPhoto.alt
   const m = slotFilename.match(/^room-(\d+)\.jpg$/)
-  if (m) return form.roomPhotos[parseInt(m[1]) - 1]?.alt ?? ''
+  if (m) return form.roomPhotos[parseInt(m[1]!) - 1]?.alt ?? ''
   return ''
 }
 function setPhotoAlt(slotFilename: string, val: string) {
@@ -364,7 +364,7 @@ function setPhotoAlt(slotFilename: string, val: string) {
   if (slotFilename === 'about.jpg') { form.aboutPhoto.alt = val; return }
   if (slotFilename === 'storefront.jpg') { form.storefrontPhoto.alt = val; return }
   const m = slotFilename.match(/^room-(\d+)\.jpg$/)
-  if (m) { const r = form.roomPhotos[parseInt(m[1]) - 1]; if (r) r.alt = val }
+  if (m) { const r = form.roomPhotos[parseInt(m[1]!) - 1]; if (r) r.alt = val }
 }
 
 // ─── Photo guide ──────────────────────────────────────────────────────────────

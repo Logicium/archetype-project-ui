@@ -22,6 +22,11 @@ export type SwatchName =
   | 'obsidian'
   | 'ember'
   | 'plum'
+  // Bold & Neon
+  | 'electric'
+  | 'punch'
+  | 'neon'
+  | 'aurora'
 
 export interface ColorSwatch {
   name: SwatchName
