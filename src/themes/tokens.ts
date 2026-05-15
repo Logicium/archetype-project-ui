@@ -6,6 +6,7 @@
 
 export type ThemeName = 'studio' | 'heritage' | 'vibrant'
 export type HeroStyle = '1' | '2' | '3' | '4' | '5' | '6'
+export type FooterStyle = '1' | '2' | '3' | '4' | '5'
 
 export type SwatchName =
   // Light

@@ -1,12 +1,44 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { useSiteTheme } from '../composables/useSiteTheme'
 import { THEME_LIST } from '../themes'
 import { SWATCH_LIST } from '../themes/swatches'
 
-const { themeName, swatchName, variant, heroStyle, setTheme, setSwatch, setVariant, setHeroStyle } = useSiteTheme()
+const { themeName, swatchName, variant, heroStyle, footerStyle, setTheme, setSwatch, setVariant, setHeroStyle, setFooterStyle } = useSiteTheme()
 const VARIANTS = ['essentials', 'portfolio'] as const
 const HERO_STYLES = ['1', '2', '3', '4', '5', '6'] as const
 const HERO_STYLE_LABELS: Record<string, string> = { '1': 'Default', '2': 'Overlay', '3': 'Broadsheet', '4': 'Split', '5': 'Marquee', '6': 'Float' }
+const FOOTER_STYLES = ['1', '2', '3', '4', '5'] as const
+const FOOTER_STYLE_LABELS: Record<string, string> = { '1': 'Classic', '2': 'Editorial', '3': 'Billboard', '4': 'Minimal', '5': 'Dark Stage' }
+
+const copied = ref(false)
+
+const configSnippet = computed(() =>
+  JSON.stringify({
+    theme: themeName.value,
+    swatch: swatchName.value,
+    variant: variant.value,
+    heroStyle: heroStyle.value,
+    footerStyle: footerStyle.value,
+  }, null, 2)
+)
+
+function copyConfig() {
+  navigator.clipboard.writeText(configSnippet.value).then(() => {
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+  })
+}
+
+function downloadConfig() {
+  const blob = new Blob([configSnippet.value], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `archetype-config-${themeName.value}-${swatchName.value}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -29,6 +61,19 @@ const HERO_STYLE_LABELS: Record<string, string> = { '1': 'Default', '2': 'Overla
         </div>
       </div>
       <div>
+        <p class="ap-eyebrow">Variant</p>
+        <div class="ap-switcher__row">
+          <button
+            v-for="v in VARIANTS"
+            :key="v"
+            type="button"
+            class="ap-switcher__chip"
+            :class="{ 'is-active': variant === v }"
+            @click="setVariant(v)"
+          >{{ v }}</button>
+        </div>
+      </div>
+      <div class="ap-switcher__span">
         <p class="ap-eyebrow">Swatch</p>
         <div class="ap-switcher__row">
           <button
@@ -44,19 +89,6 @@ const HERO_STYLE_LABELS: Record<string, string> = { '1': 'Default', '2': 'Overla
         </div>
       </div>
       <div>
-        <p class="ap-eyebrow">Variant</p>
-        <div class="ap-switcher__row">
-          <button
-            v-for="v in VARIANTS"
-            :key="v"
-            type="button"
-            class="ap-switcher__chip"
-            :class="{ 'is-active': variant === v }"
-            @click="setVariant(v)"
-          >{{ v }}</button>
-        </div>
-      </div>
-      <div>
         <p class="ap-eyebrow">Hero style</p>
         <div class="ap-switcher__row">
           <button
@@ -67,6 +99,29 @@ const HERO_STYLE_LABELS: Record<string, string> = { '1': 'Default', '2': 'Overla
             :class="{ 'is-active': heroStyle === s }"
             @click="setHeroStyle(s)"
           >{{ HERO_STYLE_LABELS[s] }}</button>
+        </div>
+      </div>
+      <div>
+        <p class="ap-eyebrow">Footer style</p>
+        <div class="ap-switcher__row">
+          <button
+            v-for="s in FOOTER_STYLES"
+            :key="s"
+            type="button"
+            class="ap-switcher__chip"
+            :class="{ 'is-active': footerStyle === s }"
+            @click="setFooterStyle(s)"
+          >{{ FOOTER_STYLE_LABELS[s] }}</button>
+        </div>
+      </div>
+      <div class="ap-switcher__export">
+        <p class="ap-eyebrow">Export config</p>
+        <pre class="ap-switcher__code">{{ configSnippet }}</pre>
+        <div class="ap-switcher__row">
+          <button type="button" class="ap-switcher__chip" @click="copyConfig">
+            {{ copied ? 'Copied!' : 'Copy JSON' }}
+          </button>
+          <button type="button" class="ap-switcher__chip" @click="downloadConfig">Download .json</button>
         </div>
       </div>
     </div>
@@ -82,7 +137,7 @@ const HERO_STYLE_LABELS: Record<string, string> = { '1': 'Default', '2': 'Overla
   box-shadow: var(--ap-shadow-lg);
   font-family: var(--ap-font-body);
   font-size: 0.85rem;
-  max-width: 320px;
+  max-width: 400px;
 }
 .ap-switcher summary {
   list-style: none; cursor: pointer; padding: 0.6rem 0.9rem;
@@ -90,12 +145,13 @@ const HERO_STYLE_LABELS: Record<string, string> = { '1': 'Default', '2': 'Overla
   text-transform: lowercase; color: var(--ap-ink-muted);
 }
 .ap-switcher summary::-webkit-details-marker { display: none; }
-.ap-switcher__panel { padding: 0.75rem 0.9rem 1rem; display: grid; gap: 0.85rem; }
+.ap-switcher__panel { padding: 0.75rem 0.9rem 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1rem; }
 .ap-switcher__row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem; }
 .ap-switcher__chip {
   background: transparent; color: var(--ap-ink);
   border: 1px solid var(--ap-line); border-radius: 999px;
   padding: 0.3rem 0.7rem; font-size: 0.78rem;
+  cursor: pointer;
 }
 .ap-switcher__chip.is-active { background: var(--ap-ink); color: var(--ap-surface); border-color: var(--ap-ink); }
 .ap-switcher__swatch {
@@ -103,4 +159,19 @@ const HERO_STYLE_LABELS: Record<string, string> = { '1': 'Default', '2': 'Overla
   border: 2px solid var(--ap-line); padding: 0;
 }
 .ap-switcher__swatch.is-active { outline: 2px solid; outline-offset: 2px; }
+.ap-switcher__span { grid-column: 1/-1; }
+.ap-switcher__export { border-top: 1px solid var(--ap-line); padding-top: 0.85rem; grid-column: 1/-1; }
+.ap-switcher__code {
+  margin: 0.5rem 0 0;
+  padding: 0.6rem 0.75rem;
+  background: var(--ap-surface);
+  border: 1px solid var(--ap-line);
+  border-radius: calc(var(--ap-radius) / 2);
+  font-family: var(--ap-font-mono, monospace);
+  font-size: 0.7rem;
+  line-height: 1.6;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--ap-ink-muted);
+}
 </style>

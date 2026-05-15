@@ -7,7 +7,7 @@ export interface PriceItem {
   blurb: string
   /** Recommended bundle item is highlighted. */
   featured?: boolean
-  category: 'website' | 'photos' | 'visibility'
+  category: 'website' | 'marketing' | 'addons'
   includes?: string[]
 }
 
@@ -54,7 +54,7 @@ export const PRICING: PriceItem[] = [
     name: 'Photo campaign',
     price: 100,
     blurb: 'A short photo session that delivers the 8 photos your Essentials site needs.',
-    category: 'photos',
+    category: 'marketing',
     includes: ['On-location shoot', '8 web-ready edited photos', 'Named to match your site'],
   },
   {
@@ -62,7 +62,7 @@ export const PRICING: PriceItem[] = [
     name: 'Photo campaign (Extended)',
     price: 150,
     blurb: 'A longer session that delivers the 16 photos your Portfolio site needs.',
-    category: 'photos',
+    category: 'marketing',
     includes: ['Two-hour on-location shoot', '16 web-ready edited photos', 'Lifestyle + product + interior coverage'],
   },
   {
@@ -70,7 +70,7 @@ export const PRICING: PriceItem[] = [
     name: 'Google Business Profile',
     price: 50,
     blurb: 'We set up — or fix — your Google Maps profile so locals can find you.',
-    category: 'visibility',
+    category: 'addons',
     includes: ['Profile creation or claim', 'Hours, photos, links', 'Verification walkthrough'],
   },
   {
@@ -78,8 +78,20 @@ export const PRICING: PriceItem[] = [
     name: 'Google Search Console',
     price: 50,
     blurb: 'We connect your site to Google so it gets indexed faster and you can see search traffic.',
-    category: 'visibility',
+    category: 'addons',
     includes: ['Property setup', 'Sitemap submission', 'A 1-page guide for reading your stats'],
+  },
+  {
+    id: 'instagram-gmaps',
+    name: 'Instagram + Google Reviews',
+    price: 50,
+    blurb: 'Embed your latest Instagram posts and live Google star ratings directly on your site — keeps content fresh automatically.',
+    category: 'addons',
+    includes: [
+      'Instagram feed widget (latest posts, auto-updated)',
+      'Google Maps star rating + review carousel',
+      'No manual updates needed',
+    ],
   },
 ]
 

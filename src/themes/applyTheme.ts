@@ -1,4 +1,4 @@
-import type { ColorSwatch, ThemeTokens, SiteVariant, Archetype, HeroStyle } from './tokens'
+import type { ColorSwatch, ThemeTokens, SiteVariant, Archetype, HeroStyle, FooterStyle } from './tokens'
 
 /**
  * Writes a theme + swatch + variant + archetype into CSS custom properties
@@ -11,7 +11,8 @@ export function applyTheme(
   swatch: ColorSwatch,
   variant: SiteVariant = 'essentials',
   archetype: Archetype = 'dine',
-  heroStyle: HeroStyle = '1'
+  heroStyle: HeroStyle = '1',
+  footerStyle: FooterStyle = '1'
 ): void {
   if (typeof document === 'undefined') return
   const root = document.documentElement
@@ -53,6 +54,7 @@ export function applyTheme(
   root.setAttribute('data-variant', variant)
   root.setAttribute('data-archetype', archetype)
   root.setAttribute('data-hero-style', heroStyle)
+  root.setAttribute('data-footer-style', footerStyle)
   root.style.colorScheme = swatch.mode
 
   ensureFontLink(theme)
