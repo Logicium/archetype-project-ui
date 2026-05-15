@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { siteConfig } from './config/site.config'
 import { useSiteTheme } from './composables/useSiteTheme'
@@ -10,7 +10,7 @@ import ThemeSwitcher from './components/ThemeSwitcher.vue'
 const { init } = useSiteTheme()
 onMounted(() => init(siteConfig.theme, siteConfig.swatch, 'essentials', 'project'))
 
-const showSwitcher = computed(() => import.meta.env.DEV)
+const showSwitcher = true
 
 const navLinks = [
   { to: '/', label: 'Overview' },

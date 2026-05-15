@@ -71,7 +71,7 @@ export const siteConfig: ProjectSiteConfig = {
       image: '/showcase/mesa.jpg',
       themes: ['studio', 'heritage', 'vibrant'],
       swatches: ['sand', 'sunset', 'forest'],
-      liveUrl: 'https://mesa.example.com',
+      liveUrl: 'https://archetype-mesa-ui.vercel.app',
     },
     {
       id: 'hearth',
@@ -81,7 +81,7 @@ export const siteConfig: ProjectSiteConfig = {
       image: '/showcase/hearth.jpg',
       themes: ['studio', 'heritage', 'vibrant'],
       swatches: ['forest', 'sage', 'stone'],
-      liveUrl: 'https://hearth.example.com',
+      liveUrl: 'https://archetype-hearth-ui.vercel.app',
     },
     {
       id: 'vault',
@@ -91,7 +91,7 @@ export const siteConfig: ProjectSiteConfig = {
       image: '/showcase/vault.jpg',
       themes: ['studio', 'heritage', 'vibrant'],
       swatches: ['fiesta', 'rose', 'midnight'],
-      liveUrl: 'https://vault.example.com',
+      liveUrl: 'https://archetype-vault-ui.vercel.app',
     },
   ],
   faq: [
