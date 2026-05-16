@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { ChevronDown, Settings, Copy, Check, Download } from 'lucide-vue-next'
+import { ChevronDown, Settings, Copy, Check, Download, CornerDownRight, AlignLeft, AlignCenter, Palette, LayoutTemplate, LayoutGrid, Globe, Code2 } from 'lucide-vue-next'
 import { useSiteTheme } from '../composables/useSiteTheme'
+import { useSectionFlash } from '../composables/useSectionFlash'
 import { THEME_LIST } from '../themes'
 import { SWATCH_LIST } from '../themes/swatches'
+import { SWATCH_GROUP_LABELS } from '../themes/tokens'
 
 const {
   themeName, swatchName, variant,
   heroStyle, footerStyle,
   contactStyle, hoursStyle, galleryStyle, reviewsStyle, subheroStyle,
   siteStyle,
+  alignment,
   setTheme, setSwatch, setVariant,
   setHeroStyle, setFooterStyle,
   setContactStyle, setHoursStyle, setGalleryStyle, setReviewsStyle, setSubheroStyle,
   setSiteStyle,
+  setAlignment,
 } = useSiteTheme()
 
 const VARIANTS = ['essentials', 'portfolio'] as const
@@ -32,14 +36,43 @@ const REVIEWS_STYLE_LABELS: Record<string, string> = { '1': 'Default', '2': 'Spo
 const SUBHERO_STYLES = ['1', '2', '3', '4', '5'] as const
 const SUBHERO_STYLE_LABELS: Record<string, string> = { '1': 'Compact', '2': 'Banner', '3': 'Centered', '4': 'Broadsheet', '5': 'Split' }
 const SITE_STYLES = ['1', '2', '3'] as const
-// project = studio: site style not applicable
+// project = wizard/agency: Site style
 const SITE_STYLE_LABEL = 'Site style'
 const SITE_STYLE_LABELS: Record<string, string> = { '1': 'Default', '2': 'Alt', '3': 'Bold' }
 
-type Tab = 'theme' | 'style' | 'sections' | 'media' | 'config'
-const tab = ref<Tab>('theme')
+type Tab = 'theme' | 'style' | 'sections' | 'global' | 'config'
+const TAB_STORAGE_KEY = 'ap-switcher-tab'
+function readTab(): Tab {
+  try {
+    const v = localStorage.getItem(TAB_STORAGE_KEY)
+    if (v === 'theme' || v === 'style' || v === 'sections' || v === 'global' || v === 'config') return v
+  } catch { /* storage unavailable */ }
+  return 'theme'
+}
+const tab = ref<Tab>(readTab())
+watch(tab, (v) => { try { localStorage.setItem(TAB_STORAGE_KEY, v) } catch { /* */ } })
 const open = ref(false)
 function toggle() { open.value = !open.value }
+
+/* ── Section-flash registry ──
+   Each setting's eyebrow label is clickable; clicking scrolls to the element
+   it controls and flashes inverted colors. If the element doesn't exist on
+   the current page, navigate to a fallback route and try again. */
+const { goto } = useSectionFlash()
+const sectionTargets = {
+  hero:      { selectors: ['.ap-hero'],                                  route: '/' },
+  subhero:   { selectors: ['.ap-subhero'],                               route: '/contact' },
+  footer:    { selectors: ['.ap-footer'],                                route: '/' },
+  site:      { selectors: ['.wiz', '.ap-section'],                       route: '/wizard' },
+  contact:   { selectors: ['.ap-contact'],                               route: '/contact' },
+  hours:     { selectors: ['.ap-hours'],                                 route: '/contact' },
+  gallery:   { selectors: ['.ap-gallery'],                               route: '/' },
+  reviews:   { selectors: ['.ap-reviews'],                               route: '/' },
+} as const
+function jumpTo(key: keyof typeof sectionTargets) {
+  const t = sectionTargets[key]
+  goto({ selectors: [...t.selectors], route: t.route })
+}
 
 /* ── Config export (mirrors the original archetype-project switcher) ── */
 const copied = ref(false)
@@ -47,6 +80,7 @@ const configSnippet = computed(() => JSON.stringify({
   theme: themeName.value,
   swatch: swatchName.value,
   variant: variant.value,
+  alignment: alignment.value,
   heroStyle: heroStyle.value,
   subheroStyle: subheroStyle.value,
   footerStyle: footerStyle.value,
@@ -76,24 +110,38 @@ function downloadConfig() {
   URL.revokeObjectURL(url)
 }
 
-/* ── Single-source height animation (no bounce) ──
-   Measure the active panel's natural height and write it to a CSS variable on
-   the wrapper. The wrapper transitions `height` from 0 (collapsed) → measured
-   px (open). Switching tabs only changes the same height variable, so the
-   transition is a single fluid motion. */
+/* ── Single-source dimension animation ──
+   We measure two intrinsic sizes:
+     pillWidth   = the natural width of the collapsed pill
+     panelHeight = the natural height of the open panel
+   The wrapper then transitions `width` between pillWidth (closed) and
+   the open width (640px capped to viewport), and `height` of the expand
+   region between 0 and panelHeight. Both sides of the toggle animate.
+
+   The pill is measured via a hidden ghost (`.ap-switcher__measure`) that
+   is always present in the DOM. Measuring the real pill while it's
+   transitioning (or while it's been pulled out of flow via
+   `position: absolute`) yields jittery / inflated widths. */
 const panelEl = ref<HTMLElement | null>(null)
+const measureEl = ref<HTMLElement | null>(null)
 const panelHeight = ref(0)
+const pillWidth = ref(0)
 
 async function measure() {
   await nextTick()
   if (panelEl.value) panelHeight.value = panelEl.value.scrollHeight
+  if (measureEl.value) pillWidth.value = measureEl.value.scrollWidth
 }
 
 onMounted(() => {
   measure()
-  if (panelEl.value && 'ResizeObserver' in window) {
-    const ro = new ResizeObserver(() => { panelHeight.value = panelEl.value!.scrollHeight })
-    ro.observe(panelEl.value)
+  if ('ResizeObserver' in window) {
+    const ro = new ResizeObserver(() => {
+      if (panelEl.value) panelHeight.value = panelEl.value.scrollHeight
+      if (measureEl.value) pillWidth.value = measureEl.value.scrollWidth
+    })
+    if (panelEl.value) ro.observe(panelEl.value)
+    if (measureEl.value) ro.observe(measureEl.value)
   }
 })
 watch([tab, open], () => { measure() })
@@ -103,10 +151,34 @@ watch([tab, open], () => { measure() })
   <div
     class="ap-switcher"
     :class="{ 'is-open': open }"
-    :style="{ '--ap-switcher-h': panelHeight + 'px' }"
+    :style="{
+      '--ap-switcher-h': panelHeight + 'px',
+      '--ap-switcher-pill-w': pillWidth + 'px',
+    }"
   >
-    <!-- Collapsed pill (hidden while open) -->
-    <button v-show="!open" type="button" class="ap-switcher__pill" @click="toggle" aria-label="Open site settings">
+    <!-- Hidden ghost pill used purely for width measurement. Lives in the
+         DOM at all times so we always know the natural collapsed width,
+         independent of whether the visible pill is showing or hidden. -->
+    <span ref="measureEl" class="ap-switcher__measure" aria-hidden="true">
+      <span class="ap-switcher__pill" tabindex="-1">
+        <span class="ap-switcher__pill-info">
+          <span class="ap-switcher__pill-dot" />
+          <span>{{ themeName }} · {{ swatchName }} · {{ variant }}</span>
+        </span>
+        <span class="ap-switcher__pill-icon"><Settings :size="16" /></span>
+      </span>
+    </span>
+
+    <!-- Collapsed pill (kept in the DOM so width can animate; hidden when open) -->
+    <button
+      type="button"
+      class="ap-switcher__pill"
+      :class="{ 'is-hidden': open }"
+      :aria-hidden="open"
+      :tabindex="open ? -1 : 0"
+      @click="toggle"
+      aria-label="Open site settings"
+    >
       <span class="ap-switcher__pill-info">
         <span class="ap-switcher__pill-dot" :style="{ background: SWATCH_LIST.find(s => s.name === swatchName)?.primary }" />
         <span>{{ themeName }} · {{ swatchName }} · {{ variant }}</span>
@@ -127,11 +199,11 @@ watch([tab, open], () => { measure() })
         </div>
 
         <div class="ap-switcher__tabs" role="tablist">
-          <button type="button" role="tab" class="ap-switcher__tab" :class="{ 'is-active': tab === 'theme' }" @click="tab = 'theme'">Theme</button>
-          <button type="button" role="tab" class="ap-switcher__tab" :class="{ 'is-active': tab === 'style' }" @click="tab = 'style'">Style</button>
-          <button type="button" role="tab" class="ap-switcher__tab" :class="{ 'is-active': tab === 'sections' }" @click="tab = 'sections'">Sections</button>
-          <button type="button" role="tab" class="ap-switcher__tab" :class="{ 'is-active': tab === 'media' }" @click="tab = 'media'">Media</button>
-          <button type="button" role="tab" class="ap-switcher__tab" :class="{ 'is-active': tab === 'config' }" @click="tab = 'config'">Config</button>
+          <button type="button" role="tab" class="ap-switcher__tab" :class="{ 'is-active': tab === 'theme' }" @click="tab = 'theme'"><Palette :size="14" /><span>theme</span></button>
+          <button type="button" role="tab" class="ap-switcher__tab" :class="{ 'is-active': tab === 'style' }" @click="tab = 'style'"><LayoutTemplate :size="14" /><span>style</span></button>
+          <button type="button" role="tab" class="ap-switcher__tab" :class="{ 'is-active': tab === 'sections' }" @click="tab = 'sections'"><LayoutGrid :size="14" /><span>sections</span></button>
+          <button type="button" role="tab" class="ap-switcher__tab" :class="{ 'is-active': tab === 'global' }" @click="tab = 'global'"><Globe :size="14" /><span>global</span></button>
+          <button type="button" role="tab" class="ap-switcher__tab" :class="{ 'is-active': tab === 'config' }" @click="tab = 'config'"><Code2 :size="14" /><span>config</span></button>
         </div>
 
         <!-- Theme -->
@@ -150,8 +222,22 @@ watch([tab, open], () => { measure() })
           </div>
           <div class="ap-switcher__span">
             <p class="ap-eyebrow">Swatch</p>
-            <div class="ap-switcher__row">
-              <button v-for="s in SWATCH_LIST" :key="s.name" type="button" class="ap-switcher__swatch" :class="{ 'is-active': swatchName === s.name }" :style="{ background: s.primary, outlineColor: s.accent }" :title="s.label" @click="setSwatch(s.name)" />
+            <div class="ap-switcher__swatch-grid">
+              <button
+                v-for="s in SWATCH_LIST"
+                :key="s.name"
+                type="button"
+                class="ap-switcher__swatch-card"
+                :class="{ 'is-active': swatchName === s.name }"
+                :title="`${s.label} · ${SWATCH_GROUP_LABELS[s.group]}`"
+                @click="setSwatch(s.name)"
+              >
+                <span class="ap-switcher__swatch-tile" :data-group="s.group">
+                  <span class="ap-switcher__swatch-chip" :style="{ background: s.primary }" />
+                  <span class="ap-switcher__swatch-chip" :style="{ background: s.accent }" />
+                </span>
+                <span class="ap-switcher__swatch-name">{{ s.label }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -159,25 +245,37 @@ watch([tab, open], () => { measure() })
         <!-- Style -->
         <div v-show="tab === 'style'" class="ap-switcher__panel">
           <div class="ap-switcher__span">
-            <p class="ap-eyebrow">Hero style</p>
+            <button type="button" class="ap-switcher__group-head" @click="jumpTo('hero')">
+              <span class="ap-eyebrow">Hero style</span>
+              <CornerDownRight :size="12" />
+            </button>
             <div class="ap-switcher__row">
               <button v-for="s in HERO_STYLES" :key="s" type="button" class="ap-switcher__chip" :class="{ 'is-active': heroStyle === s }" @click="setHeroStyle(s)">{{ HERO_STYLE_LABELS[s] }}</button>
             </div>
           </div>
           <div class="ap-switcher__span">
-            <p class="ap-eyebrow">Subpage hero</p>
+            <button type="button" class="ap-switcher__group-head" @click="jumpTo('subhero')">
+              <span class="ap-eyebrow">Subpage hero</span>
+              <CornerDownRight :size="12" />
+            </button>
             <div class="ap-switcher__row">
               <button v-for="s in SUBHERO_STYLES" :key="s" type="button" class="ap-switcher__chip" :class="{ 'is-active': subheroStyle === s }" @click="setSubheroStyle(s)">{{ SUBHERO_STYLE_LABELS[s] }}</button>
             </div>
           </div>
           <div class="ap-switcher__span">
-            <p class="ap-eyebrow">Footer style</p>
+            <button type="button" class="ap-switcher__group-head" @click="jumpTo('footer')">
+              <span class="ap-eyebrow">Footer style</span>
+              <CornerDownRight :size="12" />
+            </button>
             <div class="ap-switcher__row">
               <button v-for="s in FOOTER_STYLES" :key="s" type="button" class="ap-switcher__chip" :class="{ 'is-active': footerStyle === s }" @click="setFooterStyle(s)">{{ FOOTER_STYLE_LABELS[s] }}</button>
             </div>
           </div>
           <div class="ap-switcher__span">
-            <p class="ap-eyebrow">{{ SITE_STYLE_LABEL }}</p>
+            <button type="button" class="ap-switcher__group-head" @click="jumpTo('site')">
+              <span class="ap-eyebrow">{{ SITE_STYLE_LABEL }}</span>
+              <CornerDownRight :size="12" />
+            </button>
             <div class="ap-switcher__row">
               <button v-for="s in SITE_STYLES" :key="s" type="button" class="ap-switcher__chip" :class="{ 'is-active': siteStyle === s }" @click="setSiteStyle(s)">{{ SITE_STYLE_LABELS[s] }}</button>
             </div>
@@ -187,31 +285,65 @@ watch([tab, open], () => { measure() })
         <!-- Sections -->
         <div v-show="tab === 'sections'" class="ap-switcher__panel">
           <div class="ap-switcher__span">
-            <p class="ap-eyebrow">Contact section</p>
+            <button type="button" class="ap-switcher__group-head" @click="jumpTo('contact')">
+              <span class="ap-eyebrow">Contact section</span>
+              <CornerDownRight :size="12" />
+            </button>
             <div class="ap-switcher__row">
               <button v-for="s in CONTACT_STYLES" :key="s" type="button" class="ap-switcher__chip" :class="{ 'is-active': contactStyle === s }" @click="setContactStyle(s)">{{ CONTACT_STYLE_LABELS[s] }}</button>
             </div>
           </div>
           <div class="ap-switcher__span">
-            <p class="ap-eyebrow">Hours section</p>
+            <button type="button" class="ap-switcher__group-head" @click="jumpTo('hours')">
+              <span class="ap-eyebrow">Hours section</span>
+              <CornerDownRight :size="12" />
+            </button>
             <div class="ap-switcher__row">
               <button v-for="s in HOURS_STYLES" :key="s" type="button" class="ap-switcher__chip" :class="{ 'is-active': hoursStyle === s }" @click="setHoursStyle(s)">{{ HOURS_STYLE_LABELS[s] }}</button>
             </div>
           </div>
-        </div>
-
-        <!-- Media -->
-        <div v-show="tab === 'media'" class="ap-switcher__panel">
           <div class="ap-switcher__span">
-            <p class="ap-eyebrow">Gallery section</p>
+            <button type="button" class="ap-switcher__group-head" @click="jumpTo('gallery')">
+              <span class="ap-eyebrow">Gallery section</span>
+              <CornerDownRight :size="12" />
+            </button>
             <div class="ap-switcher__row">
               <button v-for="s in GALLERY_STYLES" :key="s" type="button" class="ap-switcher__chip" :class="{ 'is-active': galleryStyle === s }" @click="setGalleryStyle(s)">{{ GALLERY_STYLE_LABELS[s] }}</button>
             </div>
           </div>
           <div class="ap-switcher__span">
-            <p class="ap-eyebrow">Reviews section</p>
+            <button type="button" class="ap-switcher__group-head" @click="jumpTo('reviews')">
+              <span class="ap-eyebrow">Reviews section</span>
+              <CornerDownRight :size="12" />
+            </button>
             <div class="ap-switcher__row">
               <button v-for="s in REVIEWS_STYLES" :key="s" type="button" class="ap-switcher__chip" :class="{ 'is-active': reviewsStyle === s }" @click="setReviewsStyle(s)">{{ REVIEWS_STYLE_LABELS[s] }}</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Global -->
+        <div v-show="tab === 'global'" class="ap-switcher__panel">
+          <div class="ap-switcher__span">
+            <p class="ap-eyebrow">Content alignment</p>
+            <p class="ap-switcher__hint">Applies globally across all themes, components, and pages.</p>
+            <div class="ap-switcher__row">
+              <button
+                type="button"
+                class="ap-switcher__chip ap-switcher__chip--icon"
+                :class="{ 'is-active': alignment === 'left' }"
+                @click="setAlignment('left')"
+              >
+                <AlignLeft :size="14" /> Left
+              </button>
+              <button
+                type="button"
+                class="ap-switcher__chip ap-switcher__chip--icon"
+                :class="{ 'is-active': alignment === 'center' }"
+                @click="setAlignment('center')"
+              >
+                <AlignCenter :size="14" /> Center
+              </button>
             </div>
           </div>
         </div>
@@ -250,18 +382,32 @@ watch([tab, open], () => { measure() })
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   border: 1px solid color-mix(in srgb, var(--ap-line) 85%, transparent);
-  border-radius: 14px;
+  border-radius: 999px;
   box-shadow: 0 10px 40px -10px color-mix(in srgb, var(--ap-ink) 35%, transparent),
               0 2px 8px -2px color-mix(in srgb, var(--ap-ink) 20%, transparent);
   overflow: hidden;
-  width: auto; max-width: min(640px, calc(100vw - 2rem));
-  transition: width 320ms cubic-bezier(0.2, 0.7, 0.3, 1),
-              max-width 320ms cubic-bezier(0.2, 0.7, 0.3, 1),
-              border-radius 240ms ease;
+  /* Collapsed: width matches the measured pill width. Open: snap to 640px. */
+  width: var(--ap-switcher-pill-w, max-content);
+  max-width: min(640px, calc(100vw - 2rem));
+  transition: width 360ms cubic-bezier(0.2, 0.7, 0.3, 1),
+              border-radius 320ms ease;
 }
 .ap-switcher.is-open {
   width: 640px;
-  border-radius: 16px;
+  border-radius: 18px;
+}
+/* When open, pill is removed from layout so it doesn't influence height. */
+.ap-switcher__pill.is-hidden {
+  position: absolute; visibility: hidden; pointer-events: none;
+  width: max-content;
+}
+/* Offscreen ghost used only to measure the pill's natural width. Kept in
+   the DOM at all times so width is always known, even while the visible
+   pill is hidden. position: absolute removes it from layout entirely. */
+.ap-switcher__measure {
+  position: absolute; left: -99999px; top: -99999px;
+  visibility: hidden; pointer-events: none;
+  width: max-content;
 }
 
 /* ── Collapsed pill ────────────────────────────────────── */
@@ -290,15 +436,18 @@ watch([tab, open], () => { measure() })
   width: 26px; height: 26px; border-radius: 50%;
   background: color-mix(in srgb, var(--ap-ink) 8%, transparent);
   color: var(--ap-ink);
+  line-height: 0;
+  flex-shrink: 0;
   transition: background 160ms ease;
 }
+.ap-switcher__pill-icon :deep(svg) { display: block; }
 .ap-switcher__pill:hover .ap-switcher__pill-icon { background: color-mix(in srgb, var(--ap-ink) 14%, transparent); }
 
 /* ── Expand region — single height transition ── */
 .ap-switcher__expand {
   height: 0;
   overflow: hidden;
-  transition: height 320ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  transition: height 520ms cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 .ap-switcher.is-open .ap-switcher__expand {
   height: var(--ap-switcher-h, auto);
@@ -319,14 +468,18 @@ watch([tab, open], () => { measure() })
   text-transform: uppercase; color: var(--ap-ink);
 }
 .ap-switcher__close {
-  background: transparent; border: 0; cursor: pointer;
-  width: 28px; height: 28px; border-radius: 50%;
+  background: color-mix(in srgb, var(--ap-ink) 8%, transparent);
+  border: 0; cursor: pointer;
+  width: 32px; height: 32px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  color: var(--ap-ink-muted);
+  color: var(--ap-ink);
+  line-height: 0;
+  flex-shrink: 0;
   transition: background 160ms ease, color 160ms ease, transform 240ms ease;
 }
+.ap-switcher__close :deep(svg) { display: block; margin: 0; }
 .ap-switcher__close:hover {
-  background: color-mix(in srgb, var(--ap-ink) 10%, transparent);
+  background: color-mix(in srgb, var(--ap-ink) 14%, transparent);
   color: var(--ap-ink);
 }
 /* Chevron points down by default (in open state — clicking collapses).
@@ -341,28 +494,58 @@ watch([tab, open], () => { measure() })
 }
 .ap-switcher__tab {
   flex: 1;
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.2rem;
   background: transparent; border: 0;
-  padding: 0.7rem 0.4rem;
-  font-family: inherit; font-size: 0.78rem;
+  padding: 0.6rem 0.3rem 0.55rem;
+  font-family: inherit; font-size: 0.7rem;
   color: var(--ap-ink-muted); cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   letter-spacing: 0.04em;
+  text-transform: lowercase;
   transition: color 160ms ease, border-color 160ms ease;
 }
+.ap-switcher__tab :deep(svg) { display: block; opacity: 0.8; }
 .ap-switcher__tab:hover { color: var(--ap-ink); }
 .ap-switcher__tab.is-active {
   color: var(--ap-ink);
   border-bottom-color: var(--ap-primary);
   font-weight: 600;
 }
+.ap-switcher__tab.is-active :deep(svg) { opacity: 1; color: var(--ap-primary); }
 
 /* ── Panel (2-col by default; full-width groups via __span) ── */
 .ap-switcher__panel {
   padding: 0.9rem 1rem 1.1rem;
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 0.9rem 1.25rem;
+  animation: ap-switcher-fade 360ms ease both;
 }
+@keyframes ap-switcher-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-switcher__panel { animation: none; }
+}
+
+/* Clickable group head — jumps to the section the setting controls */
+.ap-switcher__group-head {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: transparent; border: 0; padding: 0; margin: 0;
+  color: inherit; cursor: pointer;
+  border-bottom: 1px dashed transparent;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+.ap-switcher__group-head .ap-eyebrow { transition: color 160ms ease; }
+.ap-switcher__group-head :global(svg) {
+  opacity: 0.4;
+  transition: opacity 160ms ease, transform 200ms ease;
+}
+.ap-switcher__group-head:hover { border-bottom-color: color-mix(in srgb, var(--ap-primary) 60%, transparent); }
+.ap-switcher__group-head:hover .ap-eyebrow { color: var(--ap-primary); }
+.ap-switcher__group-head:hover :global(svg) { opacity: 0.9; transform: translateX(2px); }
 .ap-switcher__row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem; }
 .ap-switcher__chip {
   background: transparent; color: var(--ap-ink);
@@ -385,6 +568,88 @@ watch([tab, open], () => { measure() })
   padding: 0; cursor: pointer;
 }
 .ap-switcher__swatch.is-active { outline: 2px solid; outline-offset: 2px; }
+
+/* ── Swatch cards ──
+   Each card is a perfectly square ghost-outlined tile. Inside: two color
+   chips (primary + accent) whose shape follows the active theme via
+   var(--ap-radius) — square themes get square chips, rounded themes get
+   pill-rounded chips. Group is encoded as a thin colored accent strip
+   along the bottom edge. Name sits centered below in lowercase. */
+.ap-switcher__swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+.ap-switcher__swatch-card {
+  position: relative;
+  display: flex; flex-direction: column;
+  aspect-ratio: 1 / 1;
+  padding: 0.4rem;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--ap-line) 75%, transparent);
+  border-radius: var(--ap-radius, 6px);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.ap-switcher__swatch-card:hover {
+  border-color: color-mix(in srgb, var(--ap-primary) 55%, var(--ap-line));
+  transform: translateY(-1px);
+}
+.ap-switcher__swatch-card.is-active {
+  border-color: var(--ap-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ap-primary) 28%, transparent);
+}
+.ap-switcher__swatch-tile {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  place-items: center;
+  gap: 4px;
+  flex: 1; min-height: 0; min-width: 0;
+  padding-bottom: 5px; /* room for group accent strip */
+}
+.ap-switcher__swatch-tile::after {
+  content: '';
+  position: absolute; bottom: 0; left: 10%; right: 10%;
+  height: 2px;
+  background: var(--ap-group-color, transparent);
+  border-radius: 2px;
+}
+.ap-switcher__swatch-tile[data-group="neon"]   { --ap-group-color: #00B86B; }
+.ap-switcher__swatch-tile[data-group="dark"]   { --ap-group-color: #1A1A1A; }
+.ap-switcher__swatch-tile[data-group="bold"]   { --ap-group-color: #E0005E; }
+.ap-switcher__swatch-tile[data-group="warm"]   { --ap-group-color: #D14628; }
+.ap-switcher__swatch-tile[data-group="earth"]  { --ap-group-color: #1F5132; }
+.ap-switcher__swatch-tile[data-group="neutral"]{ --ap-group-color: color-mix(in srgb, var(--ap-ink) 40%, transparent); }
+.ap-switcher__swatch-chip {
+  /* Perfect square/circle, sized to fit BOTH the cell width and the
+     tile height. Browsers honor aspect-ratio with conflicting size
+     constraints by shrinking the box while preserving 1:1, so giving
+     both max-width and max-height yields side = min(cellW, tileH). */
+  display: block;
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  border-radius: var(--ap-radius, 4px);
+  border: 1px solid color-mix(in srgb, var(--ap-ink) 12%, transparent);
+}
+[data-theme='vibrant'] .ap-switcher__swatch-chip { border-radius: 50%; }
+.ap-switcher__swatch-name {
+  margin-top: 0.3rem;
+  font-size: 0.68rem; font-weight: 500;
+  color: var(--ap-ink); line-height: 1.15;
+  text-transform: lowercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.ap-switcher__hint {
+  margin: 0.25rem 0 0.6rem; font-size: 0.78rem;
+  color: var(--ap-ink-muted);
+}
 .ap-switcher__span { grid-column: 1 / -1; }
 
 /* Config tab: code preview */

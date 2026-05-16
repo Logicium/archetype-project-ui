@@ -1,4 +1,4 @@
-import type { ColorSwatch, ThemeTokens, SiteVariant, Archetype, HeroStyle, FooterStyle, ContactStyle, HoursStyle, GalleryStyle, ReviewsStyle, SubheroStyle, SiteStyle } from './tokens'
+import type { ColorSwatch, ThemeTokens, SiteVariant, Archetype, HeroStyle, FooterStyle, ContactStyle, HoursStyle, GalleryStyle, ReviewsStyle, SubheroStyle, SiteStyle, Alignment } from './tokens'
 
 /**
  * Writes a theme + swatch + variant + archetype into CSS custom properties
@@ -19,6 +19,7 @@ export function applyTheme(
   reviewsStyle: ReviewsStyle = '1',
   subheroStyle: SubheroStyle = '1',
   siteStyle: SiteStyle = '1',
+  alignment: Alignment = 'left',
 ): void {
   if (typeof document === 'undefined') return
   const root = document.documentElement
@@ -67,6 +68,7 @@ export function applyTheme(
   root.setAttribute('data-reviews-style', reviewsStyle)
   root.setAttribute('data-subhero-style', subheroStyle)
   root.setAttribute('data-site-style', siteStyle)
+  root.setAttribute('data-align', alignment)
   root.style.colorScheme = swatch.mode
 
   ensureFontLink(theme)

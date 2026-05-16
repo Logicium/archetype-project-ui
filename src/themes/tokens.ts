@@ -13,6 +13,17 @@ export type GalleryStyle = '1' | '2' | '3' | '4' | '5'
 export type ReviewsStyle = '1' | '2' | '3' | '4' | '5'
 export type SubheroStyle = '1' | '2' | '3' | '4' | '5'
 export type SiteStyle = '1' | '2' | '3' | '4' | '5'
+export type Alignment = 'left' | 'center'
+
+export type SwatchGroup = 'neutral' | 'earth' | 'warm' | 'bold' | 'dark' | 'neon'
+export const SWATCH_GROUP_LABELS: Record<SwatchGroup, string> = {
+  neutral: 'Neutral',
+  earth: 'Earth',
+  warm: 'Warm',
+  bold: 'Bold',
+  dark: 'Dark',
+  neon: 'Neon',
+}
 
 export type SwatchName =
   // Light
@@ -39,6 +50,7 @@ export interface ColorSwatch {
   name: SwatchName
   label: string
   mode: 'light' | 'dark'
+  group: SwatchGroup
   primary: string
   accent: string
   surface: string

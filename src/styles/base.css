@@ -5,6 +5,23 @@
 html, body, #app { margin: 0; padding: 0; }
 body { overflow-x: clip; }   /* contain accidental horizontal bleed (e.g. full-bleed marquees) */
 
+/* ── Section-flash highlight (used by ThemeSwitcher to indicate which
+   element a setting affects). A slow inverted-colors pulse on the target. */
+@keyframes ap-flash-invert {
+  0%   { filter: invert(0) hue-rotate(0deg); }
+  20%  { filter: invert(1) hue-rotate(180deg); }
+  50%  { filter: invert(1) hue-rotate(180deg); }
+  80%  { filter: invert(0.2) hue-rotate(36deg); }
+  100% { filter: invert(0) hue-rotate(0deg); }
+}
+.ap-flash-invert {
+  animation: ap-flash-invert 1.8s ease-in-out;
+  will-change: filter;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-flash-invert { animation: none; outline: 3px solid var(--ap-primary); outline-offset: 4px; }
+}
+
 html {
   background: var(--ap-surface, #fff);
   color: var(--ap-ink, #111);
@@ -113,6 +130,201 @@ button { font: inherit; cursor: pointer; }
   max-width: 720px;
 }
 .ap-section-head--center { margin-left: auto; margin-right: auto; text-align: center; align-items: center; }
+
+/* ── Global alignment ──
+   Driven by the `data-align` attribute on <html>. When set to "center",
+   inline content centers, common section heads adopt centered alignment,
+   layout grids/flex stacks center their items, and 2-col helper grids
+   collapse to a single centered column.
+
+   Hero/subhero styles (overlay/broadsheet/split/float/marquee) own their
+   own layout via `data-hero-style`/`data-subhero-style` selectors, so the
+   global rules below avoid touching their internal grids/positioning to
+   prevent broken layouts. They only adjust text-align + actions row. */
+html[data-align="center"] body { text-align: center; }
+html[data-align="center"] .ap-section-head {
+  margin-left: auto; margin-right: auto; text-align: center; align-items: center;
+}
+html[data-align="center"] .ap-section-head > * { text-align: center; }
+
+/* Hero / subhero / footer / section text */
+html[data-align="center"] .ap-hero,
+html[data-align="center"] .ap-subhero,
+html[data-align="center"] .ap-footer,
+html[data-align="center"] .ap-contact,
+html[data-align="center"] .ap-hours,
+html[data-align="center"] .ap-reviews,
+html[data-align="center"] .ap-gallery,
+html[data-align="center"] .ap-menu,
+html[data-align="center"] .ap-amenities,
+html[data-align="center"] .ap-products,
+html[data-align="center"] .ap-categories { text-align: center; }
+
+/* True center for every hero/subhero content variant. Per-style overrides
+   in themes.css that anchor content bottom-left (overlay) keep their
+   own positioning; this rule just makes the inner text/figure layout
+   align centrally horizontally. */
+html[data-align="center"] .ap-hero__content,
+html[data-align="center"] .ap-subhero__compact,
+html[data-align="center"] .ap-subhero__centered,
+html[data-align="center"] .ap-subhero__banner-content,
+html[data-align="center"] .ap-subhero__broadsheet,
+html[data-align="center"] .ap-subhero__split-text {
+  text-align: center;
+  align-items: center;
+  margin-left: auto; margin-right: auto;
+}
+html[data-align="center"] .ap-hero__content > *,
+html[data-align="center"] .ap-subhero__compact > *,
+html[data-align="center"] .ap-subhero__centered > *,
+html[data-align="center"] .ap-subhero__banner-content > *,
+html[data-align="center"] .ap-subhero__broadsheet > *,
+html[data-align="center"] .ap-subhero__split-text > * { text-align: center; }
+
+/* Button rows + action rows: center on flex axis. Keep them inline-wrap so
+   the first two CTAs sit next to each other (no auto margins on the buttons
+   themselves — that would push them to opposite ends in a flex row). */
+html[data-align="center"] .ap-hero__ctas,
+html[data-align="center"] .ap-hero__actions,
+html[data-align="center"] .ap-subhero__ctas,
+html[data-align="center"] .ap-subhero__actions,
+html[data-align="center"] .ap-section__actions,
+html[data-align="center"] [class*="__actions"],
+html[data-align="center"] [class*="__cta"],
+html[data-align="center"] [class*="__buttons"] {
+  justify-content: center; align-items: center;
+}
+
+/* Generic content grids — center items within tracks and within the parent.
+   We deliberately do NOT target [class*="__grid"] / [class*="__split"] /
+   [class*="__row"] globally because hero/subhero layouts use those names
+   for their own bespoke positioning. Instead we whitelist common section
+   grids that hold cards. */
+html[data-align="center"] .ap-grid { justify-items: center; justify-content: center; }
+html[data-align="center"] .ap-grid > * { text-align: center; }
+html[data-align="center"] .ap-grid--2 { grid-template-columns: minmax(0, 560px); }
+
+html[data-align="center"] .ap-reviews__wall-grid,
+html[data-align="center"] .ap-reviews__spotlight-grid,
+html[data-align="center"] .ap-testimonials__studio-grid,
+html[data-align="center"] .ap-testimonials__heritage-grid,
+html[data-align="center"] .ap-testimonials__vibrant-grid,
+html[data-align="center"] .ap-hours__strip,
+html[data-align="center"] .ap-hours__tiles,
+html[data-align="center"] .ap-hours__pillar,
+html[data-align="center"] .ap-hours__ribbon,
+html[data-align="center"] .ap-menu__list,
+html[data-align="center"] .ap-menu__grid,
+html[data-align="center"] .ap-products__grid,
+html[data-align="center"] .ap-categories__grid,
+html[data-align="center"] .ap-amenities__grid,
+html[data-align="center"] .ap-gallery__grid,
+html[data-align="center"] .ap-footer__cols {
+  justify-items: center; justify-content: center; align-items: center;
+}
+html[data-align="center"] .ap-reviews__wall-grid > *,
+html[data-align="center"] .ap-reviews__spotlight-grid > *,
+html[data-align="center"] .ap-testimonials__studio-grid > *,
+html[data-align="center"] .ap-testimonials__heritage-grid > *,
+html[data-align="center"] .ap-testimonials__vibrant-grid > *,
+html[data-align="center"] .ap-hours__strip > *,
+html[data-align="center"] .ap-hours__tiles > *,
+html[data-align="center"] .ap-menu__list > *,
+html[data-align="center"] .ap-menu__grid > *,
+html[data-align="center"] .ap-products__grid > *,
+html[data-align="center"] .ap-categories__grid > *,
+html[data-align="center"] .ap-amenities__grid > *,
+html[data-align="center"] .ap-gallery__grid > *,
+html[data-align="center"] .ap-footer__cols > * { text-align: center; }
+
+/* Cards: center their internal content (text + auto-margin only on
+   non-flex children to avoid breaking flex CTA rows). Scope narrowly
+   to known card patterns; do not touch hero subheros. */
+html[data-align="center"] .ap-card,
+html[data-align="center"] .ap-reviews__wall-item,
+html[data-align="center"] .ap-reviews__spotlight-feature,
+html[data-align="center"] .ap-reviews__carousel-card,
+html[data-align="center"] .ap-reviews__ticker-card,
+html[data-align="center"] .ap-testimonials__studio-item,
+html[data-align="center"] .ap-testimonials__heritage-item,
+html[data-align="center"] .ap-testimonials__vibrant-item {
+  text-align: center; align-items: center;
+}
+
+/* Footer columns center their stacked content */
+html[data-align="center"] .ap-footer [class*="__col"],
+html[data-align="center"] .ap-footer [class*="__group"] { text-align: center; align-items: center; }
+
+/* Centered nav: single horizontal row, all elements adjacent in the
+   middle (links, brand title, CTA). Compact gap keeps the cluster tight. */
+html[data-align="center"] .ap-header__row {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+}
+html[data-align="center"] .ap-header__nav {
+  display: flex; align-items: center; gap: clamp(0.5rem, 1.5vw, 1rem);
+  flex-wrap: nowrap;
+}
+html[data-align="center"] .ap-header__brand {
+  text-align: center;
+}
+html[data-align="center"] .ap-header__nav .ap-header__cta {
+  position: static; margin-left: 0;
+}
+
+/* ── Hero / subhero centering for absolutely-positioned variants ──
+   Overlay hero (data-hero-style='2') and banner subhero (data-subhero-style='2')
+   anchor their content with absolute positioning; the default rules only set
+   text-align which can't move an absolute box. Override the anchor point so
+   the entire content box sits centered horizontally. */
+html[data-align="center"] [data-hero-style='2'] .ap-hero__content {
+  left: 50% !important; right: auto !important;
+  transform: translateX(-50%);
+  text-align: center; align-items: center;
+  max-width: min(58ch, calc(100% - 2rem));
+}
+html[data-align="center"] [data-subhero-style='2'] .ap-subhero__banner {
+  text-align: center;
+}
+html[data-align="center"] [data-subhero-style='2'] .ap-subhero__banner-content,
+html[data-align="center"] [data-subhero-style='2'] .ap-subhero__banner-content > * {
+  text-align: center;
+}
+html[data-align="center"] [data-subhero-style='2'] .ap-subhero__banner-content {
+  margin-left: auto; margin-right: auto;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* ── Hours inner-container centering for non-grid layouts ──
+   Pillar uses a 2-col rail (marker + body); collapse to single centered
+   column. Ribbon + tiles already align via flex-column align-items: center
+   but ensure their wrappers center their tracks. */
+html[data-align="center"] .ap-hours__rail {
+  justify-items: center; align-items: center;
+}
+html[data-align="center"] .ap-hours__rail li {
+  grid-template-columns: 1fr !important;
+  justify-items: center; text-align: center;
+}
+html[data-align="center"] .ap-hours__rail-body {
+  align-items: center; text-align: center;
+}
+html[data-align="center"] .ap-hours__rail-marker { display: none; }
+html[data-align="center"] .ap-hours__tiles-grid,
+html[data-align="center"] .ap-hours__ribbon-band {
+  justify-content: center; justify-items: center;
+}
+html[data-align="center"] .ap-hours__tile,
+html[data-align="center"] .ap-hours__ribbon-cell { text-align: center; align-items: center; }
+
+@media (max-width: 760px) {
+  html[data-align="center"] .ap-header__row { flex-wrap: wrap; }
+}
+
+html[data-align="left"] body { text-align: left; }
 
 /* Image utilities */
 .ap-img {

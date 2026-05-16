@@ -350,6 +350,50 @@ async function copyConfig() {
   setTimeout(() => { copied.value = false }, 2200)
 }
 
+// ─── Buy & deploy (PLATFORM_ENABLED) ──────────────────────────────────────────
+import { PLATFORM_ENABLED } from '../../platform/config'
+import { contentClient } from '../../platform/contentClient'
+
+const PLANS = [
+  { sku: 'plan.starter',  label: 'Starter',  blurb: 'Single-page essentials, hosted + 1 year domain.', price: '$899' },
+  { sku: 'plan.standard', label: 'Standard', blurb: 'Full site, contact form, reviews, analytics.',     price: '$1,599' },
+  { sku: 'plan.portfolio',label: 'Portfolio',blurb: 'Standard + gallery / showcase variant.',           price: '$2,199' },
+]
+const ADD_ONS = [
+  { sku: 'addon.instagram',  label: 'Instagram feed' },
+  { sku: 'addon.copy',       label: 'AI copy assistant' },
+  { sku: 'addon.seo',        label: 'SEO scaffolding' },
+  { sku: 'addon.uptime',     label: 'Uptime monitoring' },
+]
+const plan = ref<string>('plan.standard')
+const addOns = ref<string[]>([])
+const owner = reactive({ email: '', name: '' })
+const checkoutBusy = ref(false)
+const checkoutError = ref<string | null>(null)
+
+async function buyAndDeploy() {
+  checkoutError.value = null
+  if (!form.archetype) { checkoutError.value = 'Pick an archetype first.'; return }
+  if (!owner.email) { checkoutError.value = 'Enter your email so we can deliver your site.'; return }
+  checkoutBusy.value = true
+  try {
+    const wizardPayload = JSON.parse(JSON.stringify(form))
+    const res = await contentClient.createOrder({
+      archetype: form.archetype as 'mesa' | 'hearth' | 'vault',
+      plan: plan.value,
+      addOns: addOns.value,
+      wizardPayload,
+      owner: { email: owner.email, name: owner.name || undefined },
+    })
+    if (res.checkoutUrl) window.location.href = res.checkoutUrl
+    else checkoutError.value = 'Order created but no checkout URL was returned. Check Stripe configuration.'
+  } catch (e) {
+    checkoutError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    checkoutBusy.value = false
+  }
+}
+
 // ─── Photo alt helpers ────────────────────────────────────────────────────────
 function getPhotoAlt(slotFilename: string): string {
   if (slotFilename === 'hero.jpg') return form.heroPhoto.alt
@@ -849,8 +893,46 @@ const photoGuide = computed(() => {
         <!-- STEP 9: Export ──────────────────────────────────────────────── -->
         <div v-if="step === 9" class="wiz__step">
           <h2 class="wiz__step-title">Your site config is ready</h2>
+
+          <!-- Buy & Deploy: only when the platform switch is on. -->
+          <div v-if="PLATFORM_ENABLED" class="wiz__buy">
+            <h3 class="wiz__sub">Have us build &amp; host it for you</h3>
+            <p class="wiz__step-desc">
+              Pick a plan, add any extras, then pay. We'll provision a fresh Vercel site with your content within minutes
+              and email you a link when it's live.
+            </p>
+
+            <div class="wiz__plans">
+              <label v-for="p in PLANS" :key="p.sku" class="wiz__plan" :class="{ active: plan === p.sku }">
+                <input type="radio" :value="p.sku" v-model="plan" />
+                <span class="wiz__plan-name">{{ p.label }} <small>{{ p.price }}</small></span>
+                <span class="wiz__plan-blurb">{{ p.blurb }}</span>
+              </label>
+            </div>
+
+            <div class="wiz__addons">
+              <label v-for="a in ADD_ONS" :key="a.sku">
+                <input type="checkbox" :value="a.sku" v-model="addOns" /> {{ a.label }}
+              </label>
+            </div>
+
+            <div class="wiz__owner">
+              <label>Your email
+                <input v-model="owner.email" type="email" required placeholder="you@example.com" />
+              </label>
+              <label>Your name (optional)
+                <input v-model="owner.name" type="text" />
+              </label>
+            </div>
+
+            <button type="button" class="ap-btn" :disabled="checkoutBusy" @click="buyAndDeploy">
+              {{ checkoutBusy ? 'Redirecting…' : 'Buy &amp; deploy' }}
+            </button>
+            <p v-if="checkoutError" class="wiz__err">{{ checkoutError }}</p>
+          </div>
+
           <p class="wiz__step-desc">
-            Copy the code below and paste it into <code class="wiz__code">src/config/site.config.ts</code> in your archetype project.
+            Or copy the code below and paste it into <code class="wiz__code">src/config/site.config.ts</code> in your archetype project.
             Replace the default export with your new config — the site will instantly reflect your content.
           </p>
 

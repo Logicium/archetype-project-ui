@@ -1,5 +1,5 @@
 import { ref, computed, watchEffect } from 'vue'
-import type { ThemeName, SwatchName, ThemeTokens, ColorSwatch, SiteVariant, Archetype, HeroStyle, FooterStyle, ContactStyle, HoursStyle, GalleryStyle, ReviewsStyle, SubheroStyle, SiteStyle } from '../themes/tokens'
+import type { ThemeName, SwatchName, ThemeTokens, ColorSwatch, SiteVariant, Archetype, HeroStyle, FooterStyle, ContactStyle, HoursStyle, GalleryStyle, ReviewsStyle, SubheroStyle, SiteStyle, Alignment } from '../themes/tokens'
 import { THEMES } from '../themes'
 import { SWATCHES } from '../themes/swatches'
 import { applyTheme } from '../themes/applyTheme'
@@ -13,6 +13,7 @@ function readStorage(): Partial<{
   galleryStyle: GalleryStyle; reviewsStyle: ReviewsStyle;
   subheroStyle: SubheroStyle;
   siteStyle: SiteStyle;
+  alignment: Alignment;
 }> {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') } catch { return {} }
 }
@@ -31,6 +32,7 @@ const galleryStyleRef = ref<GalleryStyle>(_saved.galleryStyle ?? '1')
 const reviewsStyleRef = ref<ReviewsStyle>(_saved.reviewsStyle ?? '1')
 const subheroStyleRef = ref<SubheroStyle>(_saved.subheroStyle ?? '1')
 const siteStyleRef = ref<SiteStyle>(_saved.siteStyle ?? '1')
+const alignmentRef = ref<Alignment>(_saved.alignment ?? 'left')
 
 // Module-level effect — single instance, persists + syncs CSS vars on every change
 watchEffect(() => {
@@ -47,6 +49,7 @@ watchEffect(() => {
     reviewsStyleRef.value,
     subheroStyleRef.value,
     siteStyleRef.value,
+    alignmentRef.value,
   )
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -61,6 +64,7 @@ watchEffect(() => {
       reviewsStyle: reviewsStyleRef.value,
       subheroStyle: subheroStyleRef.value,
       siteStyle: siteStyleRef.value,
+      alignment: alignmentRef.value,
     }))
   } catch { /* storage unavailable */ }
 })
@@ -87,6 +91,7 @@ export function useSiteTheme() {
   function setReviewsStyle(s: ReviewsStyle) { reviewsStyleRef.value = s }
   function setSubheroStyle(s: SubheroStyle) { subheroStyleRef.value = s }
   function setSiteStyle(s: SiteStyle) { siteStyleRef.value = s }
+  function setAlignment(a: Alignment) { alignmentRef.value = a }
   function init(
     name: ThemeName,
     swatchName: SwatchName,
@@ -100,6 +105,7 @@ export function useSiteTheme() {
     reviewsStyle: ReviewsStyle = '1',
     subheroStyle: SubheroStyle = '1',
     siteStyle: SiteStyle = '1',
+    alignment: Alignment = 'left',
   ) {
     // Archetype is always from site config, never from user storage
     archetypeRef.value = archetype
@@ -115,6 +121,7 @@ export function useSiteTheme() {
     if (!_saved.reviewsStyle) reviewsStyleRef.value = reviewsStyle
     if (!_saved.subheroStyle) subheroStyleRef.value = subheroStyle
     if (!_saved.siteStyle) siteStyleRef.value = siteStyle
+    if (!_saved.alignment) alignmentRef.value = alignment
   }
 
   return {
@@ -126,10 +133,12 @@ export function useSiteTheme() {
     galleryStyle: galleryStyleRef, reviewsStyle: reviewsStyleRef,
     subheroStyle: subheroStyleRef,
     siteStyle: siteStyleRef,
+    alignment: alignmentRef,
     setTheme, setSwatch, setVariant, setArchetype,
     setHeroStyle, setFooterStyle,
     setContactStyle, setHoursStyle, setGalleryStyle, setReviewsStyle, setSubheroStyle,
     setSiteStyle,
+    setAlignment,
     init,
   }
 }

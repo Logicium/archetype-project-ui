@@ -6,10 +6,19 @@ import router from './router'
 import './styles/base.css'
 import './styles/themes.css'
 import './styles/scrollbar.css'
+import { PLATFORM_ENABLED } from './platform/config'
+import { useSiteContentStore } from './platform/siteContentStore'
 
 const app = createApp(App)
-
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 app.use(router)
 
-app.mount('#app')
+async function boot() {
+  if (PLATFORM_ENABLED) {
+    try { await useSiteContentStore(pinia).hydrate() } catch { /* fall back */ }
+  }
+  app.mount('#app')
+}
+
+void boot()

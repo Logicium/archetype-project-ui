@@ -90,17 +90,29 @@ body::-webkit-scrollbar { width: 0; height: 0; display: none; }
 }
 
 /* ── Scroll-container utilities ──────────────────────────────────────── */
-.ap-scroll-x {
-  overflow-x: auto;
-  overflow-y: hidden;
+/* Wrapper inserted by useApScrollbar around any scrolling element. Holds
+   the scroller + the in-flow scrollbar rail as siblings. */
+.ap-cscroll-wrap {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+.ap-cscroll-wrap--x { flex-direction: column; }
+.ap-cscroll-wrap--y { flex-direction: row; align-items: stretch; }
+.ap-cscroll-wrap > .ap-cscroll-host { flex: 1 1 auto; min-width: 0; min-height: 0; }
+
+.ap-scroll-x,
+.ap-cscroll-host--x {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
-  padding-bottom: calc(var(--ap-scrollbar-size) + 8px); /* room for bar */
 }
-.ap-scroll-y {
-  overflow-y: auto;
+.ap-scroll-x { overflow-x: auto; overflow-y: hidden; }
+.ap-scroll-y,
+.ap-cscroll-host--y {
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
 }
+.ap-scroll-y { overflow-y: auto; overflow-x: hidden; }
 
 /* ── Per-theme treatments ────────────────────────────────────────────── */
 

@@ -3,8 +3,11 @@
  *
  *   • Hides native scrollbars globally (see scrollbar.css).
  *   • Renders a fixed overlay vertical scrollbar for window scroll.
- *   • Auto-attaches an overlay horizontal scrollbar to every `.ap-scroll-x`
- *     element discovered now or later (MutationObserver).
+ *   • Auto-wraps every element with computed overflow-x:auto|scroll OR
+ *     overflow-y:auto|scroll in a flex container and appends an inline
+ *     bar in the document flow (no absolute positioning).
+ *   • The inline bar is *always* rendered (thumb fills the rail when
+ *     there is no overflow) so layout doesn't jump on/off.
  *   • Pure JS + DOM; no Vue templates so it works regardless of mount tree.
  *   • All visuals are CSS-driven via the `.ap-cscroll*` classes, which pick
  *     up per-theme tokens from scrollbar.css.
@@ -36,6 +39,8 @@ function bindDrag(
   let offset = 0
 
   thumb.addEventListener('pointerdown', (e) => {
+    const m = getMetrics()
+    if (m.scrollMax <= 0) return
     dragging = true
     const r = thumb.getBoundingClientRect()
     offset = axis === 'y' ? e.clientY - r.top : e.clientX - r.left
@@ -61,9 +66,9 @@ function bindDrag(
 
   bar.addEventListener('pointerdown', (e) => {
     if (e.target !== bar) return
-    const tr = bar.getBoundingClientRect()
     const m = getMetrics()
-    if (m.trackAvail <= 0) return
+    if (m.scrollMax <= 0) return
+    const tr = bar.getBoundingClientRect()
     const pos = axis === 'y' ? e.clientY - tr.top - m.thumbSize / 2 : e.clientX - tr.left - m.thumbSize / 2
     const clamped = Math.max(0, Math.min(m.trackAvail, pos))
     setScroll((clamped / m.trackAvail) * m.scrollMax)
@@ -79,12 +84,14 @@ function pageScrollbar(): Cleanup {
   function update() {
     const docH = document.documentElement.scrollHeight
     const viewH = window.innerHeight
+    const trackH = bar.clientHeight
     if (docH <= viewH + 1) {
-      bar.classList.add('is-hidden')
+      thumb.style.height = trackH + 'px'
+      thumb.style.transform = 'translateY(0)'
+      bar.classList.add('is-empty')
       return
     }
-    bar.classList.remove('is-hidden')
-    const trackH = bar.clientHeight
+    bar.classList.remove('is-empty')
     const ratio = viewH / docH
     const thumbH = Math.max(MIN_THUMB, Math.round(ratio * trackH))
     const trackAvail = trackH - thumbH
@@ -129,35 +136,69 @@ function pageScrollbar(): Cleanup {
 
 const attached = new WeakMap<Element, Cleanup>()
 
-function horizontalScrollbar(el: HTMLElement) {
-  if (attached.has(el)) return
-  // Build inside a wrapper that contains both content + bar
-  const parent = el.parentElement
-  if (!parent) return
-  const cs = getComputedStyle(parent)
-  if (cs.position === 'static') parent.style.position = 'relative'
+/**
+ * Wrap a scrolling element so we can append an inline bar as a sibling that
+ * takes real layout space (no absolute positioning).
+ */
+function wrapForBar(el: HTMLElement, axis: 'x' | 'y'): HTMLElement | null {
+  const parent = el.parentNode
+  if (!parent) return null
+  const wrap = document.createElement('div')
+  wrap.className = `ap-cscroll-wrap ap-cscroll-wrap--${axis}`
+  parent.insertBefore(wrap, el)
+  wrap.appendChild(el)
+  return wrap
+}
 
-  const { bar, thumb } = makeBar('x', 'inline')
-  parent.appendChild(bar)
+function inlineScrollbar(el: HTMLElement, axis: 'x' | 'y') {
+  if (attached.has(el)) return
+  el.classList.add('ap-cscroll-host', `ap-cscroll-host--${axis}`)
+  const wrap = wrapForBar(el, axis)
+  if (!wrap) return
+
+  const { bar, thumb } = makeBar(axis, 'inline')
+  wrap.appendChild(bar)
 
   let hideTimer: number | undefined
 
   function update() {
-    const sw = el.scrollWidth
-    const cw = el.clientWidth
-    if (sw <= cw + 1) {
-      bar.classList.add('is-hidden')
-      return
+    if (axis === 'x') {
+      const sw = el.scrollWidth
+      const cw = el.clientWidth
+      const trackW = bar.clientWidth
+      if (sw <= cw + 1) {
+        thumb.style.width = trackW + 'px'
+        thumb.style.transform = 'translateX(0)'
+        bar.classList.add('is-empty')
+        return
+      }
+      bar.classList.remove('is-empty')
+      const ratio = cw / sw
+      const thumbW = Math.max(MIN_THUMB, Math.round(ratio * trackW))
+      const trackAvail = trackW - thumbW
+      const scrollMax = sw - cw
+      const left = scrollMax > 0 ? (el.scrollLeft / scrollMax) * trackAvail : 0
+      thumb.style.width = thumbW + 'px'
+      thumb.style.transform = `translateX(${left}px)`
+    } else {
+      const sh = el.scrollHeight
+      const ch = el.clientHeight
+      const trackH = bar.clientHeight
+      if (sh <= ch + 1) {
+        thumb.style.height = trackH + 'px'
+        thumb.style.transform = 'translateY(0)'
+        bar.classList.add('is-empty')
+        return
+      }
+      bar.classList.remove('is-empty')
+      const ratio = ch / sh
+      const thumbH = Math.max(MIN_THUMB, Math.round(ratio * trackH))
+      const trackAvail = trackH - thumbH
+      const scrollMax = sh - ch
+      const top = scrollMax > 0 ? (el.scrollTop / scrollMax) * trackAvail : 0
+      thumb.style.height = thumbH + 'px'
+      thumb.style.transform = `translateY(${top}px)`
     }
-    bar.classList.remove('is-hidden')
-    const trackW = bar.clientWidth
-    const ratio = cw / sw
-    const thumbW = Math.max(MIN_THUMB, Math.round(ratio * trackW))
-    const trackAvail = trackW - thumbW
-    const scrollMax = sw - cw
-    const left = scrollMax > 0 ? (el.scrollLeft / scrollMax) * trackAvail : 0
-    thumb.style.width = thumbW + 'px'
-    thumb.style.transform = `translateX(${left}px)`
   }
 
   function flash() {
@@ -167,19 +208,36 @@ function horizontalScrollbar(el: HTMLElement) {
   }
 
   function getMetrics() {
-    const sw = el.scrollWidth
-    const cw = el.clientWidth
-    const trackW = bar.clientWidth
-    const ratio = cw / sw
-    const thumbSize = Math.max(MIN_THUMB, Math.round(ratio * trackW))
-    return { trackAvail: trackW - thumbSize, thumbSize, scrollMax: sw - cw }
+    if (axis === 'x') {
+      const sw = el.scrollWidth
+      const cw = el.clientWidth
+      const trackW = bar.clientWidth
+      const scrollMax = sw - cw
+      if (scrollMax <= 0) return { trackAvail: 0, thumbSize: trackW, scrollMax: 0 }
+      const ratio = cw / sw
+      const thumbSize = Math.max(MIN_THUMB, Math.round(ratio * trackW))
+      return { trackAvail: trackW - thumbSize, thumbSize, scrollMax }
+    } else {
+      const sh = el.scrollHeight
+      const ch = el.clientHeight
+      const trackH = bar.clientHeight
+      const scrollMax = sh - ch
+      if (scrollMax <= 0) return { trackAvail: 0, thumbSize: trackH, scrollMax: 0 }
+      const ratio = ch / sh
+      const thumbSize = Math.max(MIN_THUMB, Math.round(ratio * trackH))
+      return { trackAvail: trackH - thumbSize, thumbSize, scrollMax }
+    }
   }
-  bindDrag(thumb, bar, 'x', getMetrics, (v) => { el.scrollLeft = v })
+  bindDrag(thumb, bar, axis, getMetrics, (v) => {
+    if (axis === 'x') el.scrollLeft = v
+    else el.scrollTop = v
+  })
 
   const onScroll = () => { update(); flash() }
   el.addEventListener('scroll', onScroll, { passive: true })
   const ro = new ResizeObserver(update)
   ro.observe(el)
+  ro.observe(bar)
   const mo = new MutationObserver(update)
   mo.observe(el, { childList: true, subtree: true })
   update()
@@ -192,8 +250,27 @@ function horizontalScrollbar(el: HTMLElement) {
   })
 }
 
-function scanHorizontals() {
-  document.querySelectorAll<HTMLElement>('.ap-scroll-x').forEach(horizontalScrollbar)
+function isScrollable(value: string): boolean {
+  return value === 'auto' || value === 'scroll'
+}
+
+function scanScrollers() {
+  // Explicit opt-ins first
+  document.querySelectorAll<HTMLElement>('.ap-scroll-x').forEach((el) => inlineScrollbar(el, 'x'))
+  document.querySelectorAll<HTMLElement>('.ap-scroll-y').forEach((el) => inlineScrollbar(el, 'y'))
+
+  const all = document.querySelectorAll<HTMLElement>('body *')
+  for (const el of all) {
+    if (attached.has(el)) continue
+    if (el.classList.contains('ap-cscroll') || el.classList.contains('ap-cscroll__thumb')) continue
+    if (el.classList.contains('ap-cscroll-wrap')) continue
+    if (el.tagName === 'HTML' || el.tagName === 'BODY') continue
+    const cs = getComputedStyle(el)
+    // Render a bar based on declared scrollability; keeps layout stable
+    // even if overflow comes and goes.
+    if (isScrollable(cs.overflowX)) inlineScrollbar(el, 'x')
+    else if (isScrollable(cs.overflowY)) inlineScrollbar(el, 'y')
+  }
 }
 
 let installed = false
@@ -201,11 +278,10 @@ export function useApScrollbar() {
   if (typeof window === 'undefined' || installed) return
   installed = true
 
-  // Page scrollbar
   pageScrollbar()
 
-  // Horizontal scrollbars (now + on DOM mutations)
-  scanHorizontals()
-  const mo = new MutationObserver(() => scanHorizontals())
+  scanScrollers()
+  const mo = new MutationObserver(() => scanScrollers())
   mo.observe(document.body, { childList: true, subtree: true })
+  window.addEventListener('resize', () => scanScrollers())
 }
