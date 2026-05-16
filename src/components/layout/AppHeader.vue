@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import { ref } from 'vue'
+﻿<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 defineProps<{
@@ -12,10 +12,18 @@ defineProps<{
 
 const route = useRoute()
 const open = ref(false)
+const scrolled = ref(false)
+
+function onScroll() {
+  scrolled.value = window.scrollY > 40
+}
+
+onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
+onUnmounted(() => window.removeEventListener('scroll', onScroll))
 </script>
 
 <template>
-  <header class="ap-header">
+  <header class="ap-header" :class="{ 'is-scrolled': scrolled }">
     <div class="ap-container ap-header__row">
       <RouterLink to="/" class="ap-header__brand" @click="open = false">
         <span class="ap-header__brand-name">{{ brand }}</span>
@@ -55,6 +63,7 @@ const open = ref(false)
   background: color-mix(in srgb, var(--ap-surface) 92%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--ap-line);
+  transition: background 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
 }
 .ap-header__row {
   display: flex; align-items: center; justify-content: space-between;
@@ -91,6 +100,7 @@ const open = ref(false)
   height: 2px; background: var(--ap-primary);
 }
 .ap-header__cta { padding: 0.6rem 1.1rem; font-size: 0.85rem; }
+
 .ap-header__toggle {
   display: none; background: none; border: 0;
   width: 36px; height: 36px; flex-direction: column;
