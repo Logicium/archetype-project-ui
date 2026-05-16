@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import OptimizedImage from '@/components/OptimizedImage.vue'
+
 defineProps<{
   eyebrow?: string
   title: string
@@ -15,7 +17,7 @@ defineProps<{
   <section class="ap-section ap-about" :class="{ 'is-reverse': reverse }">
     <div class="ap-container ap-about__grid">
       <div v-if="image" class="ap-about__media">
-        <img :src="image" :alt="imageAlt || title" />
+        <OptimizedImage v-if="image" :src="image" :alt="imageAlt || title" />
       </div>
       <div class="ap-about__body">
         <div class="ap-section-head">

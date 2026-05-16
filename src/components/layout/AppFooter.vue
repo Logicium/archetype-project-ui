@@ -85,7 +85,7 @@ const year = new Date().getFullYear()
 /* ── Base shared ────────────────────────────────────────── */
 .ap-footer {
   position: relative; overflow: hidden;
-  margin-top: clamp(3rem, 6vw, 5rem);
+  margin-top: 0;
 }
 .ap-footer ul { list-style: none; padding: 0; margin: 0.5rem 0 0; display: grid; gap: 0.4rem; }
 .ap-footer a { color: inherit; text-decoration: none; }
@@ -101,6 +101,7 @@ const year = new Date().getFullYear()
   display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
   padding: 1.25rem 0; border-top: 1px solid var(--ap-line); color: var(--ap-ink-muted);
   font-size: 0.8rem;
+  position: relative; z-index: 1;
 }
 
 /* ── Style 1 · Classic (default) ───────────────────────── */
@@ -114,6 +115,7 @@ const year = new Date().getFullYear()
 .ap-footer__stage    { display: none; }
 
 /* ── Style 3 · Billboard ────────────────────────────────── */
+/* Giant watermark brand name */
 .ap-footer__billboard {
   position: absolute; top: 0; left: 0; right: 0;
   font-family: var(--ap-font-heading);
@@ -125,6 +127,7 @@ const year = new Date().getFullYear()
   overflow: hidden;
   pointer-events: none;
   user-select: none;
+  z-index: 0;
 }
 
 /* ── Style 4 · Minimal ──────────────────────────────────── */

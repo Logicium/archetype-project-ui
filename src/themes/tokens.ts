@@ -7,6 +7,12 @@
 export type ThemeName = 'studio' | 'heritage' | 'vibrant'
 export type HeroStyle = '1' | '2' | '3' | '4' | '5' | '6'
 export type FooterStyle = '1' | '2' | '3' | '4' | '5'
+export type ContactStyle = '1' | '2' | '3' | '4' | '5'
+export type HoursStyle = '1' | '2' | '3' | '4' | '5'
+export type GalleryStyle = '1' | '2' | '3' | '4' | '5'
+export type ReviewsStyle = '1' | '2' | '3' | '4' | '5'
+export type SubheroStyle = '1' | '2' | '3' | '4' | '5'
+export type SiteStyle = '1' | '2' | '3' | '4' | '5'
 
 export type SwatchName =
   // Light

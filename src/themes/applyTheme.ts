@@ -1,4 +1,4 @@
-import type { ColorSwatch, ThemeTokens, SiteVariant, Archetype, HeroStyle, FooterStyle } from './tokens'
+import type { ColorSwatch, ThemeTokens, SiteVariant, Archetype, HeroStyle, FooterStyle, ContactStyle, HoursStyle, GalleryStyle, ReviewsStyle, SubheroStyle, SiteStyle } from './tokens'
 
 /**
  * Writes a theme + swatch + variant + archetype into CSS custom properties
@@ -12,7 +12,13 @@ export function applyTheme(
   variant: SiteVariant = 'essentials',
   archetype: Archetype = 'dine',
   heroStyle: HeroStyle = '1',
-  footerStyle: FooterStyle = '1'
+  footerStyle: FooterStyle = '1',
+  contactStyle: ContactStyle = '1',
+  hoursStyle: HoursStyle = '1',
+  galleryStyle: GalleryStyle = '1',
+  reviewsStyle: ReviewsStyle = '1',
+  subheroStyle: SubheroStyle = '1',
+  siteStyle: SiteStyle = '1',
 ): void {
   if (typeof document === 'undefined') return
   const root = document.documentElement
@@ -55,6 +61,12 @@ export function applyTheme(
   root.setAttribute('data-archetype', archetype)
   root.setAttribute('data-hero-style', heroStyle)
   root.setAttribute('data-footer-style', footerStyle)
+  root.setAttribute('data-contact-style', contactStyle)
+  root.setAttribute('data-hours-style', hoursStyle)
+  root.setAttribute('data-gallery-style', galleryStyle)
+  root.setAttribute('data-reviews-style', reviewsStyle)
+  root.setAttribute('data-subhero-style', subheroStyle)
+  root.setAttribute('data-site-style', siteStyle)
   root.style.colorScheme = swatch.mode
 
   ensureFontLink(theme)

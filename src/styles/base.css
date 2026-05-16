@@ -3,6 +3,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body, #app { margin: 0; padding: 0; }
+body { overflow-x: clip; }   /* contain accidental horizontal bleed (e.g. full-bleed marquees) */
 
 html {
   background: var(--ap-surface, #fff);
@@ -150,30 +151,32 @@ button { font: inherit; cursor: pointer; }
 }
 [data-theme='studio'] .ap-card { border-color: var(--ap-line); }
 
-/* ── Overlay-hero (hero style 2): fixed transparent navbar ────────────── */
-[data-hero-style='2'] .ap-header {
+/* ── Transparent navbar over hero ──────────────────────────────────────
+   Header floats over the page hero only on routes whose hero is meant to
+   sit beneath it: home with Overlay (heroStyle=2), or subpages with
+   Banner (subheroStyle=2) or Broadsheet (subheroStyle=4). The component
+   computes that and toggles `.is-transparent-eligible`. We keep the nav
+   text in its original color (no white-out) and we recolor the CTA to
+   the theme's primary instead of white. */
+.ap-header.is-transparent-eligible {
   position: fixed; width: 100%;
   background: transparent;
   border-bottom-color: transparent;
   backdrop-filter: none;
   box-shadow: none;
 }
-[data-hero-style='2'] .ap-header.is-scrolled {
+.ap-header.is-transparent-eligible.is-scrolled {
   background: color-mix(in srgb, var(--ap-surface) 92%, transparent);
   border-bottom-color: var(--ap-line);
   backdrop-filter: blur(10px);
   box-shadow: 0 1px 12px rgba(0,0,0,0.08);
 }
-[data-hero-style='2'] .ap-header:not(.is-scrolled) .ap-header__brand-name,
-[data-hero-style='2'] .ap-header:not(.is-scrolled) .ap-header__brand-tag,
-[data-hero-style='2'] .ap-header:not(.is-scrolled) .ap-header__link,
-[data-hero-style='2'] .ap-header:not(.is-scrolled) .ap-header__toggle span {
-  color: #fff;
+/* Floating CTA in transparent mode: use theme accent/primary, not white. */
+.ap-header.is-transparent-eligible:not(.is-scrolled) .ap-header__cta {
+  background: var(--ap-primary);
+  border-color: var(--ap-primary);
+  color: var(--ap-on-primary);
 }
-[data-hero-style='2'] .ap-header:not(.is-scrolled) .ap-header__cta {
-  background: rgba(255,255,255,0.15);
-  border-color: rgba(255,255,255,0.6);
-  color: #fff;
-}
-/* Header is fixed, so <main> must not leave a gap at the top */
-[data-hero-style='2'] main { padding-top: 0; margin-top: 0; }
+/* Header is fixed in transparent-eligible routes — main must not gap top */
+.ap-header.is-transparent-eligible ~ main,
+body:has(.ap-header.is-transparent-eligible) main { padding-top: 0; margin-top: 0; }

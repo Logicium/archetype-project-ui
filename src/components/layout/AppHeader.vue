@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { useSiteTheme } from '../../composables/useSiteTheme'
 
 defineProps<{
   brand: string
@@ -11,19 +12,72 @@ defineProps<{
 }>()
 
 const route = useRoute()
+const { heroStyle, subheroStyle } = useSiteTheme()
 const open = ref(false)
 const scrolled = ref(false)
+const headerEl = useTemplateRef<HTMLElement>('headerEl')
+
+/**
+ * Header sits transparently OVER the page hero when:
+ *  - on home (`/`) and the home hero is Overlay (heroStyle '2') or
+ *    Broadsheet (heroStyle '3'), OR
+ *  - on a subpage and the subhero is Banner ('2') or Broadsheet ('4').
+ */
+const transparentEligible = computed(() => {
+  const isHome = route.path === '/'
+  if (isHome) return heroStyle.value === '2' || heroStyle.value === '3'
+  return subheroStyle.value === '2' || subheroStyle.value === '4'
+})
+
+/**
+ * Light-on-dark text only over photo-backed heroes:
+ *  - home Overlay ('2'), or subpage Banner ('2').
+ * Broadsheet variants keep dark text since they sit on a colored panel.
+ */
+const lightOnDark = computed(() => {
+  const isHome = route.path === '/'
+  if (isHome) return heroStyle.value === '2'
+  return subheroStyle.value === '2'
+})
 
 function onScroll() {
   scrolled.value = window.scrollY > 40
 }
 
-onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
-onUnmounted(() => window.removeEventListener('scroll', onScroll))
+let ro: ResizeObserver | undefined
+function publishHeight() {
+  if (!headerEl.value) return
+  const h = headerEl.value.offsetHeight
+  document.documentElement.style.setProperty('--ap-header-h', h + 'px')
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', onScroll, { passive: true })
+  publishHeight()
+  if (headerEl.value) {
+    ro = new ResizeObserver(publishHeight)
+    ro.observe(headerEl.value)
+  }
+  window.addEventListener('resize', publishHeight)
+})
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+  window.removeEventListener('resize', publishHeight)
+  ro?.disconnect()
+})
 </script>
 
 <template>
-  <header class="ap-header" :class="{ 'is-scrolled': scrolled }">
+  <header
+    ref="headerEl"
+    class="ap-header"
+    :class="{
+      'is-scrolled': scrolled,
+      'is-transparent-eligible': transparentEligible,
+      'is-transparent': transparentEligible && !scrolled,
+      'is-light': lightOnDark && !scrolled,
+    }"
+  >
     <div class="ap-container ap-header__row">
       <RouterLink to="/" class="ap-header__brand" @click="open = false">
         <span class="ap-header__brand-name">{{ brand }}</span>
@@ -63,8 +117,28 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   background: color-mix(in srgb, var(--ap-surface) 92%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--ap-line);
-  transition: background 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+  transition: background 300ms ease, border-color 300ms ease, box-shadow 300ms ease, color 300ms ease;
 }
+/* Transparent floating navbar for hero-eligible pages (until scrolled). */
+.ap-header.is-transparent {
+  position: fixed; top: 0; left: 0; right: 0;
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom-color: transparent;
+}
+/* Light-on-dark variant for nav over photo heroes (overlay/banner). */
+.ap-header.is-light,
+.ap-header.is-light .ap-header__brand-name,
+.ap-header.is-light .ap-header__brand-tag,
+.ap-header.is-light .ap-header__link { color: #fff; }
+.ap-header.is-light .ap-header__brand-tag { color: rgba(255,255,255,0.78); }
+.ap-header.is-light .ap-header__toggle span { background: #fff; }
+.ap-header.is-light .ap-header__cta {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.6);
+  color: #fff;
+}
+.ap-header.is-light .ap-header__link.is-active::after { background: #fff; }
 .ap-header__row {
   display: flex; align-items: center; justify-content: space-between;
   padding-top: 1rem; padding-bottom: 1rem; gap: 1.5rem;

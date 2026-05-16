@@ -3,12 +3,24 @@ import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { siteConfig } from './config/site.config'
 import { useSiteTheme } from './composables/useSiteTheme'
+import { useImagePreload } from './composables/useImagePreload'
+import { useApScrollbar } from './composables/useApScrollbar'
 import AppHeader from './components/layout/AppHeader.vue'
 import AppFooter from './components/layout/AppFooter.vue'
+import AppLoader from './components/AppLoader.vue'
 import ThemeSwitcher from './components/ThemeSwitcher.vue'
 
 const { init } = useSiteTheme()
-onMounted(() => init(siteConfig.theme, siteConfig.swatch, 'essentials', 'project'))
+const { isReady, preloadCritical } = useImagePreload()
+
+onMounted(async () => {
+  init(siteConfig.theme, siteConfig.swatch, 'essentials', 'project')
+  useApScrollbar()
+  await preloadCritical([
+    siteConfig.hero.image,
+    ...siteConfig.showcase.map(s => s.image),
+  ])
+})
 
 const showSwitcher = true
 
@@ -21,6 +33,7 @@ const navLinks = [
 </script>
 
 <template>
+  <AppLoader :brand="siteConfig.brand" :visible="!isReady" />
   <AppHeader
     :brand="siteConfig.brand"
     :tagline="siteConfig.tagline"

@@ -2,6 +2,7 @@
 import type { ShowcaseSite } from '../../config/site.config'
 import { THEMES } from '../../themes'
 import { SWATCHES } from '../../themes/swatches'
+import OptimizedImage from '@/components/OptimizedImage.vue'
 
 defineProps<{
   eyebrow?: string
@@ -23,7 +24,7 @@ defineProps<{
       <div class="ap-showcase__grid">
         <article v-for="s in sites" :key="s.id" class="ap-showcase__card">
           <a :href="s.liveUrl" target="_blank" rel="noopener" class="ap-showcase__media">
-            <img :src="s.image" :alt="s.name + ' preview'" loading="lazy" />
+            <OptimizedImage :src="s.image" :alt="s.name + ' preview'" />
             <span class="ap-showcase__pill">{{ s.archetype }}</span>
           </a>
           <div class="ap-showcase__body">

@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { siteConfig } from '../config/site.config'
+import HeroSection from '../components/sections/HeroSection.vue'
 import ContactSection from '../components/sections/ContactSection.vue'
 </script>
 
 <template>
-  <section class="ap-section">
-    <div class="ap-container ap-section-head ap-section-head--center">
-      <span class="ap-eyebrow">Contact</span>
-      <h1>Tell us about your business</h1>
-      <p style="color: var(--ap-ink-muted); max-width: 50ch">
-        Send us a note with your business name and what you sell.
-        We will reply within one business day with a quote and timeline.
-      </p>
-    </div>
-  </section>
+  <HeroSection
+    subpage
+    eyebrow="Contact"
+    title="Tell us about your business"
+    subtitle="Send us a note with your business name and what you sell. We will reply within one business day with a quote and timeline."
+    :image="siteConfig.hero.image"
+  />
   <ContactSection
     title="Send a note"
     :intro="'Or call us — we are local and we answer the phone.'"

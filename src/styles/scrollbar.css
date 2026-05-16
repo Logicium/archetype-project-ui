@@ -1,0 +1,146 @@
+/* ════════════════════════════════════════════════════════════════════════
+   scrollbar.css — Fully custom, JS-driven, theme-aware scrollbar.
+
+   The actual rail/thumb DOM and behavior is provided by useApScrollbar().
+   This stylesheet:
+     • Hides native scrollbars completely (page + every element).
+     • Styles the custom .ap-cscroll rail + thumb with theme tokens.
+     • Provides .ap-scroll-x / .ap-scroll-y utilities for horizontal /
+       vertical scroll containers (which the JS auto-decorates).
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Token defaults (per-theme overrides below) ──────────────────────── */
+:root {
+  --ap-scrollbar-size: 14px;
+  --ap-scrollbar-pad: 4px;          /* gap between bar edge and viewport */
+  --ap-scrollbar-track: color-mix(in srgb, var(--ap-ink) 6%, transparent);
+  --ap-scrollbar-thumb: color-mix(in srgb, var(--ap-primary) 55%, var(--ap-ink) 25%);
+  --ap-scrollbar-thumb-hover: var(--ap-primary);
+  --ap-scrollbar-thumb-active: color-mix(in srgb, var(--ap-primary) 80%, var(--ap-ink) 20%);
+  --ap-scrollbar-radius: 999px;
+  --ap-scrollbar-thumb-inset: 2px;  /* pill effect: thumb sits inside track */
+}
+
+/* ── Hide all native scrollbars ──────────────────────────────────────── */
+html, body { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar,
+body::-webkit-scrollbar { width: 0; height: 0; display: none; }
+*::-webkit-scrollbar { width: 0; height: 0; display: none; }
+* { scrollbar-width: none; }
+
+/* ── Custom scrollbar — track (rail) ─────────────────────────────────── */
+.ap-cscroll {
+  position: fixed;
+  z-index: 9999;
+  background: var(--ap-scrollbar-track);
+  border-radius: var(--ap-scrollbar-radius);
+  opacity: 0;
+  transition: opacity 220ms ease;
+  user-select: none;
+  touch-action: none;
+}
+.ap-cscroll.is-hidden { display: none; }
+.ap-cscroll.is-active,
+.ap-cscroll:hover,
+.ap-cscroll.is-dragging { opacity: 1; }
+@media (hover: none) {
+  .ap-cscroll { opacity: 0.85; }
+  .ap-cscroll.is-active { opacity: 1; }
+}
+
+/* Page-level vertical scrollbar (fixed to viewport right edge) */
+.ap-cscroll--page.ap-cscroll--y {
+  top: var(--ap-scrollbar-pad);
+  right: var(--ap-scrollbar-pad);
+  bottom: var(--ap-scrollbar-pad);
+  width: var(--ap-scrollbar-size);
+}
+
+/* Inline horizontal scrollbar — appended into a positioned parent */
+.ap-cscroll--inline.ap-cscroll--x {
+  position: absolute;
+  left: var(--ap-scrollbar-pad);
+  right: var(--ap-scrollbar-pad);
+  bottom: 0;
+  height: var(--ap-scrollbar-size);
+}
+
+/* ── Thumb ───────────────────────────────────────────────────────────── */
+.ap-cscroll__thumb {
+  position: absolute;
+  background: var(--ap-scrollbar-thumb);
+  border-radius: var(--ap-scrollbar-radius);
+  cursor: grab;
+  transition: background-color 160ms ease;
+  will-change: transform;
+}
+.ap-cscroll__thumb:hover { background: var(--ap-scrollbar-thumb-hover); }
+.ap-cscroll.is-dragging .ap-cscroll__thumb,
+.ap-cscroll__thumb:active { background: var(--ap-scrollbar-thumb-active); cursor: grabbing; }
+
+.ap-cscroll--y .ap-cscroll__thumb {
+  left: var(--ap-scrollbar-thumb-inset);
+  right: var(--ap-scrollbar-thumb-inset);
+  top: 0; height: 0;
+}
+.ap-cscroll--x .ap-cscroll__thumb {
+  top: var(--ap-scrollbar-thumb-inset);
+  bottom: var(--ap-scrollbar-thumb-inset);
+  left: 0; width: 0;
+}
+
+/* ── Scroll-container utilities ──────────────────────────────────────── */
+.ap-scroll-x {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  padding-bottom: calc(var(--ap-scrollbar-size) + 8px); /* room for bar */
+}
+.ap-scroll-y {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+/* ── Per-theme treatments ────────────────────────────────────────────── */
+
+/* STUDIO — sharp & industrial. Squared rail, ink-on-line monochrome. */
+[data-theme='studio'] {
+  --ap-scrollbar-size: 14px;
+  --ap-scrollbar-track: color-mix(in srgb, var(--ap-ink) 6%, transparent);
+  --ap-scrollbar-thumb: var(--ap-ink);
+  --ap-scrollbar-thumb-hover: color-mix(in srgb, var(--ap-ink) 80%, var(--ap-primary) 20%);
+  --ap-scrollbar-thumb-active: var(--ap-primary);
+  --ap-scrollbar-radius: 0;
+  --ap-scrollbar-thumb-inset: 3px;
+}
+
+/* HERITAGE — softer, gilt-edge pill rail. */
+[data-theme='heritage'] {
+  --ap-scrollbar-size: 12px;
+  --ap-scrollbar-track: color-mix(in srgb, var(--ap-primary) 10%, transparent);
+  --ap-scrollbar-thumb: color-mix(in srgb, var(--ap-primary) 60%, var(--ap-ink) 25%);
+  --ap-scrollbar-thumb-hover: var(--ap-primary);
+  --ap-scrollbar-thumb-active: color-mix(in srgb, var(--ap-primary) 75%, var(--ap-ink) 25%);
+  --ap-scrollbar-radius: 999px;
+  --ap-scrollbar-thumb-inset: 2px;
+}
+
+/* VIBRANT — chunky brutalist poster slab. */
+[data-theme='vibrant'] {
+  --ap-scrollbar-size: 16px;
+  --ap-scrollbar-track: color-mix(in srgb, var(--ap-accent) 70%, var(--ap-surface));
+  --ap-scrollbar-thumb: var(--ap-ink);
+  --ap-scrollbar-thumb-hover: var(--ap-primary);
+  --ap-scrollbar-thumb-active: var(--ap-accent);
+  --ap-scrollbar-radius: 0;
+  --ap-scrollbar-thumb-inset: 2px;
+}
+[data-theme='vibrant'] .ap-cscroll {
+  border: 2px solid var(--ap-ink);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ap-cscroll, .ap-cscroll__thumb { transition: none !important; }
+}
