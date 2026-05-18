@@ -61,6 +61,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
         <p class="wiz-result__icon">✓</p>
         <h1>Your site is live!</h1>
         <p>Check your email — we sent a sign-in link so you can log in and manage your site.</p>
+        <a href="/admin" class="ap-btn">Go to dashboard</a>
         <a href="/wizard" class="ap-btn ap-btn--ghost">Start another</a>
       </template>
       <template v-else-if="order.status === 'failed'">
