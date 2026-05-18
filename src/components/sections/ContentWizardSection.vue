@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { UtensilsCrossed, BedDouble, ShoppingBag, Wrench } from 'lucide-vue-next'
+import { SWATCHES } from '../../themes/swatches'
+
+// ─── Color preview helpers ────────────────────────────────────────────────────
+function swatchOf(name: string) {
+  return SWATCHES[name as keyof typeof SWATCHES] ?? SWATCHES.sand
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type WizardArchetype = 'mesa' | 'hearth' | 'vault'
+type WizardArchetype = 'mesa' | 'hearth' | 'vault' | 'keystone'
 
 interface Photo { src: string; alt: string; caption: string }
 interface HourRow { day: string; open: string }
@@ -15,6 +22,8 @@ interface Room { name: string; blurb: string; image: string; features: string; r
 interface Amenity { label: string; description: string; icon: string }
 interface Product { name: string; price: string; image: string; blurb: string; badge: string; url: string }
 interface ShopCat { name: string; image: string; url: string; count: string }
+interface Service { name: string; description: string; price: string; icon: string }
+interface Capability { label: string; value: string }
 
 interface WizardForm {
   archetype: WizardArchetype | ''
@@ -32,11 +41,14 @@ interface WizardForm {
   roomPhotos: Photo[]
   // Vault
   shopUrl: string; featured: Product[]; categories: ShopCat[]
+  // Keystone (utility / trades)
+  serviceArea: string; dispatchPhone: string; emergencyAvailable: boolean
+  services: Service[]; capabilities: Capability[]
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'ap-site-wizard-v1'
-const THEME_OPTS = ['studio', 'heritage', 'vibrant'] as const
+const THEME_OPTS = ['studio', 'heritage', 'vibrant', 'ironwood'] as const
 const SWATCH_OPTS = ['sand', 'forest', 'sage', 'sunset', 'rose', 'stone', 'fiesta', 'citrus', 'midnight', 'obsidian', 'ember', 'plum'] as const
 const VARIANT_OPTS = ['essentials', 'portfolio'] as const
 const STEPS = [
@@ -117,6 +129,19 @@ const form = reactive<WizardForm>({
     { name: '', image: '/photos/cat-3.jpg', url: '#', count: '' },
     { name: '', image: '/photos/cat-4.jpg', url: '#', count: '' },
   ],
+  // Keystone
+  serviceArea: '', dispatchPhone: '', emergencyAvailable: false,
+  services: [
+    { name: '', description: '', price: '', icon: '🔧' },
+    { name: '', description: '', price: '', icon: '⚙' },
+    { name: '', description: '', price: '', icon: '🛠' },
+    { name: '', description: '', price: '', icon: '⚡' },
+  ],
+  capabilities: [
+    { label: 'Years in business', value: '' },
+    { label: 'Service radius', value: '' },
+    { label: 'Licensed & insured', value: '' },
+  ],
 })
 
 // ─── Persistence ──────────────────────────────────────────────────────────────
@@ -138,7 +163,8 @@ watch([() => ({ ...form }), step], () => {
 const isMesa   = computed(() => form.archetype === 'mesa')
 const isHearth = computed(() => form.archetype === 'hearth')
 const isVault  = computed(() => form.archetype === 'vault')
-const hasHours = computed(() => isMesa.value || isVault.value)
+const isKeystone = computed(() => form.archetype === 'keystone')
+const hasHours = computed(() => isMesa.value || isVault.value || isKeystone.value)
 const progress = computed(() => Math.round((step.value / (STEPS.length - 1)) * 100))
 
 function next() { if (step.value < STEPS.length - 1) step.value++ }
@@ -341,6 +367,54 @@ ${socialBlock}
 }`
   }
 
+  // ── Keystone ──────────────────────────────────────────────────────────────
+  if (isKeystone.value) {
+    const hours = form.hours.map(h => `    { day: ${q(h.day)}, open: ${q(h.open)} },`).join('\n')
+
+    const services = form.services.filter(s => s.name).map(s =>
+      `    { name: ${q(s.name)}, description: ${q(s.description)}${s.price ? `, price: ${q(s.price)}` : ''}${s.icon ? `, icon: ${q(s.icon)}` : ''} },`
+    ).join('\n')
+
+    const capabilities = form.capabilities.filter(c => c.label && c.value).map(c =>
+      `    { label: ${q(c.label)}, value: ${q(c.value)} },`
+    ).join('\n')
+
+    return `import type { KeystoneSiteConfig } from './site.config'
+
+export const siteConfig: KeystoneSiteConfig = {
+  brand: ${q(form.brand)},
+  tagline: ${q(form.tagline)},
+  blurb: ${q(form.blurb)},
+  theme: '${form.theme}',
+  swatch: '${form.swatch}',
+  variant: '${form.variant}',
+${contactBlock}
+  serviceArea: ${q(form.serviceArea)},
+  dispatchPhone: ${q(form.dispatchPhone)},
+  emergencyAvailable: ${form.emergencyAvailable ? 'true' : 'false'},
+  hours: [
+${hours}
+  ],
+  photos: {
+    hero: ${photoSlot(form.heroPhoto)},
+    about: ${photoSlot(form.aboutPhoto)},
+    storefront: ${photoSlot(form.storefrontPhoto)},
+    gallery: [
+${gallery}
+    ],
+  },
+${storyBlock}
+  services: [
+${services}
+  ],
+  capabilities: [
+${capabilities}
+  ],
+${testimonialsBlock}
+${socialBlock}
+}`
+  }
+
   return '// Select an archetype to generate config'
 })
 
@@ -379,7 +453,7 @@ async function buyAndDeploy() {
   try {
     const wizardPayload = JSON.parse(JSON.stringify(form))
     const res = await contentClient.createOrder({
-      archetype: form.archetype as 'mesa' | 'hearth' | 'vault',
+      archetype: form.archetype as 'mesa' | 'hearth' | 'vault' | 'keystone',
       plan: plan.value,
       addOns: addOns.value,
       wizardPayload,
@@ -450,6 +524,16 @@ const photoGuide = computed(() => {
     { slot: 'cat-3.jpg',       label: 'Category 3', desc: 'Category cover photo.' },
     { slot: 'cat-4.jpg',       label: 'Category 4', desc: 'Category cover photo.' },
   ]
+  if (isKeystone.value) return [
+    ...base,
+    { slot: 'storefront.jpg',  label: 'Shop / Yard', desc: 'Your shop, yard, or job site exterior. Daylight, clear branding on the building or truck.' },
+    { slot: 'gallery-01.jpg',  label: 'Work 1',     desc: 'A finished project or active job site. Wide shot.' },
+    { slot: 'gallery-02.jpg',  label: 'Work 2',     desc: 'Equipment, fabrication, or detail of craft.' },
+    { slot: 'gallery-03.jpg',  label: 'Work 3',     desc: 'Before/after or process shot.' },
+    { slot: 'gallery-04.jpg',  label: 'Work 4',     desc: 'Crew at work, safety gear visible.' },
+    { slot: 'gallery-05.jpg',  label: 'Work 5',     desc: 'Tools or materials staged.' },
+    { slot: 'gallery-06.jpg',  label: 'Work 6',     desc: 'Hero project or signature build.' },
+  ]
   return base
 })
 </script>
@@ -503,7 +587,7 @@ const photoGuide = computed(() => {
               :class="{ 'is-active': form.archetype === 'mesa' }"
               @click="form.archetype = 'mesa'"
             >
-              <span class="wiz__arch-icon">🍽</span>
+              <span class="wiz__arch-icon"><UtensilsCrossed :size="28" :stroke-width="1.5" /></span>
               <strong>Mesa</strong>
               <span>Dine — restaurant, café, food truck, bar</span>
               <span class="wiz__arch-sections">Menu · Gallery · Hours · Story · Testimonials</span>
@@ -514,7 +598,7 @@ const photoGuide = computed(() => {
               :class="{ 'is-active': form.archetype === 'hearth' }"
               @click="form.archetype = 'hearth'"
             >
-              <span class="wiz__arch-icon">🛏</span>
+              <span class="wiz__arch-icon"><BedDouble :size="28" :stroke-width="1.5" /></span>
               <strong>Hearth</strong>
               <span>Stay — hotel, B&amp;B, inn, rental property</span>
               <span class="wiz__arch-sections">Rooms · Amenities · Gallery · Story · Testimonials</span>
@@ -525,10 +609,21 @@ const photoGuide = computed(() => {
               :class="{ 'is-active': form.archetype === 'vault' }"
               @click="form.archetype = 'vault'"
             >
-              <span class="wiz__arch-icon">🛍</span>
+              <span class="wiz__arch-icon"><ShoppingBag :size="28" :stroke-width="1.5" /></span>
               <strong>Vault</strong>
               <span>Shop — retail, boutique, market, maker</span>
               <span class="wiz__arch-sections">Products · Categories · Gallery · Story · Testimonials</span>
+            </button>
+            <button
+              type="button"
+              class="wiz__arch-card"
+              :class="{ 'is-active': form.archetype === 'keystone' }"
+              @click="form.archetype = 'keystone'"
+            >
+              <span class="wiz__arch-icon"><Wrench :size="28" :stroke-width="1.5" /></span>
+              <strong>Keystone</strong>
+              <span>Utility — auto, contractor, welder, mill, field crew</span>
+              <span class="wiz__arch-sections">Services · Capabilities · Hours · Story · Testimonials</span>
             </button>
           </div>
         </div>
@@ -573,20 +668,94 @@ const photoGuide = computed(() => {
                   <span v-if="t === 'studio'">Minimal · Mono type · Hairline rules</span>
                   <span v-if="t === 'heritage'">Editorial · Serif · Generous whitespace</span>
                   <span v-if="t === 'vibrant'">Bold · Graphic · Chunky borders</span>
+                  <span v-if="t === 'ironwood'">Industrial · Condensed · Spec-sheet contrast</span>
                 </button>
               </div>
             </div>
             <div class="wiz__field wiz__field--full">
               <p class="wiz__label">Color swatch</p>
-              <div class="wiz__chips wiz__chips--wrap">
+              <div class="wiz__swatch-grid">
                 <button
                   v-for="s in SWATCH_OPTS" :key="s"
-                  type="button" class="wiz__chip wiz__chip--sm"
+                  type="button" class="wiz__swatch"
                   :class="{ 'is-active': form.swatch === s }"
                   @click="form.swatch = s"
-                >{{ s }}</button>
+                  :title="swatchOf(s).label + ' · ' + swatchOf(s).mode"
+                >
+                  <span class="wiz__swatch-dot" :style="{ background: swatchOf(s).primary }" aria-hidden="true" />
+                  <span class="wiz__swatch-label">{{ s }}</span>
+                </button>
               </div>
               <span class="wiz__hint">Light swatches: sand, forest, sage, sunset, rose, stone, fiesta, citrus. Dark: midnight, obsidian, ember, plum.</span>
+            </div>
+
+            <!-- ── Interactive site preview ─────────────────────────────── -->
+            <div class="wiz__field wiz__field--full">
+              <p class="wiz__label">Live preview</p>
+              <div
+                class="wiz__preview"
+                :data-theme="form.theme"
+                :style="{
+                  '--pv-primary':     swatchOf(form.swatch).primary,
+                  '--pv-accent':      swatchOf(form.swatch).accent,
+                  '--pv-surface':     swatchOf(form.swatch).surface,
+                  '--pv-surface-alt': swatchOf(form.swatch).surfaceAlt,
+                  '--pv-ink':         swatchOf(form.swatch).ink,
+                  '--pv-ink-muted':   swatchOf(form.swatch).inkMuted,
+                  '--pv-line':        swatchOf(form.swatch).line,
+                }"
+              >
+                <div class="wiz__preview-bar" aria-hidden="true">
+                  <span /><span /><span />
+                  <span class="wiz__preview-url">{{ (form.brand || 'yoursite').toLowerCase().replace(/\s+/g, '') }}.com</span>
+                </div>
+                <div class="wiz__preview-frame">
+                  <header class="wiz__preview-header">
+                    <span class="wiz__preview-brand">{{ form.brand || 'Your Brand' }}</span>
+                    <nav class="wiz__preview-nav">
+                      <span>Home</span><span>About</span><span>Contact</span>
+                    </nav>
+                    <span class="wiz__preview-cta wiz__preview-cta--sm">Get a quote</span>
+                  </header>
+                  <section class="wiz__preview-hero">
+                    <span class="wiz__preview-eyebrow">{{ form.tagline || 'Tagline goes here' }}</span>
+                    <h3 class="wiz__preview-title">{{ form.brand || 'A real headline.' }}</h3>
+                    <p class="wiz__preview-sub">{{ form.blurb || 'A short sentence about what this business does and why it matters.' }}</p>
+                    <div class="wiz__preview-ctas">
+                      <span class="wiz__preview-cta">Primary action</span>
+                      <span class="wiz__preview-cta wiz__preview-cta--ghost">Secondary</span>
+                    </div>
+                  </section>
+                  <section class="wiz__preview-cards">
+                    <div v-for="i in 3" :key="i" class="wiz__preview-card">
+                      <span class="wiz__preview-card-dot" />
+                      <span class="wiz__preview-card-line wiz__preview-card-line--lg" />
+                      <span class="wiz__preview-card-line" />
+                      <span class="wiz__preview-card-line wiz__preview-card-line--short" />
+                    </div>
+                  </section>
+                  <footer class="wiz__preview-footer">
+                    <span>© {{ form.brand || 'Your Brand' }}</span>
+                    <span class="wiz__preview-footer-accent">·</span>
+                    <span>Trinidad, CO</span>
+                  </footer>
+                </div>
+                <div class="wiz__preview-legend">
+                  <div v-for="c in [
+                    { key: 'primary', label: 'Primary', val: swatchOf(form.swatch).primary },
+                    { key: 'accent', label: 'Accent', val: swatchOf(form.swatch).accent },
+                    { key: 'surface', label: 'Surface', val: swatchOf(form.swatch).surface },
+                    { key: 'surface-alt', label: 'Surface Alt', val: swatchOf(form.swatch).surfaceAlt },
+                    { key: 'ink', label: 'Ink', val: swatchOf(form.swatch).ink },
+                    { key: 'ink-muted', label: 'Ink Muted', val: swatchOf(form.swatch).inkMuted },
+                    { key: 'line', label: 'Line', val: swatchOf(form.swatch).line },
+                  ]" :key="c.key" class="wiz__preview-legend-row">
+                    <span class="wiz__preview-legend-swatch" :style="{ background: c.val }" />
+                    <span class="wiz__preview-legend-label">{{ c.label }}</span>
+                    <code class="wiz__preview-legend-hex">{{ c.val }}</code>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="wiz__field wiz__field--full">
               <p class="wiz__label">Variant</p>
@@ -980,6 +1149,9 @@ const photoGuide = computed(() => {
 
 
 <style scoped>
+/* ── Google Fonts for preview ────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Lora:wght@400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Oswald:wght@500;600;700&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 .wiz { padding: clamp(3rem, 8vw, 7rem) 0; }
 .wiz__header { max-width: 62ch; margin-bottom: 2.5rem; }
@@ -1022,13 +1194,15 @@ const photoGuide = computed(() => {
 }
 .wiz__tab:hover { border-color: var(--ap-ink); color: var(--ap-ink); }
 .wiz__tab.is-done { border-color: var(--ap-primary); color: var(--ap-primary); }
+.wiz__tab.is-done .wiz__tab-num { background: var(--ap-primary); color: var(--ap-surface); }
 .wiz__tab.is-active {
   background: var(--ap-ink); border-color: var(--ap-ink); color: var(--ap-surface);
 }
 .wiz__tab-num {
   font-variant-numeric: tabular-nums;
   width: 1.4em; height: 1.4em; display: flex; align-items: center; justify-content: center;
-  border-radius: 50%; background: currentColor; color: var(--ap-surface);
+  border-radius: 50%;
+  background: var(--ap-ink-muted); color: var(--ap-surface);
   font-size: 0.7em; font-weight: 700;
 }
 .wiz__tab.is-active .wiz__tab-num { background: var(--ap-surface); color: var(--ap-ink); }
@@ -1125,7 +1299,8 @@ const photoGuide = computed(() => {
   color: var(--ap-primary) !important;
   margin-top: 0.5rem;
 }
-.wiz__arch-icon { font-size: 1.75rem; }
+.wiz__arch-icon { display: inline-flex; align-items: center; justify-content: center; color: var(--ap-ink); }
+.wiz__arch-card.is-active .wiz__arch-icon { color: var(--ap-primary); }
 
 /* ── Design chips ────────────────────────────────────────────────────────── */
 .wiz__chips { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem; }
@@ -1143,6 +1318,335 @@ const photoGuide = computed(() => {
 .wiz__chip--sm {
   flex-direction: row; padding: 0.4rem 0.75rem;
   font-size: 0.8rem; font-weight: 500;
+}
+
+/* ── Swatch picker (colored dot + label) ─────────────────────────────────── */
+.wiz__swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.wiz__swatch {
+  display: flex; align-items: center; gap: 0.55rem;
+  background: var(--ap-surface); border: 1.5px solid var(--ap-line);
+  border-radius: var(--ap-radius);
+  padding: 0.45rem 0.7rem;
+  cursor: pointer; text-align: left;
+  font: inherit;
+  transition: border-color 0.12s, background 0.12s;
+}
+.wiz__swatch:hover { border-color: var(--ap-ink-muted); }
+.wiz__swatch.is-active {
+  border-color: var(--ap-primary);
+  background: color-mix(in srgb, var(--ap-primary) 8%, var(--ap-surface));
+}
+.wiz__swatch-dot {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--ap-ink) 18%, transparent);
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+}
+.wiz__swatch-label {
+  font-size: 0.82rem; font-weight: 500;
+  text-transform: capitalize;
+  color: var(--ap-ink);
+}
+
+/* ── Live site preview ────────────────────────────────────────────────────── */
+.wiz__preview {
+  margin-top: 0.5rem;
+  border: 1px solid var(--ap-line);
+  border-radius: var(--ap-radius-lg, 12px);
+  overflow: hidden;
+  background: var(--pv-surface);
+  color: var(--pv-ink);
+  /* Theme-driven look tweaks (default: studio) */
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+/* ── studio ──────────────────────────────────────────────────────────────── */
+.wiz__preview[data-theme='studio'] .wiz__preview-title {
+  font-family: "Inter Tight", "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+.wiz__preview[data-theme='studio'] .wiz__preview-eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pv-ink-muted);
+  border-top: 1px solid var(--pv-line);
+  padding-top: 0.4rem;
+  background: none;
+  border-radius: 0;
+  padding-inline: 0;
+}
+.wiz__preview[data-theme='studio'] .wiz__preview-cta {
+  border-radius: 2px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* ── heritage ────────────────────────────────────────────────────────────── */
+.wiz__preview[data-theme='heritage'] {
+  font-family: "Lora", Georgia, "Times New Roman", serif;
+}
+.wiz__preview[data-theme='heritage'] .wiz__preview-title {
+  font-family: "Fraunces", "Cormorant Garamond", Georgia, serif;
+  font-weight: 400;
+  font-size: 1.65rem;
+  letter-spacing: -0.01em;
+}
+.wiz__preview[data-theme='heritage'] .wiz__preview-eyebrow {
+  font-family: "Fraunces", "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--pv-primary);
+  letter-spacing: 0;
+  text-transform: none;
+  background: none;
+  border-radius: 0;
+  padding: 0;
+}
+.wiz__preview[data-theme='heritage'] .wiz__preview-cta {
+  border-radius: 0;
+  border-width: 2px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  font-family: "Lora", Georgia, serif;
+}
+
+/* ── vibrant ─────────────────────────────────────────────────────────────── */
+.wiz__preview[data-theme='vibrant'] {
+  font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+}
+.wiz__preview[data-theme='vibrant'] .wiz__preview-title {
+  font-family: "Bricolage Grotesque", "Space Grotesk", system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: 1.55rem;
+}
+.wiz__preview[data-theme='vibrant'] .wiz__preview-eyebrow {
+  display: inline-block;
+  background: var(--pv-ink);
+  color: var(--pv-surface);
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.wiz__preview[data-theme='vibrant'] .wiz__preview-cta {
+  border-radius: 999px;
+  border-width: 2.5px;
+  border-color: var(--pv-ink);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  box-shadow: 4px 4px 0 var(--pv-ink);
+  color: var(--pv-surface);
+}
+.wiz__preview[data-theme='vibrant'] .wiz__preview-cta--ghost {
+  background: var(--pv-surface);
+  color: var(--pv-ink);
+  border-color: var(--pv-ink);
+  box-shadow: 4px 4px 0 var(--pv-ink);
+}
+
+/* ── ironwood ────────────────────────────────────────────────────────────── */
+.wiz__preview[data-theme='ironwood'] {
+  font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.005em;
+}
+.wiz__preview[data-theme='ironwood'] .wiz__preview-title {
+  font-family: "Oswald", "Roboto Condensed", "Impact", Arial, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 1.5rem;
+}
+.wiz__preview[data-theme='ironwood'] .wiz__preview-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--pv-ink);
+  background: none;
+  border-radius: 0;
+  padding: 0;
+}
+.wiz__preview[data-theme='ironwood'] .wiz__preview-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 22px;
+  height: 5px;
+  background: var(--pv-accent);
+  border: 1px solid var(--pv-ink);
+  flex-shrink: 0;
+}
+.wiz__preview[data-theme='ironwood'] .wiz__preview-card,
+.wiz__preview[data-theme='ironwood'] .wiz__preview-frame { border-radius: 0; }
+.wiz__preview[data-theme='ironwood'] .wiz__preview-cta {
+  border-radius: 0;
+  border-width: 2px;
+  border-color: var(--pv-ink);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-family: "Oswald", "Roboto Condensed", Arial, sans-serif;
+  font-size: 0.75rem;
+  box-shadow: none;
+}
+
+.wiz__preview-bar {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.45rem 0.7rem;
+  background: var(--pv-surface-alt);
+  border-bottom: 1px solid var(--pv-line);
+}
+.wiz__preview-bar > span:not(.wiz__preview-url) {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: color-mix(in srgb, var(--pv-ink) 22%, transparent);
+}
+.wiz__preview-url {
+  margin-left: 0.6rem;
+  font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  color: var(--pv-ink-muted);
+  padding: 0.25rem 0.55rem;
+  background: var(--pv-surface);
+  border: 1px solid var(--pv-line);
+  border-radius: 999px;
+}
+.wiz__preview-frame { padding: 0; }
+.wiz__preview-header {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--pv-line);
+  background: var(--pv-surface);
+}
+.wiz__preview-brand {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--pv-ink);
+}
+.wiz__preview-nav {
+  display: flex; gap: 0.85rem;
+  font-size: 0.78rem;
+  color: var(--pv-ink-muted);
+}
+.wiz__preview-header .wiz__preview-cta--sm { margin-left: auto; }
+.wiz__preview-hero {
+  padding: 1.5rem 1.25rem 1.6rem;
+  background: var(--pv-surface-alt);
+  border-bottom: 1px solid var(--pv-line);
+  display: flex; flex-direction: column; gap: 0.45rem;
+}
+.wiz__preview-eyebrow {
+  /* Base reset — each theme overrides font, color, transform */
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.wiz__preview-title {
+  margin: 0;
+  font-size: 1.4rem;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--pv-ink);
+}
+.wiz__preview-sub {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--pv-ink-muted);
+  max-width: 50ch;
+}
+.wiz__preview-ctas {
+  display: flex; gap: 0.5rem; margin-top: 0.55rem;
+}
+.wiz__preview-cta {
+  display: inline-block;
+  padding: 0.45rem 0.85rem;
+  background: var(--pv-primary);
+  color: var(--pv-surface);
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1.5px solid var(--pv-primary);
+}
+.wiz__preview-cta--ghost {
+  background: transparent;
+  color: var(--pv-ink);
+  border-color: var(--pv-ink);
+}
+.wiz__preview-cta--sm { padding: 0.3rem 0.65rem; font-size: 0.72rem; }
+.wiz__preview-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  background: var(--pv-surface);
+}
+.wiz__preview-card {
+  display: flex; flex-direction: column; gap: 0.4rem;
+  padding: 0.7rem 0.7rem 0.8rem;
+  background: var(--pv-surface-alt);
+  border: 1px solid var(--pv-line);
+  border-radius: 6px;
+}
+.wiz__preview-card-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--pv-accent);
+}
+.wiz__preview-card-line {
+  height: 6px; border-radius: 3px;
+  background: color-mix(in srgb, var(--pv-ink) 22%, transparent);
+  width: 80%;
+}
+.wiz__preview-card-line--lg { height: 8px; width: 95%; background: color-mix(in srgb, var(--pv-ink) 38%, transparent); }
+.wiz__preview-card-line--short { width: 55%; }
+.wiz__preview-footer {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: var(--pv-ink);
+  color: var(--pv-surface);
+  font-size: 0.74rem;
+}
+.wiz__preview-footer-accent { color: var(--pv-accent); }
+
+.wiz__preview-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.4rem 0.85rem;
+  padding: 0.9rem 1rem 1rem;
+  background: var(--ap-surface-alt, var(--ap-surface));
+  border-top: 1px solid var(--ap-line);
+  color: var(--ap-ink);
+  font-family: ui-sans-serif, system-ui, sans-serif !important;
+}
+.wiz__preview-legend-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.78rem;
+}
+.wiz__preview-legend-swatch {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--ap-ink) 18%, transparent);
+  flex-shrink: 0;
+}
+.wiz__preview-legend-label {
+  font-weight: 600;
+  color: var(--ap-ink);
+  flex-shrink: 0;
+}
+.wiz__preview-legend-hex {
+  margin-left: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  color: var(--ap-ink-muted);
 }
 
 /* ── Menu ────────────────────────────────────────────────────────────────── */

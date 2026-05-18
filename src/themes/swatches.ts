@@ -106,6 +106,30 @@ export const SWATCHES: Record<SwatchName, ColorSwatch> = {
     surface: '#060810', surfaceAlt: '#0C1422',
     ink: '#E4F4FF', inkMuted: '#6AA8CC', line: '#0D2040',
   },
+  carnival: {
+    name: 'carnival', label: 'Carnival', mode: 'light', group: 'bold',
+    primary: '#FF3D77', accent: '#00C9A7',
+    surface: '#FFF6FA', surfaceAlt: '#FFFFFF',
+    ink: '#2A0820', inkMuted: '#7A3060', line: '#FAD0DD',
+  },
+  acid: {
+    name: 'acid', label: 'Acid', mode: 'dark', group: 'neon',
+    primary: '#A3FF12', accent: '#FF1FB6',
+    surface: '#0C1208', surfaceAlt: '#152012',
+    ink: '#E8FFD4', inkMuted: '#88A06A', line: '#1E3010',
+  },
+  mango: {
+    name: 'mango', label: 'Mango', mode: 'light', group: 'bold',
+    primary: '#FF7A00', accent: '#FF1493',
+    surface: '#FFF6EC', surfaceAlt: '#FFFFFF',
+    ink: '#2A1408', inkMuted: '#8A4A20', line: '#F6D5B5',
+  },
+  synthwave: {
+    name: 'synthwave', label: 'Synthwave', mode: 'dark', group: 'neon',
+    primary: '#FF2EAA', accent: '#00F0FF',
+    surface: '#0A0420', surfaceAlt: '#150A38',
+    ink: '#FFE0F2', inkMuted: '#A878B8', line: '#2A1450',
+  },
 }
 
 export const SWATCH_LIST: ColorSwatch[] = Object.values(SWATCHES)

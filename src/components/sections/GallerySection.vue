@@ -294,11 +294,6 @@ function shapeFor(i: number): 'tall' | 'wide' | 'square' {
   scroll-snap-type: x mandatory;
   scroll-padding: 5vw;
   padding: 0.5rem 5vw;
-  scrollbar-width: thin;
-}
-.ap-gallery__marquee-track::-webkit-scrollbar { height: 6px; }
-.ap-gallery__marquee-track::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--ap-ink) 25%, transparent); border-radius: 3px;
 }
 .ap-gallery__marquee-item {
   flex: 0 0 clamp(260px, 38vw, 520px);

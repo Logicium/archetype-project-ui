@@ -4,7 +4,7 @@
  * A "swatch" defines color. They are composed at runtime.
  */
 
-export type ThemeName = 'studio' | 'heritage' | 'vibrant'
+export type ThemeName = 'studio' | 'heritage' | 'vibrant' | 'ironwood'
 export type HeroStyle = '1' | '2' | '3' | '4' | '5' | '6'
 export type FooterStyle = '1' | '2' | '3' | '4' | '5'
 export type ContactStyle = '1' | '2' | '3' | '4' | '5'
@@ -45,6 +45,10 @@ export type SwatchName =
   | 'punch'
   | 'neon'
   | 'aurora'
+  | 'carnival'
+  | 'acid'
+  | 'mango'
+  | 'synthwave'
 
 export interface ColorSwatch {
   name: SwatchName
@@ -86,7 +90,7 @@ export interface ThemeTokens {
 
 export type SiteVariant = 'essentials' | 'portfolio'
 
-export type Archetype = 'dine' | 'stay' | 'shop' | 'project'
+export type Archetype = 'dine' | 'stay' | 'shop' | 'project' | 'utility'
 
 /** How many photos each variant expects in each gallery slot. */
 export const VARIANT_PHOTO_COUNT: Record<SiteVariant, { gallery: number; max: number }> = {

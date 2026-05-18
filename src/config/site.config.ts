@@ -1,9 +1,9 @@
 import type { ThemeName, SwatchName } from '../themes/tokens'
 
 export interface ShowcaseSite {
-  id: 'mesa' | 'hearth' | 'vault'
+  id: 'mesa' | 'hearth' | 'vault' | 'keystone'
   name: string
-  archetype: 'Dine' | 'Stay' | 'Shop'
+  archetype: 'Dine' | 'Stay' | 'Shop' | 'Utility'
   blurb: string
   image: string
   themes: ThemeName[]
@@ -92,6 +92,16 @@ export const siteConfig: ProjectSiteConfig = {
       themes: ['studio', 'heritage', 'vibrant'],
       swatches: ['fiesta', 'rose', 'midnight'],
       liveUrl: 'https://archetype-vault-ui.vercel.app',
+    },
+    {
+      id: 'keystone',
+      name: 'Keystone',
+      archetype: 'Utility',
+      blurb: 'For auto shops, contractors, welders, and mills. Services, capabilities, dispatch line, work gallery.',
+      image: '/showcase/vault.jpg',
+      themes: ['ironwood', 'studio', 'heritage', 'vibrant'],
+      swatches: ['stone', 'midnight', 'forest'],
+      liveUrl: 'https://archetype-keystone-ui.vercel.app',
     },
   ],
   faq: [

@@ -27,7 +27,6 @@ const showSwitcher = true
 const navLinks = [
   { to: '/', label: 'Overview' },
   { to: '/#pricing', label: 'Pricing' },
-  { to: '/wizard', label: 'Site wizard' },
   { to: '/contact', label: 'Contact' },
 ]
 </script>
@@ -39,7 +38,7 @@ const navLinks = [
     :tagline="siteConfig.tagline"
     :links="navLinks"
     cta-label="Start a project"
-    cta-to="/contact"
+    cta-to="/wizard"
   />
   <main><RouterView /></main>
   <AppFooter

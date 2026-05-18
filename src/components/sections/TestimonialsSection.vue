@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Star, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
@@ -17,7 +17,7 @@ function next() { idx.value = (idx.value + 1) % total.value }
 
 <!--
   Reviews/testimonials with five selectable layouts (data-reviews-style on <html>):
-  Style 1 · Default   — original theme-tinted layout (studio numbered / heritage cards / vibrant stickers)
+  Style 1 · Default   — original theme-tinted layout (studio numbered / heritage cards / vibrant stickers / ironwood spec-cards)
   Style 2 · Spotlight — single oversized pull quote with author block + supporting thumbnails
   Style 3 · Carousel  — focused single-card carousel with prev/next + indicator dots
   Style 4 · Wall      — masonry-style quote tiles, paper notes feel
@@ -80,6 +80,30 @@ function next() { idx.value = (idx.value + 1) % total.value }
               <figcaption>
                 <strong>{{ t.author }}</strong>
                 <span v-if="t.source"> &middot; {{ t.source }}</span>
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <!-- KEYSTONE — spec-sheet ledger: numbered rows, mono metadata,
+             ink rules, no roundness. Reads like a vendor reference card. -->
+        <div class="ap-testimonials--ironwood">
+          <div class="ap-section-head">
+            <span v-if="eyebrow" class="ap-eyebrow">{{ eyebrow }}</span>
+            <h2>{{ title || 'Client reports' }}</h2>
+          </div>
+          <div class="ap-testimonials__ironwood-grid">
+            <figure v-for="(t, i) in items" :key="i" class="ap-testimonials__ironwood-item">
+              <header class="ap-testimonials__ironwood-head">
+                <span class="ap-testimonials__ironwood-num" aria-hidden="true">№ {{ String(i + 1).padStart(2, '0') }}</span>
+                <span class="ap-testimonials__ironwood-rating" v-if="t.rating ?? 5">
+                  <Star v-for="s in (t.rating ?? 5)" :key="s" :size="13" fill="currentColor" stroke="none" />
+                </span>
+              </header>
+              <blockquote>{{ t.quote }}</blockquote>
+              <figcaption>
+                <strong>{{ t.author }}</strong>
+                <span v-if="t.source" class="ap-testimonials__ironwood-src">{{ t.source }}</span>
               </figcaption>
             </figure>
           </div>
@@ -209,10 +233,12 @@ function next() { idx.value = (idx.value + 1) % total.value }
 /* ── Style 1 · Default (theme-aware) ────────────────── */
 .ap-testimonials--studio,
 .ap-testimonials--heritage,
-.ap-testimonials--vibrant { display: none; }
-[data-theme='studio']   .ap-testimonials--studio  { display: block; }
+.ap-testimonials--vibrant,
+.ap-testimonials--ironwood { display: none; }
+[data-theme='studio']   .ap-testimonials--studio   { display: block; }
 [data-theme='heritage'] .ap-testimonials--heritage { display: block; }
 [data-theme='vibrant']  .ap-testimonials--vibrant  { display: block; }
+[data-theme='ironwood'] .ap-testimonials--ironwood { display: block; }
 
 .ap-testimonials__studio-head { margin-bottom: clamp(2.5rem, 5vw, 4rem); }
 .ap-testimonials__studio-grid {
@@ -486,5 +512,60 @@ function next() { idx.value = (idx.value + 1) % total.value }
 @media (prefers-reduced-motion: reduce) {
   .ap-reviews__ticker-track { animation: none; }
   .ap-reviews__ticker-viewport { overflow-x: auto; }
+}
+
+/* ── Ironwood · industrial spec-card grid ─────────── */
+.ap-testimonials__ironwood-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0;
+  border: 1px solid var(--ap-ink);
+  background: var(--ap-ink);
+}
+.ap-testimonials__ironwood-item {
+  background: var(--ap-surface);
+  padding: clamp(1.5rem, 3vw, 2rem);
+  margin: 0;
+  display: flex; flex-direction: column; gap: 1rem;
+  outline: 1px solid var(--ap-ink);
+  outline-offset: 0;
+}
+.ap-testimonials__ironwood-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--ap-ink);
+  margin-bottom: 0.25rem;
+}
+.ap-testimonials__ironwood-num {
+  font-family: var(--ap-font-mono);
+  font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ap-primary);
+}
+.ap-testimonials__ironwood-rating { display: inline-flex; gap: 2px; color: var(--ap-accent); }
+.ap-testimonials__ironwood-item blockquote {
+  margin: 0; font-size: 1rem; line-height: 1.55;
+  color: var(--ap-ink); flex: 1;
+}
+.ap-testimonials__ironwood-item figcaption {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ap-line);
+  font-family: var(--ap-font-mono);
+  font-size: 0.78rem;
+}
+.ap-testimonials__ironwood-item figcaption strong {
+  font-family: var(--ap-font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--ap-ink);
+}
+.ap-testimonials__ironwood-src {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ap-ink-muted);
+  font-size: 0.7rem;
 }
 </style>

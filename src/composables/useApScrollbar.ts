@@ -152,9 +152,13 @@ function wrapForBar(el: HTMLElement, axis: 'x' | 'y'): HTMLElement | null {
 
 function inlineScrollbar(el: HTMLElement, axis: 'x' | 'y') {
   if (attached.has(el)) return
+  // Mark as attached IMMEDIATELY (before any DOM mutation) so that the
+  // MutationObserver / re-scan triggered by wrapForBar() can't pick this
+  // element up a second time and produce a duplicate bar.
+  attached.set(el, () => { /* placeholder replaced below */ })
   el.classList.add('ap-cscroll-host', `ap-cscroll-host--${axis}`)
   const wrap = wrapForBar(el, axis)
-  if (!wrap) return
+  if (!wrap) { attached.delete(el); return }
 
   const { bar, thumb } = makeBar(axis, 'inline')
   wrap.appendChild(bar)
@@ -264,12 +268,22 @@ function scanScrollers() {
     if (attached.has(el)) continue
     if (el.classList.contains('ap-cscroll') || el.classList.contains('ap-cscroll__thumb')) continue
     if (el.classList.contains('ap-cscroll-wrap')) continue
+    // Skip anything that lives inside a custom scrollbar's chrome.
+    if (el.closest('.ap-cscroll')) continue
     if (el.tagName === 'HTML' || el.tagName === 'BODY') continue
     const cs = getComputedStyle(el)
-    // Render a bar based on declared scrollability; keeps layout stable
-    // even if overflow comes and goes.
-    if (isScrollable(cs.overflowX)) inlineScrollbar(el, 'x')
-    else if (isScrollable(cs.overflowY)) inlineScrollbar(el, 'y')
+    const sx = isScrollable(cs.overflowX)
+    const sy = isScrollable(cs.overflowY)
+    if (!sx && !sy) continue
+    // Choose axis based on actual overflow direction; if neither overflows
+    // yet, fall back to the explicitly-declared scrollable axis (preferring
+    // y for 'auto' overflow which defaults to vertical text flow).
+    const overflowsX = el.scrollWidth - el.clientWidth > 1
+    const overflowsY = el.scrollHeight - el.clientHeight > 1
+    if (overflowsY && sy) { inlineScrollbar(el, 'y'); continue }
+    if (overflowsX && sx) { inlineScrollbar(el, 'x'); continue }
+    if (sy) inlineScrollbar(el, 'y')
+    else if (sx) inlineScrollbar(el, 'x')
   }
 }
 

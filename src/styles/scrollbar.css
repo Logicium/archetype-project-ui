@@ -11,8 +11,8 @@
 
 /* ── Token defaults (per-theme overrides below) ──────────────────────── */
 :root {
-  --ap-scrollbar-size: 14px;
-  --ap-scrollbar-pad: 4px;          /* gap between bar edge and viewport */
+  --ap-scrollbar-size: 12px;
+  --ap-scrollbar-pad: 0px;          /* page bar sits flush to viewport edge */
   --ap-scrollbar-track: color-mix(in srgb, var(--ap-ink) 6%, transparent);
   --ap-scrollbar-thumb: color-mix(in srgb, var(--ap-primary) 55%, var(--ap-ink) 25%);
   --ap-scrollbar-thumb-hover: var(--ap-primary);
@@ -25,8 +25,17 @@
 html, body { scrollbar-width: none; -ms-overflow-style: none; }
 html::-webkit-scrollbar,
 body::-webkit-scrollbar { width: 0; height: 0; display: none; }
-*::-webkit-scrollbar { width: 0; height: 0; display: none; }
-* { scrollbar-width: none; }
+/* Hide on every element; use !important so component-scoped
+   `::-webkit-scrollbar { ... }` overrides cannot reintroduce native bars. */
+*::-webkit-scrollbar,
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-corner {
+  width: 0 !important; height: 0 !important;
+  background: transparent !important;
+  display: none !important;
+}
+* { scrollbar-width: none !important; }
 
 /* ── Custom scrollbar — track (rail) ─────────────────────────────────── */
 .ap-cscroll {
@@ -34,35 +43,50 @@ body::-webkit-scrollbar { width: 0; height: 0; display: none; }
   z-index: 9999;
   background: var(--ap-scrollbar-track);
   border-radius: var(--ap-scrollbar-radius);
-  opacity: 0;
-  transition: opacity 220ms ease;
+  /* Always visible; only hidden when there's nothing to scroll. */
+  opacity: 1;
+  transition: background-color 220ms ease;
   user-select: none;
   touch-action: none;
 }
+.ap-cscroll.is-empty { opacity: 0; pointer-events: none; }
 .ap-cscroll.is-hidden { display: none; }
-.ap-cscroll.is-active,
-.ap-cscroll:hover,
-.ap-cscroll.is-dragging { opacity: 1; }
 @media (hover: none) {
-  .ap-cscroll { opacity: 0.85; }
-  .ap-cscroll.is-active { opacity: 1; }
+  .ap-cscroll { opacity: 0.9; }
 }
 
-/* Page-level vertical scrollbar (fixed to viewport right edge) */
+/* Page-level vertical scrollbar — sits flush to the viewport right edge.
+   This is necessarily fixed-position because it tracks window scroll,
+   but it occupies the viewport gutter with no inset so it reads as a
+   natural in-flow chrome rather than a floating overlay. */
 .ap-cscroll--page.ap-cscroll--y {
-  top: var(--ap-scrollbar-pad);
-  right: var(--ap-scrollbar-pad);
-  bottom: var(--ap-scrollbar-pad);
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: var(--ap-scrollbar-size);
+  border-radius: 0;
 }
 
-/* Inline horizontal scrollbar — appended into a positioned parent */
+/* Inline scrollbars — take real layout space as flex siblings inside
+   the .ap-cscroll-wrap container (no absolute positioning). Length is
+   bound to the scroller's own size via the flex wrap, so the bar can
+   never extend beyond its scrolling content. */
+.ap-cscroll--inline {
+  position: relative;
+  flex: 0 0 auto;
+  align-self: stretch;
+}
 .ap-cscroll--inline.ap-cscroll--x {
-  position: absolute;
-  left: var(--ap-scrollbar-pad);
-  right: var(--ap-scrollbar-pad);
-  bottom: 0;
+  width: auto;
   height: var(--ap-scrollbar-size);
+  margin-top: var(--ap-scrollbar-pad);
+  max-width: 100%;
+}
+.ap-cscroll--inline.ap-cscroll--y {
+  height: auto;
+  width: var(--ap-scrollbar-size);
+  margin-left: var(--ap-scrollbar-pad);
+  max-height: 100%;
 }
 
 /* ── Thumb ───────────────────────────────────────────────────────────── */
@@ -138,18 +162,24 @@ body::-webkit-scrollbar { width: 0; height: 0; display: none; }
   --ap-scrollbar-thumb-inset: 2px;
 }
 
-/* VIBRANT — chunky brutalist poster slab. */
+/* VIBRANT — chunky pill rail. Wider than the rest, fully pill-shaped
+   with a heavy ink border so it reads like a poster element. */
 [data-theme='vibrant'] {
-  --ap-scrollbar-size: 16px;
+  --ap-scrollbar-size: 20px;
   --ap-scrollbar-track: color-mix(in srgb, var(--ap-accent) 70%, var(--ap-surface));
   --ap-scrollbar-thumb: var(--ap-ink);
   --ap-scrollbar-thumb-hover: var(--ap-primary);
   --ap-scrollbar-thumb-active: var(--ap-accent);
-  --ap-scrollbar-radius: 0;
-  --ap-scrollbar-thumb-inset: 2px;
+  --ap-scrollbar-radius: 999px;
+  --ap-scrollbar-thumb-inset: 3px;
 }
 [data-theme='vibrant'] .ap-cscroll {
   border: 2px solid var(--ap-ink);
+}
+[data-theme='vibrant'] .ap-cscroll--page.ap-cscroll--y {
+  /* Inset slightly so the pill shape is visible against the page edge. */
+  top: 8px; right: 8px; bottom: 8px;
+  border-radius: 999px;
 }
 
 /* ── Reduced motion ──────────────────────────────────────────────────── */

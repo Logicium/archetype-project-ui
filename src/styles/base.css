@@ -2,6 +2,29 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* ── Global theme transition ──
+   When the user swaps theme / swatch / variant / alignment / etc.,
+   the cascade of CSS-variable changes propagates instantly. To make the
+   change feel intentional and seamless we transition the properties most
+   affected by theme tokens: colors, borders, shadows, fills, strokes.
+   Duration is deliberately on the slower side so the morph is visually
+   registered and appreciated.
+   Transforms / opacity are intentionally excluded so component-specific
+   micro-interactions (hover lifts, scroll animations, etc.) stay snappy. */
+*, *::before, *::after {
+  transition:
+    background-color 560ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 560ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 560ms cubic-bezier(0.4, 0, 0.2, 1),
+    fill 560ms cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 560ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 560ms cubic-bezier(0.4, 0, 0.2, 1),
+    outline-color 560ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+
 html, body, #app { margin: 0; padding: 0; }
 body { overflow-x: clip; }   /* contain accidental horizontal bleed (e.g. full-bleed marquees) */
 

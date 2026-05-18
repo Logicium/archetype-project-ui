@@ -82,7 +82,7 @@ export const contentClient = {
 
   // --- Orders / checkout (public) ---
   createOrder: (payload: {
-    archetype: 'mesa' | 'hearth' | 'vault'
+    archetype: 'mesa' | 'hearth' | 'vault' | 'keystone'
     plan: string
     addOns: string[]
     wizardPayload: Record<string, unknown>

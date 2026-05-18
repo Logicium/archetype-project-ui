@@ -36,7 +36,7 @@ const REVIEWS_STYLE_LABELS: Record<string, string> = { '1': 'Default', '2': 'Spo
 const SUBHERO_STYLES = ['1', '2', '3', '4', '5'] as const
 const SUBHERO_STYLE_LABELS: Record<string, string> = { '1': 'Compact', '2': 'Banner', '3': 'Centered', '4': 'Broadsheet', '5': 'Split' }
 const SITE_STYLES = ['1', '2', '3'] as const
-// project = wizard/agency: Site style
+// project = wizard: Site style
 const SITE_STYLE_LABEL = 'Site style'
 const SITE_STYLE_LABELS: Record<string, string> = { '1': 'Default', '2': 'Alt', '3': 'Bold' }
 
@@ -63,7 +63,7 @@ const sectionTargets = {
   hero:      { selectors: ['.ap-hero'],                                  route: '/' },
   subhero:   { selectors: ['.ap-subhero'],                               route: '/contact' },
   footer:    { selectors: ['.ap-footer'],                                route: '/' },
-  site:      { selectors: ['.wiz', '.ap-section'],                       route: '/wizard' },
+  site:      { selectors: ['.wiz', '.ap-section'], route: '/wizard' },
   contact:   { selectors: ['.ap-contact'],                               route: '/contact' },
   hours:     { selectors: ['.ap-hours'],                                 route: '/contact' },
   gallery:   { selectors: ['.ap-gallery'],                               route: '/' },
@@ -76,6 +76,7 @@ function jumpTo(key: keyof typeof sectionTargets) {
 
 /* ── Config export (mirrors the original archetype-project switcher) ── */
 const copied = ref(false)
+const currentSwatch = computed(() => SWATCH_LIST.find(s => s.name === swatchName.value))
 const configSnippet = computed(() => JSON.stringify({
   theme: themeName.value,
   swatch: swatchName.value,
@@ -145,12 +146,35 @@ onMounted(() => {
   }
 })
 watch([tab, open], () => { measure() })
+
+/* Delay hiding the pill on open until the width transition has finished
+   (so the wrapper visibly grows in width with the pill filling it, instead
+   of momentarily collapsing to a zero-height bar). On close, restore the
+   pill immediately so it's already in place when width snaps back. */
+const pillHidden = ref(false)
+const settled = ref(false)
+let pillTimer: ReturnType<typeof setTimeout> | null = null
+let settleTimer: ReturnType<typeof setTimeout> | null = null
+watch(open, (v) => {
+  if (pillTimer) { clearTimeout(pillTimer); pillTimer = null }
+  if (settleTimer) { clearTimeout(settleTimer); settleTimer = null }
+  if (v) {
+    pillTimer = setTimeout(() => { pillHidden.value = true }, 360)
+    settleTimer = setTimeout(() => { settled.value = true }, 880)
+  } else {
+    /* Keep the pill faded out while the panel collapses; restore it once the
+       height transition (520ms) has finished so it can fade in over the
+       width-collapse phase. */
+    pillTimer = setTimeout(() => { pillHidden.value = false }, 520)
+    settled.value = false
+  }
+})
 </script>
 
 <template>
   <div
     class="ap-switcher"
-    :class="{ 'is-open': open }"
+    :class="{ 'is-open': open, 'is-settled': settled }"
     :style="{
       '--ap-switcher-h': panelHeight + 'px',
       '--ap-switcher-pill-w': pillWidth + 'px',
@@ -161,9 +185,13 @@ watch([tab, open], () => { measure() })
          independent of whether the visible pill is showing or hidden. -->
     <span ref="measureEl" class="ap-switcher__measure" aria-hidden="true">
       <span class="ap-switcher__pill" tabindex="-1">
+        <span class="ap-switcher__pill-chip">
+          <span class="ap-switcher__pill-chip-half" />
+          <span class="ap-switcher__pill-chip-half" />
+        </span>
         <span class="ap-switcher__pill-info">
-          <span class="ap-switcher__pill-dot" />
-          <span>{{ themeName }} · {{ swatchName }} · {{ variant }}</span>
+          <span class="ap-switcher__pill-line">{{ themeName }} · {{ swatchName }}</span>
+          <span class="ap-switcher__pill-sub">{{ variant }} · {{ alignment }}</span>
         </span>
         <span class="ap-switcher__pill-icon"><Settings :size="16" /></span>
       </span>
@@ -173,15 +201,19 @@ watch([tab, open], () => { measure() })
     <button
       type="button"
       class="ap-switcher__pill"
-      :class="{ 'is-hidden': open }"
-      :aria-hidden="open"
-      :tabindex="open ? -1 : 0"
+      :class="{ 'is-hidden': pillHidden }"
+      :aria-hidden="pillHidden"
+      :tabindex="pillHidden ? -1 : 0"
       @click="toggle"
       aria-label="Open site settings"
     >
+      <span class="ap-switcher__pill-chip" aria-hidden="true">
+        <span class="ap-switcher__pill-chip-half" :style="{ background: currentSwatch?.primary }" />
+        <span class="ap-switcher__pill-chip-half" :style="{ background: currentSwatch?.accent }" />
+      </span>
       <span class="ap-switcher__pill-info">
-        <span class="ap-switcher__pill-dot" :style="{ background: SWATCH_LIST.find(s => s.name === swatchName)?.primary }" />
-        <span>{{ themeName }} · {{ swatchName }} · {{ variant }}</span>
+        <span class="ap-switcher__pill-line">{{ themeName }} · {{ swatchName }}</span>
+        <span class="ap-switcher__pill-sub">{{ variant }} · {{ alignment }}</span>
       </span>
       <span class="ap-switcher__pill-icon" aria-hidden="true"><Settings :size="16" /></span>
     </button>
@@ -386,20 +418,31 @@ watch([tab, open], () => { measure() })
   box-shadow: 0 10px 40px -10px color-mix(in srgb, var(--ap-ink) 35%, transparent),
               0 2px 8px -2px color-mix(in srgb, var(--ap-ink) 20%, transparent);
   overflow: hidden;
-  /* Collapsed: width matches the measured pill width. Open: snap to 640px. */
+  /* Collapsed: width matches the measured pill width. Open: snap to 640px.
+     Staged animation: opening goes width-then-height; closing height-then-width.
+     The closed-state spec delays width by the height duration; the open-state
+     spec removes that delay so width leads on the way in. */
   width: var(--ap-switcher-pill-w, max-content);
   max-width: min(640px, calc(100vw - 2rem));
-  transition: width 360ms cubic-bezier(0.2, 0.7, 0.3, 1),
-              border-radius 320ms ease;
+  transition: width 360ms cubic-bezier(0.2, 0.7, 0.3, 1) 520ms,
+              border-radius 360ms ease 520ms,
+              border-color 360ms ease 520ms,
+              background-color 360ms ease 520ms;
 }
 .ap-switcher.is-open {
   width: 640px;
   border-radius: 18px;
+  transition: width 360ms cubic-bezier(0.2, 0.7, 0.3, 1) 0ms,
+              border-radius 360ms ease 0ms,
+              border-color 360ms ease 0ms,
+              background-color 360ms ease 0ms;
 }
-/* When open, pill is removed from layout so it doesn't influence height. */
+/* When open, pill fades out (driven by JS pillHidden timer) so it gracefully
+   disappears as the height grows. On close it fades back in over the
+   width-collapse phase. Stays in grid flow so it contributes to height. */
 .ap-switcher__pill.is-hidden {
-  position: absolute; visibility: hidden; pointer-events: none;
-  width: max-content;
+  opacity: 0;
+  pointer-events: none;
 }
 /* Offscreen ghost used only to measure the pill's natural width. Kept in
    the DOM at all times so width is always known, even while the visible
@@ -412,28 +455,50 @@ watch([tab, open], () => { measure() })
 
 /* ── Collapsed pill ────────────────────────────────────── */
 .ap-switcher__pill {
-  display: flex; align-items: center; gap: 0.65rem;
+  display: flex; align-items: center; gap: 0.75rem;
   width: 100%;
   background: transparent; border: 0; cursor: pointer;
-  padding: 0.55rem 0.75rem 0.55rem 0.85rem;
+  padding: 0.6rem 0.65rem 0.6rem 0.85rem;
   color: var(--ap-ink); font: inherit;
   text-align: left;
+  opacity: 1;
+  transition: opacity 320ms ease;
+}
+.ap-switcher__pill-chip {
+  display: inline-flex;
+  width: 26px; height: 26px;
+  border-radius: var(--ap-radius, 6px);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ap-ink) 18%, transparent);
+  flex-shrink: 0;
+}
+[data-theme='vibrant'] .ap-switcher__pill-chip { border-radius: 50%; }
+.ap-switcher__pill-chip-half {
+  flex: 1; display: block; min-width: 0;
+  background: var(--ap-line);
 }
 .ap-switcher__pill-info {
-  display: flex; align-items: center; gap: 0.5rem;
-  color: var(--ap-ink-muted);
-  text-transform: lowercase; font-size: 0.78rem;
-  white-space: nowrap;
+  display: inline-flex; flex-direction: column; justify-content: center;
+  gap: 0.05rem; min-width: 0;
 }
-.ap-switcher__pill-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--ap-ink) 30%, transparent);
-  flex-shrink: 0;
+.ap-switcher__pill-line {
+  font-size: 0.82rem; font-weight: 600;
+  color: var(--ap-ink);
+  text-transform: lowercase;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.ap-switcher__pill-sub {
+  font-size: 0.66rem; font-weight: 500;
+  color: var(--ap-ink-muted);
+  text-transform: lowercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 .ap-switcher__pill-icon {
   margin-left: auto;
   display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 50%;
+  width: 32px; height: 32px; border-radius: 50%;
   background: color-mix(in srgb, var(--ap-ink) 8%, transparent);
   color: var(--ap-ink);
   line-height: 0;
@@ -443,7 +508,18 @@ watch([tab, open], () => { measure() })
 .ap-switcher__pill-icon :deep(svg) { display: block; }
 .ap-switcher__pill:hover .ap-switcher__pill-icon { background: color-mix(in srgb, var(--ap-ink) 14%, transparent); }
 
-/* ── Expand region — single height transition ── */
+/* ── Expand region ─ height transitions in sync with the pill leaving layout ─ */
+.ap-switcher {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+.ap-switcher__measure,
+.ap-switcher__pill,
+.ap-switcher__expand {
+  grid-column: 1;
+  grid-row: 1;
+}
 .ap-switcher__expand {
   height: 0;
   overflow: hidden;
@@ -451,11 +527,25 @@ watch([tab, open], () => { measure() })
 }
 .ap-switcher.is-open .ap-switcher__expand {
   height: var(--ap-switcher-h, auto);
+  transition: height 520ms cubic-bezier(0.2, 0.7, 0.3, 1) 360ms;
+}
+/* Once fully open, tab switches re-measure --ap-switcher-h; remove the
+   opening-stage delay so the height retunes immediately. */
+.ap-switcher.is-open.is-settled .ap-switcher__expand {
+  transition: height 320ms cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 /* ── Expanded wrapper ──────────────────────────────────── */
 .ap-switcher__panel-wrap {
   display: flex; flex-direction: column;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+/* Fade panel contents IN after width AND part of height have grown; fade
+   OUT immediately on close so it clears before height collapses. */
+.ap-switcher.is-open .ap-switcher__panel-wrap {
+  opacity: 1;
+  transition: opacity 360ms ease 520ms;
 }
 .ap-switcher__head {
   display: flex; align-items: center; justify-content: space-between;
