@@ -85,6 +85,8 @@ export const contentClient = {
 
   listOrders: () => request<Array<{ id: string; archetype: string; plan: string; status: string; siteId?: string; createdAt: string; failureReason?: string }>>('GET', '/admin/orders'),
   retryOrder: (orderId: string) => request<{ ok: true }>('POST', `/admin/orders/${orderId}/retry`),
+  getDeployLogs: (siteId: string) => request<Array<{ step: string; status: string; message?: string; durationMs?: number; createdAt: string }>>('GET', `/admin/sites/${siteId}/deploy-logs`),
+  redeploySite: (siteId: string) => request<{ ok: boolean; deploymentId: string; url: string }>('POST', `/admin/sites/${siteId}/redeploy`),
 
   // --- Orders / checkout (public) ---
   createOrder: (payload: {
