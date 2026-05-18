@@ -427,23 +427,24 @@ async function copyConfig() {
 // ─── Buy & deploy (PLATFORM_ENABLED) ──────────────────────────────────────────
 import { PLATFORM_ENABLED } from '../../platform/config'
 import { contentClient } from '../../platform/contentClient'
+import { PRICING, BUNDLES } from '../../config/pricing'
 
-const PLANS = [
-  { sku: 'plan.starter',  label: 'Starter',  blurb: 'Single-page essentials, hosted + 1 year domain.', price: '$899' },
-  { sku: 'plan.standard', label: 'Standard', blurb: 'Full site, contact form, reviews, analytics.',     price: '$1,599' },
-  { sku: 'plan.portfolio',label: 'Portfolio',blurb: 'Standard + gallery / showcase variant.',           price: '$2,199' },
-]
-const ADD_ONS = [
-  { sku: 'addon.instagram',  label: 'Instagram feed' },
-  { sku: 'addon.copy',       label: 'AI copy assistant' },
-  { sku: 'addon.seo',        label: 'SEO scaffolding' },
-  { sku: 'addon.uptime',     label: 'Uptime monitoring' },
-]
-const plan = ref<string>('plan.standard')
+const CHECKOUT_BUNDLES = BUNDLES as readonly { id: string; name: string; price: number; items: readonly string[]; blurb: string }[]
+const CHECKOUT_ADDONS = PRICING.filter(p => p.category === 'addons')
+
+const plan = ref<string>(form.variant === 'portfolio' ? 'pro' : 'starter')
+watch(() => form.variant, v => { plan.value = v === 'portfolio' ? 'pro' : 'starter' })
 const addOns = ref<string[]>([])
 const owner = reactive({ email: '', name: '' })
 const checkoutBusy = ref(false)
 const checkoutError = ref<string | null>(null)
+
+const checkoutTotal = computed(() => {
+  const b = CHECKOUT_BUNDLES.find(b => b.id === plan.value)
+  const basePrice = b?.price ?? PRICING.find(p => p.id === plan.value)?.price ?? 0
+  const addOnTotal = addOns.value.reduce((sum, id) => sum + (PRICING.find(p => p.id === id)?.price ?? 0), 0)
+  return basePrice + addOnTotal
+})
 
 async function buyAndDeploy() {
   checkoutError.value = null
@@ -1067,38 +1068,72 @@ const photoGuide = computed(() => {
           <div v-if="PLATFORM_ENABLED" class="wiz__buy">
             <h3 class="wiz__sub">Have us build &amp; host it for you</h3>
             <p class="wiz__step-desc">
-              Pick a plan, add any extras, then pay. We'll provision a fresh Vercel site with your content within minutes
-              and email you a link when it's live.
-            </p>
+                Pick a package, add any extras, enter your email, and pay. We'll provision your site on GitHub + Vercel
+                within minutes and email you a sign-in link when it's live.
+              </p>
 
-            <div class="wiz__plans">
-              <label v-for="p in PLANS" :key="p.sku" class="wiz__plan" :class="{ active: plan === p.sku }">
-                <input type="radio" :value="p.sku" v-model="plan" />
-                <span class="wiz__plan-name">{{ p.label }} <small>{{ p.price }}</small></span>
-                <span class="wiz__plan-blurb">{{ p.blurb }}</span>
-              </label>
-            </div>
+              <!-- Bundle selection -->
+              <div class="wiz__plans">
+                <label
+                  v-for="b in CHECKOUT_BUNDLES"
+                  :key="b.id"
+                  class="wiz__plan"
+                  :class="{ 'wiz__plan--active': plan === b.id }"
+                >
+                  <input type="radio" :value="b.id" v-model="plan" class="wiz__plan-radio" />
+                  <div class="wiz__plan-body">
+                    <div class="wiz__plan-header">
+                      <span class="wiz__plan-name">{{ b.name }}</span>
+                      <span class="wiz__plan-price">${{ b.price }}</span>
+                    </div>
+                    <p class="wiz__plan-blurb">{{ b.blurb }}</p>
+                    <ul class="wiz__plan-includes">
+                      <li v-for="item in b.items" :key="item">{{ item }}</li>
+                    </ul>
+                  </div>
+                </label>
+              </div>
 
-            <div class="wiz__addons">
-              <label v-for="a in ADD_ONS" :key="a.sku">
-                <input type="checkbox" :value="a.sku" v-model="addOns" /> {{ a.label }}
-              </label>
-            </div>
+              <!-- Add-ons -->
+              <div class="wiz__addons-section">
+                <h4 class="wiz__addons-title">Optional add-ons</h4>
+                <div class="wiz__addons">
+                  <label
+                    v-for="a in CHECKOUT_ADDONS"
+                    :key="a.id"
+                    class="wiz__addon"
+                    :class="{ 'wiz__addon--checked': addOns.includes(a.id) }"
+                  >
+                    <input type="checkbox" :value="a.id" v-model="addOns" />
+                    <div class="wiz__addon-body">
+                      <span class="wiz__addon-name">{{ a.name }}</span>
+                      <span class="wiz__addon-price">+${{ a.price }}</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
 
-            <div class="wiz__owner">
-              <label>Your email
-                <input v-model="owner.email" type="email" required placeholder="you@example.com" />
-              </label>
-              <label>Your name (optional)
-                <input v-model="owner.name" type="text" />
-              </label>
-            </div>
+              <!-- Owner info -->
+              <div class="wiz__fields wiz__buy-fields">
+                <label class="wiz__field">
+                  <span class="wiz__label">Your email</span>
+                  <input v-model="owner.email" type="email" required placeholder="you@example.com" class="wiz__input" />
+                </label>
+                <label class="wiz__field">
+                  <span class="wiz__label">Your name <em>(optional)</em></span>
+                  <input v-model="owner.name" type="text" class="wiz__input" />
+                </label>
+              </div>
 
-            <button type="button" class="ap-btn" :disabled="checkoutBusy" @click="buyAndDeploy">
-              {{ checkoutBusy ? 'Redirecting…' : 'Buy &amp; deploy' }}
-            </button>
-            <p v-if="checkoutError" class="wiz__err">{{ checkoutError }}</p>
-          </div>
+              <!-- Total + CTA -->
+              <div class="wiz__checkout-footer">
+                <div class="wiz__total">Total: <strong>${{ checkoutTotal }}</strong></div>
+                <button type="button" class="ap-btn" :disabled="checkoutBusy" @click="buyAndDeploy">
+                  {{ checkoutBusy ? 'Redirecting…' : 'Buy &amp; deploy →' }}
+                </button>
+              </div>
+              <p v-if="checkoutError" class="wiz__err">{{ checkoutError }}</p>
+            </div><!-- /wiz__buy -->
 
           <p class="wiz__step-desc">
             Or copy the code below and paste it into <code class="wiz__code">src/config/site.config.ts</code> in your archetype project.
@@ -1228,6 +1263,110 @@ const photoGuide = computed(() => {
   line-height: 1.6; margin: 0 0 2rem;
 }
 .wiz__sub { font-size: 1rem; font-weight: 600; margin: 2rem 0 0.85rem; }
+
+/* ── Buy & deploy ─────────────────────────────────────────────────────────── */
+.wiz__buy {
+  background: var(--ap-surface);
+  border: 1px solid var(--ap-line);
+  border-radius: var(--ap-radius-lg);
+  padding: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+/* Plans grid */
+.wiz__plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+.wiz__plan {
+  position: relative;
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  background: var(--ap-surface-alt);
+  border: 2px solid var(--ap-line);
+  border-radius: var(--ap-radius);
+  cursor: pointer;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.wiz__plan:hover { border-color: var(--ap-primary); }
+.wiz__plan--active {
+  border-color: var(--ap-primary);
+  background: color-mix(in srgb, var(--ap-primary) 6%, var(--ap-surface));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ap-primary) 15%, transparent);
+}
+.wiz__plan-radio { margin-top: 2px; flex-shrink: 0; accent-color: var(--ap-primary); }
+.wiz__plan-body { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
+.wiz__plan-header { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.wiz__plan-name { font-weight: 700; font-size: 0.95rem; color: var(--ap-ink); }
+.wiz__plan-price {
+  font-weight: 700; font-size: 1.05rem;
+  color: var(--ap-primary);
+  white-space: nowrap;
+}
+.wiz__plan-blurb { font-size: 0.82rem; color: var(--ap-ink-muted); line-height: 1.4; margin: 0; }
+.wiz__plan-includes {
+  list-style: none; margin: 0.35rem 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 0.2rem;
+}
+.wiz__plan-includes li {
+  font-size: 0.78rem; color: var(--ap-ink-muted);
+  padding-left: 1.1em;
+  position: relative;
+}
+.wiz__plan-includes li::before {
+  content: '✓';
+  position: absolute; left: 0;
+  color: var(--ap-primary); font-size: 0.72em; top: 0.1em;
+}
+
+/* Add-ons */
+.wiz__addons-section { margin-bottom: 1.5rem; }
+.wiz__addons-title { font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ap-ink-muted); margin: 0 0 0.65rem; }
+.wiz__addons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.wiz__addon {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--ap-surface-alt);
+  border: 1.5px solid var(--ap-line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.12s;
+  font-size: 0.85rem;
+}
+.wiz__addon:hover { border-color: var(--ap-primary); }
+.wiz__addon--checked { border-color: var(--ap-primary); background: color-mix(in srgb, var(--ap-primary) 8%, var(--ap-surface)); }
+.wiz__addon input { accent-color: var(--ap-primary); }
+.wiz__addon-body { display: flex; align-items: center; gap: 0.5rem; }
+.wiz__addon-name { font-weight: 500; color: var(--ap-ink); }
+.wiz__addon-price { font-size: 0.8rem; color: var(--ap-ink-muted); }
+
+/* Owner fields — reuse existing wiz__fields grid */
+.wiz__buy-fields { margin-bottom: 1.5rem; }
+
+/* Footer row */
+.wiz__checkout-footer {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.wiz__total {
+  font-size: 1.05rem;
+  color: var(--ap-ink-muted);
+}
+.wiz__total strong {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ap-ink);
+}
+
+/* Error */
+.wiz__err { color: #c0392b; font-size: 0.85rem; margin-top: 0.75rem; }
 
 /* ── Fields ──────────────────────────────────────────────────────────────── */
 .wiz__fields {

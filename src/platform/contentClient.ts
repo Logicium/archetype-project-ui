@@ -47,7 +47,13 @@ export const contentClient = {
   // --- Auth ---
   requestMagicLink: (email: string, name?: string) =>
     request<{ ok: true }>('POST', `/auth/request-link`, { email, name }),
-  me: () => request<{ owner: { id: string; email: string; name?: string } }>('GET', '/auth/me'),
+  passwordRegister: (email: string, password: string, name?: string) =>
+    request<{ ok: true; owner: { id: string; email: string; name?: string } }>('POST', `/auth/register`, { email, password, name }),
+  passwordLogin: (email: string, password: string) =>
+    request<{ ok: true; owner: { id: string; email: string; name?: string } }>('POST', `/auth/login`, { email, password }),
+  setPassword: (password: string) =>
+    request<{ ok: true }>('POST', `/auth/set-password`, { password }),
+  me: () => request<{ owner: { id: string; email: string; name?: string; hasPassword?: boolean } }>('GET', '/auth/me'),
   logout: () => request<{ ok: true }>('POST', '/auth/logout'),
 
   // --- Admin ---
@@ -82,7 +88,7 @@ export const contentClient = {
 
   // --- Orders / checkout (public) ---
   createOrder: (payload: {
-    archetype: 'mesa' | 'hearth' | 'vault' | 'keystone'
+    archetype: 'mesa' | 'hearth' | 'vault' | 'keystone' | 'keystone'
     plan: string
     addOns: string[]
     wizardPayload: Record<string, unknown>
