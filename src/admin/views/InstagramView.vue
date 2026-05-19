@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { contentClient } from '../../platform/contentClient'
+import { useActiveSiteStore } from '../../platform/activeSiteStore'
 
-const sites = ref<Awaited<ReturnType<typeof contentClient.listSites>>>([])
-const siteId = ref('')
+const activeSites = useActiveSiteStore()
+const siteId = computed(() => activeSites.activeId)
 const connectUrl = ref<string | null>(null)
 const error = ref<string | null>(null)
 
@@ -16,26 +17,21 @@ async function disconnect() {
   await contentClient.disconnectInstagram(siteId.value)
   await loadConnect()
 }
-onMounted(async () => {
-  sites.value = await contentClient.listSites()
-  if (sites.value[0]) siteId.value = sites.value[0].id
-})
+onMounted(loadConnect)
 watch(siteId, loadConnect)
 </script>
 
 <template>
   <section>
     <h1>Instagram</h1>
-    <label>Site:
-      <select v-model="siteId">
-        <option v-for="s in sites" :key="s.id" :value="s.id">{{ s.slug }}</option>
-      </select>
-    </label>
-    <p v-if="connectUrl">
-      <a :href="connectUrl" class="btn">Connect Instagram</a>
-      <button type="button" @click="disconnect">Disconnect</button>
-    </p>
-    <p v-if="error" class="err">{{ error }}</p>
+    <p v-if="!siteId" class="err">Select a site from the header dropdown.</p>
+    <template v-else>
+      <p v-if="connectUrl">
+        <a :href="connectUrl" class="btn">Connect Instagram</a>
+        <button type="button" @click="disconnect">Disconnect</button>
+      </p>
+      <p v-if="error" class="err">{{ error }}</p>
+    </template>
   </section>
 </template>
 

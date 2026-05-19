@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { contentClient } from '../../platform/contentClient'
+import { useActiveSiteStore } from '../../platform/activeSiteStore'
 
-const sites = ref<Awaited<ReturnType<typeof contentClient.listSites>>>([])
-const siteId = ref('')
+const activeSites = useActiveSiteStore()
+const siteId = computed(() => activeSites.activeId)
 const items = ref<Awaited<ReturnType<typeof contentClient.listSubmissions>>>([])
 const error = ref<string | null>(null)
 
 async function load() {
-  if (!siteId.value) return
+  if (!siteId.value) { items.value = []; return }
   try { items.value = await contentClient.listSubmissions(siteId.value) }
   catch (e) { error.value = e instanceof Error ? e.message : String(e) }
 }
@@ -17,37 +18,32 @@ async function markRead(id: string) {
   await load()
 }
 
-onMounted(async () => {
-  sites.value = await contentClient.listSites()
-  if (sites.value[0]) siteId.value = sites.value[0].id
-})
+onMounted(load)
 watch(siteId, load)
 </script>
 
 <template>
   <section>
     <h1>Inbox</h1>
-    <label>Site:
-      <select v-model="siteId">
-        <option v-for="s in sites" :key="s.id" :value="s.id">{{ s.slug }}</option>
-      </select>
-    </label>
-    <p v-if="error" class="err">{{ error }}</p>
-    <ul class="inbox">
-      <li v-for="m in items" :key="m.id" :class="{ unread: !m.readAt }">
-        <header>
-          <strong>{{ m.type }}</strong>
-          <span>{{ new Date(m.createdAt).toLocaleString() }}</span>
-          <button v-if="!m.readAt" type="button" @click="markRead(m.id)">Mark read</button>
-        </header>
-        <dl>
-          <template v-for="(v, k) in m.payload" :key="k">
-            <dt>{{ k }}</dt><dd>{{ v }}</dd>
-          </template>
-        </dl>
-      </li>
-      <li v-if="!items.length">No submissions.</li>
-    </ul>
+    <p v-if="!siteId" class="err">Select a site from the header dropdown.</p>
+    <template v-else>
+      <p v-if="error" class="err">{{ error }}</p>
+      <ul class="inbox">
+        <li v-for="m in items" :key="m.id" :class="{ unread: !m.readAt }">
+          <header>
+            <strong>{{ m.type }}</strong>
+            <span>{{ new Date(m.createdAt).toLocaleString() }}</span>
+            <button v-if="!m.readAt" type="button" @click="markRead(m.id)">Mark read</button>
+          </header>
+          <dl>
+            <template v-for="(v, k) in m.payload" :key="k">
+              <dt>{{ k }}</dt><dd>{{ v }}</dd>
+            </template>
+          </dl>
+        </li>
+        <li v-if="!items.length">No submissions.</li>
+      </ul>
+    </template>
   </section>
 </template>
 

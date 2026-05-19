@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // ─── Types (mirrors MesaSiteConfig) ──────────────────────────────────────────
-import { onMounted, ref, watch, reactive } from 'vue'
+import { computed, onMounted, ref, watch, reactive } from 'vue'
 import { contentClient } from '../../platform/contentClient'
+import { useActiveSiteStore } from '../../platform/activeSiteStore'
 
 interface PhotoSlot { src: string; alt?: string; caption?: string }
 interface MenuItem { name: string; description?: string; price: string; tags?: string[] }
@@ -34,8 +35,8 @@ function blankContent(): SiteContent {
   }
 }
 
-const sites = ref<Awaited<ReturnType<typeof contentClient.listSites>>>([])
-const siteId = ref<string>('')
+const activeSites = useActiveSiteStore()
+const siteId = computed(() => activeSites.activeId)
 const version = ref(0)
 const published = ref(false)
 const statusMsg = ref<string>('')
@@ -129,10 +130,7 @@ function removeMenuItem(cat: MenuCategory, i: number){ cat.items.splice(i, 1) }
 function tagsStr(item: MenuItem)                     { return (item.tags ?? []).join(', ') }
 function setTags(item: MenuItem, v: string)          { item.tags = v.split(',').map(t => t.trim()).filter(Boolean) }
 
-onMounted(async () => {
-  sites.value = await contentClient.listSites()
-  if (sites.value[0]) siteId.value = sites.value[0].id
-})
+onMounted(loadDraft)
 watch(siteId, loadDraft)
 </script>
 
@@ -141,11 +139,6 @@ watch(siteId, loadDraft)
     <div class="cv-header">
       <h1>Content</h1>
       <div class="cv-header__right">
-        <label class="cv-site-select">Site:
-          <select v-model="siteId">
-            <option v-for="s in sites" :key="s.id" :value="s.id">{{ s.slug }} ({{ s.archetype }})</option>
-          </select>
-        </label>
         <span v-if="siteId" class="meta">v{{ version }} · {{ published ? 'published' : 'draft' }}</span>
         <button type="button" @click="save(false)">Save draft</button>
         <button type="button" class="btn-primary" @click="save(true)">Publish</button>
@@ -153,6 +146,7 @@ watch(siteId, loadDraft)
     </div>
     <p v-if="statusMsg" class="ok">{{ statusMsg }}</p>
     <p v-if="error" class="err">{{ error }}</p>
+    <p v-if="!siteId" class="err">Select a site from the header dropdown.</p>
 
     <div v-if="siteId" class="cv-body">
 

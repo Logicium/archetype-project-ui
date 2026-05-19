@@ -1,41 +1,37 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { contentClient } from '../../platform/contentClient'
+import { useActiveSiteStore } from '../../platform/activeSiteStore'
 
-const sites = ref<Awaited<ReturnType<typeof contentClient.listSites>>>([])
-const siteId = ref('')
+const activeSites = useActiveSiteStore()
+const siteId = computed(() => activeSites.activeId)
 const rows = ref<Awaited<ReturnType<typeof contentClient.getAnalytics>>>([])
 const error = ref<string | null>(null)
 
 async function load() {
-  if (!siteId.value) return
+  if (!siteId.value) { rows.value = []; return }
   try { rows.value = await contentClient.getAnalytics(siteId.value) }
   catch (e) { error.value = e instanceof Error ? e.message : String(e) }
 }
-onMounted(async () => {
-  sites.value = await contentClient.listSites()
-  if (sites.value[0]) siteId.value = sites.value[0].id
-})
+onMounted(load)
 watch(siteId, load)
 </script>
 
 <template>
   <section>
     <h1>Analytics</h1>
-    <label>Site:
-      <select v-model="siteId">
-        <option v-for="s in sites" :key="s.id" :value="s.id">{{ s.slug }}</option>
-      </select>
-    </label>
-    <table>
-      <thead><tr><th>Date</th><th>Visitors</th><th>Pageviews</th><th>Uptime (ms)</th><th>Error</th></tr></thead>
-      <tbody>
-        <tr v-for="r in rows" :key="r.date">
-          <td>{{ r.date }}</td><td>{{ r.visitors }}</td><td>{{ r.pageviews }}</td><td>{{ r.uptimeLatencyMs }}</td><td>{{ r.uptimeError || '' }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <p v-if="error" class="err">{{ error }}</p>
+    <p v-if="!siteId" class="err">Select a site from the header dropdown.</p>
+    <template v-else>
+      <table>
+        <thead><tr><th>Date</th><th>Visitors</th><th>Pageviews</th><th>Uptime (ms)</th><th>Error</th></tr></thead>
+        <tbody>
+          <tr v-for="r in rows" :key="r.date">
+            <td>{{ r.date }}</td><td>{{ r.visitors }}</td><td>{{ r.pageviews }}</td><td>{{ r.uptimeLatencyMs }}</td><td>{{ r.uptimeError || '' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-if="error" class="err">{{ error }}</p>
+    </template>
   </section>
 </template>
 

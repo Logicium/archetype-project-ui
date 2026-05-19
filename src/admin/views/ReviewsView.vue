@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { contentClient } from '../../platform/contentClient'
+import { useActiveSiteStore } from '../../platform/activeSiteStore'
 
-const sites = ref<Awaited<ReturnType<typeof contentClient.listSites>>>([])
-const siteId = ref('')
+const activeSites = useActiveSiteStore()
+const siteId = computed(() => activeSites.activeId)
 const placeId = ref('')
 const manual = ref({ author: '', rating: 5, text: '' })
 const status = ref('')
@@ -24,38 +25,31 @@ async function addManual() {
     manual.value = { author: '', rating: 5, text: '' }
   } catch (e) { error.value = e instanceof Error ? e.message : String(e) }
 }
-onMounted(async () => {
-  sites.value = await contentClient.listSites()
-  if (sites.value[0]) siteId.value = sites.value[0].id
-})
 watch(siteId, () => { status.value = ''; error.value = null })
 </script>
 
 <template>
   <section>
     <h1>Reviews</h1>
-    <label>Site:
-      <select v-model="siteId">
-        <option v-for="s in sites" :key="s.id" :value="s.id">{{ s.slug }}</option>
-      </select>
-    </label>
+    <p v-if="!siteId" class="err">Select a site from the header dropdown to manage reviews.</p>
+    <template v-else>
+      <h2>Google Places</h2>
+      <form @submit.prevent="savePlace">
+        <input v-model="placeId" placeholder="ChIJ… (Google place ID)" />
+        <button type="submit">Save</button>
+      </form>
 
-    <h2>Google Places</h2>
-    <form @submit.prevent="savePlace">
-      <input v-model="placeId" placeholder="ChIJ… (Google place ID)" />
-      <button type="submit">Save</button>
-    </form>
+      <h2>Add a manual review</h2>
+      <form @submit.prevent="addManual" class="manual">
+        <input v-model="manual.author" placeholder="Author" required />
+        <input v-model.number="manual.rating" type="number" min="1" max="5" required />
+        <textarea v-model="manual.text" rows="3" placeholder="Review text" required />
+        <button type="submit">Add</button>
+      </form>
 
-    <h2>Add a manual review</h2>
-    <form @submit.prevent="addManual" class="manual">
-      <input v-model="manual.author" placeholder="Author" required />
-      <input v-model.number="manual.rating" type="number" min="1" max="5" required />
-      <textarea v-model="manual.text" rows="3" placeholder="Review text" required />
-      <button type="submit">Add</button>
-    </form>
-
-    <p v-if="status" class="ok">{{ status }}</p>
-    <p v-if="error" class="err">{{ error }}</p>
+      <p v-if="status" class="ok">{{ status }}</p>
+      <p v-if="error" class="err">{{ error }}</p>
+    </template>
   </section>
 </template>
 

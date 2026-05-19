@@ -87,6 +87,8 @@ export const contentClient = {
   retryOrder: (orderId: string) => request<{ ok: true }>('POST', `/admin/orders/${orderId}/retry`),
   getDeployLogs: (siteId: string) => request<Array<{ step: string; status: string; message?: string; durationMs?: number; createdAt: string }>>('GET', `/admin/sites/${siteId}/deploy-logs`),
   redeploySite: (siteId: string) => request<{ ok: boolean; deploymentId: string; url: string }>('POST', `/admin/sites/${siteId}/redeploy`),
+  getUpdateStatus: (siteId: string) => request<{ current: string | null; latest: string | null; hasUpdate: boolean; neverChecked?: boolean }>('GET', `/admin/sites/${siteId}/update-status`),
+  updateSite: (siteId: string) => request<{ ok: boolean; jobId: string }>('POST', `/admin/sites/${siteId}/update`),
 
   // --- Orders / checkout (public) ---
   createOrder: (payload: {
