@@ -49,7 +49,13 @@ interface WizardForm {
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'ap-site-wizard-v1'
 const THEME_OPTS = ['studio', 'heritage', 'vibrant', 'ironwood'] as const
-const SWATCH_OPTS = ['sand', 'forest', 'sage', 'sunset', 'rose', 'stone', 'fiesta', 'citrus', 'midnight', 'obsidian', 'ember', 'plum'] as const
+const SWATCH_GROUPS = [
+  { label: 'Earth',  swatches: ['sand', 'stone', 'sage', 'forest', 'citrus'] },
+  { label: 'Warm',   swatches: ['sunset', 'rose', 'fiesta', 'mango'] },
+  { label: 'Bold',   swatches: ['electric', 'punch', 'carnival'] },
+  { label: 'Dark',   swatches: ['midnight', 'obsidian', 'ember', 'plum'] },
+  { label: 'Neon',   swatches: ['neon', 'aurora', 'acid', 'synthwave'] },
+]
 const VARIANT_OPTS = ['essentials', 'portfolio'] as const
 const STEPS = [
   { id: 'archetype',    label: 'Archetype' },
@@ -430,6 +436,8 @@ import { contentClient } from '../../platform/contentClient'
 import { PRICING, BUNDLES } from '../../config/pricing'
 
 const CHECKOUT_BUNDLES = BUNDLES as readonly { id: string; name: string; price: number; items: readonly string[]; blurb: string }[]
+const CHECKOUT_WEBSITE_ITEMS = PRICING.filter(p => p.category === 'website')
+const CHECKOUT_MARKETING = PRICING.filter(p => p.category === 'marketing')
 const CHECKOUT_ADDONS = PRICING.filter(p => p.category === 'addons')
 
 const plan = ref<string>(form.variant === 'portfolio' ? 'pro' : 'starter')
@@ -675,19 +683,23 @@ const photoGuide = computed(() => {
             </div>
             <div class="wiz__field wiz__field--full">
               <p class="wiz__label">Color swatch</p>
-              <div class="wiz__swatch-grid">
-                <button
-                  v-for="s in SWATCH_OPTS" :key="s"
-                  type="button" class="wiz__swatch"
-                  :class="{ 'is-active': form.swatch === s }"
-                  @click="form.swatch = s"
-                  :title="swatchOf(s).label + ' · ' + swatchOf(s).mode"
-                >
-                  <span class="wiz__swatch-dot" :style="{ background: swatchOf(s).primary }" aria-hidden="true" />
-                  <span class="wiz__swatch-label">{{ s }}</span>
-                </button>
+              <div class="wiz__swatch-groups">
+                <div v-for="group in SWATCH_GROUPS" :key="group.label" class="wiz__swatch-group">
+                  <p class="wiz__swatch-group-label">{{ group.label }}</p>
+                  <div class="wiz__swatch-row">
+                    <button
+                      v-for="s in group.swatches" :key="s"
+                      type="button" class="wiz__swatch"
+                      :class="{ 'is-active': form.swatch === s }"
+                      @click="form.swatch = s"
+                      :title="swatchOf(s).label + ' · ' + swatchOf(s).mode"
+                    >
+                      <span class="wiz__swatch-dot" :style="{ background: swatchOf(s).primary }" aria-hidden="true" />
+                      <span class="wiz__swatch-label">{{ s }}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <span class="wiz__hint">Light swatches: sand, forest, sage, sunset, rose, stone, fiesta, citrus. Dark: midnight, obsidian, ember, plum.</span>
             </div>
 
             <!-- ── Interactive site preview ─────────────────────────────── -->
@@ -908,6 +920,11 @@ const photoGuide = computed(() => {
         <!-- STEP 6: Content (archetype-specific) ───────────────────────── -->
         <div v-if="step === 6" class="wiz__step">
 
+          <div v-if="!form.archetype" class="wiz__empty">
+            <p class="wiz__empty-msg">Choose a project type first — the content fields here depend on your archetype.</p>
+            <button type="button" class="ap-btn ap-btn--ghost" @click="goTo(0)">← Choose project type</button>
+          </div>
+
           <!-- MESA: Menu ─────────────────────────────────────────────── -->
           <template v-if="isMesa">
             <h2 class="wiz__step-title">Menu</h2>
@@ -1023,6 +1040,45 @@ const photoGuide = computed(() => {
               + Add category
             </button>
           </template>
+
+          <!-- KEYSTONE: Services & Capabilities ─────────────────────── -->
+          <template v-if="isKeystone">
+            <h2 class="wiz__step-title">Services &amp; capabilities</h2>
+            <p class="wiz__step-desc">List what you do and key facts about your operation. These populate the services grid and stats bar on your site.</p>
+
+            <h3 class="wiz__sub">Services</h3>
+            <div v-for="(s, i) in form.services" :key="i" class="wiz__card-block">
+              <div class="wiz__fields">
+                <label class="wiz__field">
+                  <span class="wiz__label">Service name</span>
+                  <input v-model="s.name" type="text" class="wiz__input" placeholder="e.g. Electrical Repair" />
+                </label>
+                <label class="wiz__field">
+                  <span class="wiz__label">Price / rate <em>(optional)</em></span>
+                  <input v-model="s.price" type="text" class="wiz__input" placeholder="Starting at $95" />
+                </label>
+                <label class="wiz__field">
+                  <span class="wiz__label">Icon <em>(emoji)</em></span>
+                  <input v-model="s.icon" type="text" class="wiz__input wiz__input--xs" placeholder="⚡" />
+                </label>
+                <label class="wiz__field wiz__field--full">
+                  <span class="wiz__label">Short description</span>
+                  <input v-model="s.description" type="text" class="wiz__input" placeholder="One sentence describing this service." />
+                </label>
+              </div>
+            </div>
+            <button type="button" class="wiz__add wiz__add--lg" @click="form.services.push({ name: '', description: '', price: '', icon: '🔧' })">
+              + Add service
+            </button>
+
+            <h3 class="wiz__sub" style="margin-top:2.5rem">Key capabilities / stats</h3>
+            <p class="wiz__step-desc">Short facts shown in the trust bar (e.g. "15 years in business", "Licensed &amp; insured").</p>
+            <div v-for="(c, i) in form.capabilities" :key="i" class="wiz__row-pair">
+              <input v-model="c.label" type="text" class="wiz__input wiz__input--sm" placeholder="Label (e.g. Years in business)" />
+              <input v-model="c.value" type="text" class="wiz__input" placeholder="Value (e.g. 15+)" />
+            </div>
+            <button type="button" class="wiz__add" @click="form.capabilities.push({ label: '', value: '' })">+ Add capability</button>
+          </template>
         </div>
 
         <!-- STEP 7: Testimonials ────────────────────────────────────────── -->
@@ -1094,9 +1150,50 @@ const photoGuide = computed(() => {
                 </label>
               </div>
 
-              <!-- Add-ons -->
+              <!-- Individual website services -->
               <div class="wiz__addons-section">
-                <h4 class="wiz__addons-title">Optional add-ons</h4>
+                <h4 class="wiz__addons-title">Or choose a website service individually</h4>
+                <div class="wiz__plans wiz__plans--sm">
+                  <label
+                    v-for="w in CHECKOUT_WEBSITE_ITEMS"
+                    :key="w.id"
+                    class="wiz__plan"
+                    :class="{ 'wiz__plan--active': plan === w.id }"
+                  >
+                    <input type="radio" :value="w.id" v-model="plan" class="wiz__plan-radio" />
+                    <div class="wiz__plan-body">
+                      <div class="wiz__plan-header">
+                        <span class="wiz__plan-name">{{ w.name }}</span>
+                        <span class="wiz__plan-price">${{ w.price }}<span v-if="w.unit" class="wiz__plan-unit"> {{ w.unit }}</span></span>
+                      </div>
+                      <p class="wiz__plan-blurb">{{ w.blurb }}</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Photography & marketing -->
+              <div class="wiz__addons-section">
+                <h4 class="wiz__addons-title">Photography &amp; marketing</h4>
+                <div class="wiz__addons">
+                  <label
+                    v-for="a in CHECKOUT_MARKETING"
+                    :key="a.id"
+                    class="wiz__addon"
+                    :class="{ 'wiz__addon--checked': addOns.includes(a.id) }"
+                  >
+                    <input type="checkbox" :value="a.id" v-model="addOns" />
+                    <div class="wiz__addon-body">
+                      <span class="wiz__addon-name">{{ a.name }}</span>
+                      <span class="wiz__addon-price">+${{ a.price }}</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Technical add-ons -->
+              <div class="wiz__addons-section">
+                <h4 class="wiz__addons-title">Technical add-ons</h4>
                 <div class="wiz__addons">
                   <label
                     v-for="a in CHECKOUT_ADDONS"
@@ -1491,6 +1588,23 @@ const photoGuide = computed(() => {
   text-transform: capitalize;
   color: var(--ap-ink);
 }
+
+/* ── Grouped swatches ────────────────────────────────────────────────────── */
+.wiz__swatch-groups { display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem; }
+.wiz__swatch-group-label {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ap-ink-muted);
+  margin: 0 0 0.4rem;
+}
+.wiz__swatch-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+/* ── Step empty state ────────────────────────────────────────────────────── */
+.wiz__empty { display: flex; flex-direction: column; align-items: flex-start; gap: 1rem; padding: 2.5rem 0; }
+.wiz__empty-msg { color: var(--ap-ink-muted); margin: 0; max-width: 44ch; }
+
+/* ── Plan modifiers ──────────────────────────────────────────────────────── */
+.wiz__plans--sm { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.wiz__plan-unit { font-size: 0.75rem; font-weight: 400; color: var(--ap-ink-muted); }
 
 /* ── Live site preview ────────────────────────────────────────────────────── */
 .wiz__preview {

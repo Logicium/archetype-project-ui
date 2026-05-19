@@ -120,6 +120,7 @@ body::-webkit-scrollbar { width: 0; height: 0; display: none; }
   display: flex;
   min-width: 0;
   min-height: 0;
+  overflow: clip; /* rail can never bleed outside the container's bounds */
 }
 .ap-cscroll-wrap--x { flex-direction: column; }
 .ap-cscroll-wrap--y { flex-direction: row; align-items: stretch; }

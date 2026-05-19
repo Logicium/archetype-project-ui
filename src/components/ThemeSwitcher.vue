@@ -497,15 +497,14 @@ watch(open, (v) => {
 }
 .ap-switcher__pill-icon {
   margin-left: auto;
-  display: inline-flex; align-items: center; justify-content: center;
+  display: grid; place-items: center;
   width: 32px; height: 32px; border-radius: 50%;
   background: color-mix(in srgb, var(--ap-ink) 8%, transparent);
   color: var(--ap-ink);
-  line-height: 0;
   flex-shrink: 0;
   transition: background 160ms ease;
 }
-.ap-switcher__pill-icon :deep(svg) { display: block; }
+.ap-switcher__pill-icon :deep(svg) { display: block; width: 16px; height: 16px; }
 .ap-switcher__pill:hover .ap-switcher__pill-icon { background: color-mix(in srgb, var(--ap-ink) 14%, transparent); }
 
 /* ── Expand region ─ height transitions in sync with the pill leaving layout ─ */
