@@ -1,15 +1,32 @@
 /**
  * Thin fetch wrapper around the archetype-service API.
- * Sends credentials (cookie session for admin endpoints); throws on non-2xx.
+ * Session is stored in localStorage and sent as an Authorization: Bearer header
+ * so it works cross-domain (third-party cookies are blocked in modern browsers).
  */
 import { PLATFORM_API, PLATFORM_SLUG } from './config'
 
+const SESSION_KEY = 'archetype_session'
+
+export function getStoredToken(): string | null {
+  try { return localStorage.getItem(SESSION_KEY) } catch { return null }
+}
+export function storeSessionToken(t: string) {
+  try { localStorage.setItem(SESSION_KEY, t) } catch { /* SSR / private browsing */ }
+}
+export function clearSessionToken() {
+  try { localStorage.removeItem(SESSION_KEY) } catch { /* ignore */ }
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   if (!PLATFORM_API) throw new Error('VITE_CONTENT_API not configured')
+  const token = getStoredToken()
+  const headers: Record<string, string> = {}
+  if (body) headers['Content-Type'] = 'application/json'
+  if (token) headers['Authorization'] = `Bearer ${token}`
   const res = await fetch(`${PLATFORM_API}${path}`, {
     method,
-    credentials: 'include',
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    credentials: 'include', // still send cookie as fallback for same-domain setups
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   })
   if (!res.ok) {
@@ -47,14 +64,34 @@ export const contentClient = {
   // --- Auth ---
   requestMagicLink: (email: string, name?: string) =>
     request<{ ok: true }>('POST', `/auth/request-link`, { email, name }),
-  passwordRegister: (email: string, password: string, name?: string) =>
-    request<{ ok: true; owner: { id: string; email: string; name?: string } }>('POST', `/auth/register`, { email, password, name }),
-  passwordLogin: (email: string, password: string) =>
-    request<{ ok: true; owner: { id: string; email: string; name?: string } }>('POST', `/auth/login`, { email, password }),
+  verifyMagicToken: async (token: string) => {
+    const res = await request<{ ok: true; sessionToken: string; owner: { id: string; email: string; name?: string } }>(
+      'GET', `/auth/callback?token=${encodeURIComponent(token)}`,
+    )
+    storeSessionToken(res.sessionToken)
+    return res
+  },
+  passwordRegister: async (email: string, password: string, name?: string) => {
+    const res = await request<{ ok: true; sessionToken: string; owner: { id: string; email: string; name?: string } }>(
+      'POST', `/auth/register`, { email, password, name },
+    )
+    storeSessionToken(res.sessionToken)
+    return res
+  },
+  passwordLogin: async (email: string, password: string) => {
+    const res = await request<{ ok: true; sessionToken: string; owner: { id: string; email: string; name?: string } }>(
+      'POST', `/auth/login`, { email, password },
+    )
+    storeSessionToken(res.sessionToken)
+    return res
+  },
   setPassword: (password: string) =>
     request<{ ok: true }>('POST', `/auth/set-password`, { password }),
   me: () => request<{ owner: { id: string; email: string; name?: string; hasPassword?: boolean } }>('GET', '/auth/me'),
-  logout: () => request<{ ok: true }>('POST', '/auth/logout'),
+  logout: async () => {
+    clearSessionToken()
+    return request<{ ok: true }>('POST', '/auth/logout').catch(() => ({ ok: true as const }))
+  },
 
   // --- Admin ---
   listSites: () => request<Array<{ id: string; slug: string; archetype: string; status: string; productionUrl?: string; customDomain?: string }>>('GET', '/admin/sites'),

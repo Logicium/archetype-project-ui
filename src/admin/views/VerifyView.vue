@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminAuthStore } from '../../platform/adminAuthStore'
-import { PLATFORM_API } from '../../platform/config'
+import { contentClient } from '../../platform/contentClient'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,14 +14,10 @@ onMounted(async () => {
   const token = String(route.query.token || '')
   if (!token) { state.value = 'fail'; message.value = 'Missing token'; return }
   try {
-    const res = await fetch(`${PLATFORM_API}/auth/callback?token=${encodeURIComponent(token)}`, {
-      method: 'GET', credentials: 'include',
-    })
-    if (!res.ok) throw new Error(`Status ${res.status}`)
-    // Best-effort auth refresh — the cookie is set but may not be sent back
-    // on this first same-page fetch in all browsers. A redirect to /admin lets
-    // the router guard re-check cleanly on the next navigation.
-    try { await auth.refresh() } catch { /* will re-verify on redirect */ }
+    // verifyMagicToken calls /auth/callback, gets the session token in the
+    // response body, and stores it in localStorage for all subsequent requests.
+    await contentClient.verifyMagicToken(token)
+    await auth.refresh()
     state.value = 'ok'
     setTimeout(() => router.replace('/admin'), 500)
   } catch (e) {
