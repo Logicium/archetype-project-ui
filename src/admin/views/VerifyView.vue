@@ -18,7 +18,10 @@ onMounted(async () => {
       method: 'GET', credentials: 'include',
     })
     if (!res.ok) throw new Error(`Status ${res.status}`)
-    await auth.refresh()
+    // Best-effort auth refresh — the cookie is set but may not be sent back
+    // on this first same-page fetch in all browsers. A redirect to /admin lets
+    // the router guard re-check cleanly on the next navigation.
+    try { await auth.refresh() } catch { /* will re-verify on redirect */ }
     state.value = 'ok'
     setTimeout(() => router.replace('/admin'), 500)
   } catch (e) {
