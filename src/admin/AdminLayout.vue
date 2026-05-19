@@ -27,7 +27,8 @@ const navItems = [
   { to: '/admin/billing', label: 'Billing' },
 ]
 
-const requiresLogin = computed(() => !auth.owner && !auth.loading && route.name !== 'admin-login')
+// Don't gate the verify page — it handles its own session flow and must always render.
+const requiresLogin = computed(() => !auth.owner && !auth.loading && route.name !== 'admin-login' && route.name !== 'admin-verify')
 // The Sites tab itself is a multi-site overview, so don't show the dropdown there.
 const showSiteSwitcher = computed(() => !!auth.owner && route.path !== '/admin' && activeSites.sites.length > 0)
 </script>

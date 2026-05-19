@@ -12,7 +12,8 @@ export interface AdminOwner { id: string; email: string; name?: string }
 
 export const useAdminAuthStore = defineStore('adminAuth', () => {
   const owner = ref<AdminOwner | null>(null)
-  const loading = ref(false)
+  // Start loading=true so the gate never flickers on initial render before the first /auth/me check.
+  const loading = ref(true)
 
   async function refresh() {
     loading.value = true
