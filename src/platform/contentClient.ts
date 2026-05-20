@@ -136,7 +136,7 @@ export const contentClient = {
     context?: Record<string, string>
   }) => {
     if (!PLATFORM_API) return Promise.resolve({ text: '' })
-    return fetch(`${PLATFORM_API}/v1/ai/suggest`, {
+    return fetch(`${PLATFORM_API}/ai/suggest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
