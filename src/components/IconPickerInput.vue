@@ -6,10 +6,18 @@ import { ChevronDown, Search, X } from 'lucide-vue-next'
 const props = defineProps<{ modelValue: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
-// All exportable icon components: uppercase names that are functions
+// Base icon names only — exclude Lucide-prefixed (LucideWrench) and Icon-suffixed (WrenchIcon)
+// aliases, which are not standalone Vue components and crash Lucide's internal Icon renderer.
 const ALL_ICON_NAMES: string[] = Object.keys(LucideIcons)
-  .filter(k => /^[A-Z]/.test(k) && typeof (LucideIcons as Record<string, unknown>)[k] === 'function')
+  .filter(k =>
+    /^[A-Z]/.test(k) &&
+    typeof (LucideIcons as Record<string, unknown>)[k] === 'function' &&
+    !k.startsWith('Lucide') &&
+    !k.endsWith('Icon')
+  )
   .sort()
+
+const VISIBLE_LIMIT = 120 // cap unfiltered grid for performance
 
 const open  = ref(false)
 const query = ref('')
@@ -18,8 +26,11 @@ const rootEl   = ref<HTMLElement | null>(null)
 
 const filtered = computed(() => {
   const q = query.value.toLowerCase()
-  return q ? ALL_ICON_NAMES.filter(n => n.toLowerCase().includes(q)) : ALL_ICON_NAMES
+  if (!q) return ALL_ICON_NAMES.slice(0, VISIBLE_LIMIT)
+  return ALL_ICON_NAMES.filter(n => n.toLowerCase().includes(q)).slice(0, 300)
 })
+
+const showingAll = computed(() => !query.value && ALL_ICON_NAMES.length > VISIBLE_LIMIT)
 
 const currentComponent = computed(() =>
   props.modelValue ? ((LucideIcons as Record<string, unknown>)[props.modelValue] ?? null) : null
@@ -90,6 +101,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
       </div>
 
       <p v-if="filtered.length === 0" class="ip__empty">No icons match "{{ query }}"</p>
+      <p v-else-if="showingAll" class="ip__hint">Showing {{ VISIBLE_LIMIT }} of {{ ALL_ICON_NAMES.length }} — type to search</p>
     </div>
   </div>
 </template>
@@ -120,9 +132,9 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
 
 /* ── Panel ───────────────────────────────────────────────────────────────── */
 .ip__panel {
-  position: fixed; top: 0; left: 0; z-index: 9999;
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 300;
   width: 296px;
-  background: red;
+  background: var(--ap-surface);
   border: 1px solid var(--ap-line);
   border-radius: var(--ap-radius);
   box-shadow: 0 8px 28px rgba(0,0,0,0.14);
@@ -175,5 +187,11 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
 .ip__empty {
   padding: 1.25rem; text-align: center;
   color: var(--ap-ink-muted); font-size: 0.82rem; margin: 0;
+}
+.ip__hint {
+  padding: 0.4rem 0.65rem 0.55rem;
+  text-align: center; font-size: 0.72rem;
+  color: var(--ap-ink-muted); margin: 0;
+  border-top: 1px solid var(--ap-line);
 }
 </style>

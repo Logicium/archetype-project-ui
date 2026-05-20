@@ -60,7 +60,7 @@ function initials(email?: string) {
     return local[0]?.toUpperCase() ?? '·'
   }
 
-  const firstInitial = parts[0][0]?.toUpperCase() ?? ''
+  const firstInitial = parts[0]?.[0]?.toUpperCase() ?? ''
   const secondInitial = parts[1]?.[0]?.toUpperCase() ?? ''
 
   return (firstInitial + secondInitial) || '·'
