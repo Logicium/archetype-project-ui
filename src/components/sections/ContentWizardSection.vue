@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { UtensilsCrossed, BedDouble, ShoppingBag, Wrench } from 'lucide-vue-next'
+import { UtensilsCrossed, BedDouble, ShoppingBag, Wrench, Sparkles } from 'lucide-vue-next'
+import IconPickerInput from '../IconPickerInput.vue'
 import { SWATCHES } from '../../themes/swatches'
 
 // ─── Color preview helpers ────────────────────────────────────────────────────
@@ -182,6 +183,29 @@ function clearAll() {
   localStorage.removeItem(STORAGE_KEY)
   Object.assign(form, { archetype: '', brand: '', tagline: '', blurb: '' })
   step.value = 0
+}
+
+// ─── AI copy assist ───────────────────────────────────────────────────────────
+const aiLoading = reactive<Record<string, boolean>>({})
+
+async function aiSuggest(
+  field: string,
+  apply: (text: string) => void,
+  context: Record<string, string> = {},
+) {
+  if (aiLoading[field]) return
+  aiLoading[field] = true
+  try {
+    const { text } = await contentClient.aiSuggest({
+      archetype: form.archetype,
+      brand: form.brand,
+      field,
+      context,
+    })
+    if (text) apply(text)
+  } finally {
+    aiLoading[field] = false
+  }
 }
 
 // ─── Menu helpers ─────────────────────────────────────────────────────────────
@@ -648,12 +672,18 @@ const photoGuide = computed(() => {
             </label>
             <label class="wiz__field">
               <span class="wiz__label">Tagline</span>
-              <input v-model="form.tagline" type="text" class="wiz__input" placeholder="e.g. Wood-fired kitchen" />
+              <div class="wiz__input-ai">
+                <input v-model="form.tagline" type="text" class="wiz__input" placeholder="e.g. Wood-fired kitchen" />
+                <button type="button" class="wiz__ai-btn" :class="{ 'is-loading': aiLoading['tagline'] }" :disabled="!form.archetype || !form.brand || aiLoading['tagline']" @click="aiSuggest('tagline', t => form.tagline = t)" title="AI suggest"><Sparkles :size="13" /><span>Suggest</span></button>
+              </div>
               <span class="wiz__hint">Short — 3 to 6 words. Shows under the name in the header.</span>
             </label>
             <label class="wiz__field wiz__field--full">
               <span class="wiz__label">One-sentence description</span>
-              <textarea v-model="form.blurb" class="wiz__input wiz__textarea" rows="2" placeholder="e.g. A neighborhood kitchen serving Southern Colorado classics with a wood-fired heart." />
+              <div class="wiz__input-ai wiz__input-ai--textarea">
+                <textarea v-model="form.blurb" class="wiz__input wiz__textarea" rows="2" placeholder="e.g. A neighborhood kitchen serving Southern Colorado classics with a wood-fired heart." />
+                <button type="button" class="wiz__ai-btn" :class="{ 'is-loading': aiLoading['blurb'] }" :disabled="!form.archetype || !form.brand || aiLoading['blurb']" @click="aiSuggest('blurb', t => form.blurb = t)" title="AI suggest"><Sparkles :size="13" /><span>Suggest</span></button>
+              </div>
               <span class="wiz__hint">Used in the site footer and meta description. Keep it under 160 characters.</span>
             </label>
           </div>
@@ -900,11 +930,17 @@ const photoGuide = computed(() => {
           <div class="wiz__fields">
             <label class="wiz__field wiz__field--full">
               <span class="wiz__label">Section headline</span>
-              <input v-model="form.storyTitle" type="text" class="wiz__input" placeholder="e.g. A table built for Trinidad." />
+              <div class="wiz__input-ai">
+                <input v-model="form.storyTitle" type="text" class="wiz__input" placeholder="e.g. A table built for Trinidad." />
+                <button type="button" class="wiz__ai-btn" :class="{ 'is-loading': aiLoading['storyTitle'] }" :disabled="!form.archetype || !form.brand || aiLoading['storyTitle']" @click="aiSuggest('storyTitle', t => form.storyTitle = t, { hint: 'short headline for the About section' })" title="AI suggest"><Sparkles :size="13" /><span>Suggest</span></button>
+              </div>
             </label>
             <div v-for="(_, i) in form.storyParagraphs" :key="i" class="wiz__field wiz__field--full">
               <span class="wiz__label">Paragraph {{ i + 1 }}</span>
-              <textarea v-model="form.storyParagraphs[i]" class="wiz__input wiz__textarea" rows="3" placeholder="2–4 sentences. Write naturally, like you're telling a friend." />
+              <div class="wiz__input-ai wiz__input-ai--textarea">
+                <textarea v-model="form.storyParagraphs[i]" class="wiz__input wiz__textarea" rows="3" placeholder="2–4 sentences. Write naturally, like you're telling a friend." />
+                <button type="button" class="wiz__ai-btn" :class="{ 'is-loading': aiLoading[`storyParagraph-${i}`] }" :disabled="!form.archetype || !form.brand || aiLoading[`storyParagraph-${i}`]" @click="aiSuggest('storyParagraph', t => form.storyParagraphs[i] = t, { existing: form.storyParagraphs.slice(0, i).join(' | ') })" title="AI suggest"><Sparkles :size="13" /><span>Suggest</span></button>
+              </div>
             </div>
             <button type="button" class="wiz__add" @click="form.storyParagraphs.push('')">+ Add paragraph</button>
           </div>
@@ -943,7 +979,10 @@ const photoGuide = computed(() => {
               </div>
               <div v-for="(item, ii) in cat.items" :key="ii" class="wiz__menu-item">
                 <input v-model="item.name" type="text" class="wiz__input" placeholder="Dish name" />
-                <input v-model="item.description" type="text" class="wiz__input" placeholder="Description (optional)" />
+                <div class="wiz__input-ai">
+                  <input v-model="item.description" type="text" class="wiz__input" placeholder="Description (optional)" />
+                  <button type="button" class="wiz__ai-btn" :class="{ 'is-loading': aiLoading[`menuitem-${ci}-${ii}`] }" :disabled="!form.archetype || !form.brand || !item.name || aiLoading[`menuitem-${ci}-${ii}`]" @click="aiSuggest('menuItem.description', t => item.description = t, { item: item.name, category: cat.name })" title="AI suggest"><Sparkles :size="13" /><span>Suggest</span></button>
+                </div>
                 <input v-model="item.price" type="text" class="wiz__input wiz__input--xs" placeholder="$12" />
                 <input v-model="item.tags" type="text" class="wiz__input wiz__input--xs" placeholder="GF, V, ..." />
                 <button type="button" class="wiz__remove" @click="removeMenuItem(ci, ii)" title="Remove item">✕</button>
@@ -970,7 +1009,10 @@ const photoGuide = computed(() => {
                 </label>
                 <label class="wiz__field wiz__field--full">
                   <span class="wiz__label">Short description</span>
-                  <input v-model="room.blurb" type="text" class="wiz__input" placeholder="One sentence about this room." />
+                  <div class="wiz__input-ai">
+                    <input v-model="room.blurb" type="text" class="wiz__input" placeholder="One sentence about this room." />
+                    <button type="button" class="wiz__ai-btn" :class="{ 'is-loading': aiLoading[`room-blurb-${i}`] }" :disabled="!form.archetype || !form.brand || !room.name || aiLoading[`room-blurb-${i}`]" @click="aiSuggest('room.blurb', t => room.blurb = t, { room: room.name, features: room.features, rate: room.rateFrom })" title="AI suggest"><Sparkles :size="13" /><span>Suggest</span></button>
+                  </div>
                 </label>
                 <label class="wiz__field wiz__field--full">
                   <span class="wiz__label">Features <em>(comma-separated)</em></span>
@@ -989,7 +1031,7 @@ const photoGuide = computed(() => {
             <h3 class="wiz__sub" style="margin-top:2.5rem">Amenities</h3>
             <p class="wiz__step-desc">Things included with every stay. Shown as a grid of icons.</p>
             <div v-for="(a, i) in form.amenities" :key="i" class="wiz__row-trio">
-              <input v-model="a.icon" type="text" class="wiz__input wiz__input--xs" placeholder="☕" />
+              <IconPickerInput v-model="a.icon" />
               <input v-model="a.label" type="text" class="wiz__input wiz__input--sm" placeholder="Label" />
               <input v-model="a.description" type="text" class="wiz__input" placeholder="Short description (optional)" />
             </div>
@@ -1014,7 +1056,10 @@ const photoGuide = computed(() => {
                 </label>
                 <label class="wiz__field">
                   <span class="wiz__label">Short description</span>
-                  <input v-model="p.blurb" type="text" class="wiz__input" placeholder="Hand-thrown stoneware" />
+                  <div class="wiz__input-ai">
+                    <input v-model="p.blurb" type="text" class="wiz__input" placeholder="Hand-thrown stoneware" />
+                    <button type="button" class="wiz__ai-btn" :class="{ 'is-loading': aiLoading[`product-blurb-${i}`] }" :disabled="!form.archetype || !form.brand || !p.name || aiLoading[`product-blurb-${i}`]" @click="aiSuggest('product.blurb', t => p.blurb = t, { product: p.name, price: p.price })" title="AI suggest"><Sparkles :size="13" /><span>Suggest</span></button>
+                  </div>
                 </label>
                 <label class="wiz__field">
                   <span class="wiz__label">Badge <em>(optional)</em></span>
@@ -1041,7 +1086,7 @@ const photoGuide = computed(() => {
             </button>
           </template>
 
-          <!-- KEYSTONE: Services & Capabilities ─────────────────────── -->
+          <!-- KEYSTONE: Services & Capabilities ──────────────────────── -->
           <template v-if="isKeystone">
             <h2 class="wiz__step-title">Services &amp; capabilities</h2>
             <p class="wiz__step-desc">List what you do and key facts about your operation. These populate the services grid and stats bar on your site.</p>
@@ -1058,12 +1103,15 @@ const photoGuide = computed(() => {
                   <input v-model="s.price" type="text" class="wiz__input" placeholder="Starting at $95" />
                 </label>
                 <label class="wiz__field">
-                  <span class="wiz__label">Icon <em>(emoji)</em></span>
-                  <input v-model="s.icon" type="text" class="wiz__input wiz__input--xs" placeholder="⚡" />
+                  <span class="wiz__label">Icon</span>
+                  <IconPickerInput v-model="s.icon" />
                 </label>
                 <label class="wiz__field wiz__field--full">
                   <span class="wiz__label">Short description</span>
-                  <input v-model="s.description" type="text" class="wiz__input" placeholder="One sentence describing this service." />
+                  <div class="wiz__input-ai">
+                    <input v-model="s.description" type="text" class="wiz__input" placeholder="One sentence describing this service." />
+                    <button type="button" class="wiz__ai-btn" :class="{ 'is-loading': aiLoading[`service-desc-${i}`] }" :disabled="!form.archetype || !form.brand || !s.name || aiLoading[`service-desc-${i}`]" @click="aiSuggest('service.description', t => s.description = t, { service: s.name, price: s.price })" title="AI suggest"><Sparkles :size="13" /><span>Suggest</span></button>
+                  </div>
                 </label>
               </div>
             </div>
@@ -1475,6 +1523,42 @@ const photoGuide = computed(() => {
 .wiz__label { font-size: 0.85rem; font-weight: 600; }
 .wiz__label em { font-style: normal; font-weight: 400; color: var(--ap-ink-muted); }
 .wiz__hint { font-size: 0.78rem; color: var(--ap-ink-muted); }
+
+/* ── AI suggest ──────────────────────────────────────────────────────────── */
+.wiz__input-ai {
+  display: flex; align-items: center; gap: 0.45rem;
+  width: 100%;
+}
+.wiz__input-ai .wiz__input { flex: 1; }
+.wiz__input-ai--textarea { align-items: flex-start; }
+.wiz__input-ai--textarea .wiz__input { resize: vertical; }
+.wiz__input-ai--textarea .wiz__ai-btn { margin-top: 0.15rem; }
+.wiz__ai-btn {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.35rem 0.7rem;
+  border: none; border-radius: 99px;
+  background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+  color: #fff;
+  font-size: 0.75rem; font-weight: 600; white-space: nowrap;
+  cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: filter 140ms, opacity 140ms;
+}
+.wiz__ai-btn:hover:not(:disabled) { filter: brightness(1.12); }
+.wiz__ai-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+@keyframes wiz-ai-spin { to { transform: rotate(360deg); } }
+.wiz__ai-btn.is-loading { pointer-events: none; }
+.wiz__ai-btn.is-loading > * { visibility: hidden; }
+.wiz__ai-btn.is-loading::after {
+  content: ''; position: absolute; inset: 0; margin: auto;
+  width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,0.5);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: wiz-ai-spin 0.7s linear infinite;
+}
 .wiz__input {
   background: var(--ap-surface);
   border: 1px solid var(--ap-line);
@@ -1589,7 +1673,7 @@ const photoGuide = computed(() => {
   color: var(--ap-ink);
 }
 
-/* ── Grouped swatches ────────────────────────────────────────────────────── */
+/* ── Grouped swatches ─────────────────────────────────────────────────────── */
 .wiz__swatch-groups { display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem; }
 .wiz__swatch-group-label {
   font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
@@ -1598,11 +1682,11 @@ const photoGuide = computed(() => {
 }
 .wiz__swatch-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 
-/* ── Step empty state ────────────────────────────────────────────────────── */
+/* ── Step empty state ─────────────────────────────────────────────────────── */
 .wiz__empty { display: flex; flex-direction: column; align-items: flex-start; gap: 1rem; padding: 2.5rem 0; }
 .wiz__empty-msg { color: var(--ap-ink-muted); margin: 0; max-width: 44ch; }
 
-/* ── Plan modifiers ──────────────────────────────────────────────────────── */
+/* ── Plan modifiers ───────────────────────────────────────────────────────── */
 .wiz__plans--sm { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .wiz__plan-unit { font-size: 0.75rem; font-weight: 400; color: var(--ap-ink-muted); }
 

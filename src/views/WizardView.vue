@@ -16,6 +16,8 @@ const showCancelled = ref(status === 'cancelled')
 type OrderStatus = { id: string; status: string; siteId?: string; failureReason?: string }
 const order = ref<OrderStatus | null>(null)
 const pollError = ref<string | null>(null)
+const retrying = ref(false)
+const retryMsg = ref<string | null>(null)
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 async function fetchOrder() {
@@ -27,6 +29,24 @@ async function fetchOrder() {
     }
   } catch (e) {
     pollError.value = e instanceof Error ? e.message : String(e)
+  }
+}
+
+async function retryProvisioning() {
+  if (!orderId) return
+  retrying.value = true
+  retryMsg.value = null
+  try {
+    await contentClient.retryOrder(orderId)
+    retryMsg.value = 'Retry queued — provisioning will restart shortly.'
+    // Resume polling to track the new attempt
+    order.value = { ...order.value!, status: 'queued' }
+    pollTimer = setInterval(fetchOrder, 4000)
+    void fetchOrder()
+  } catch (e) {
+    retryMsg.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    retrying.value = false
   }
 }
 
@@ -68,8 +88,13 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
         <p class="wiz-result__icon wiz-result__icon--err">✕</p>
         <h1>Provisioning failed</h1>
         <p v-if="order.failureReason" class="wiz-result__reason">{{ order.failureReason }}</p>
-        <p>We've been alerted. You can retry from your account or reply to the confirmation email.</p>
-        <a href="/wizard" class="ap-btn ap-btn--ghost">Back to wizard</a>
+        <p>Your payment was captured. You can retry provisioning below — it’s safe to do more than once.</p>
+        <button type="button" class="ap-btn" :disabled="retrying" @click="retryProvisioning">
+          {{ retrying ? 'Retrying…' : 'Retry provisioning' }}
+        </button>
+        <p v-if="retryMsg" class="wiz-result__sub">{{ retryMsg }}</p>
+        <a href="/admin" class="ap-btn ap-btn--ghost">Go to dashboard</a>
+        <a href="/wizard" class="ap-btn ap-btn--ghost">Start another</a>
       </template>
       <template v-else>
         <div class="wiz-result__spinner" />

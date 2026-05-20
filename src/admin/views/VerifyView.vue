@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAdminAuthStore } from '../../platform/adminAuthStore'
 import { contentClient } from '../../platform/contentClient'
 
@@ -28,14 +28,31 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="verify">
-    <p v-if="state === 'verifying'">Verifying…</p>
-    <p v-else-if="state === 'ok'">Signed in. Redirecting…</p>
-    <p v-else class="err">Sign-in failed: {{ message }}</p>
+  <section class="verify adm-page">
+    <div class="adm-card verify__card">
+      <template v-if="state === 'verifying'">
+        <span class="adm-eyebrow">One moment</span>
+        <h1 class="adm-title verify__title">Verifying your link…</h1>
+      </template>
+      <template v-else-if="state === 'ok'">
+        <span class="adm-eyebrow">Welcome back</span>
+        <h1 class="adm-title verify__title">Signed in</h1>
+        <p class="adm-subtitle">Redirecting to your dashboard…</p>
+      </template>
+      <template v-else>
+        <span class="adm-eyebrow">Trouble signing in</span>
+        <h1 class="adm-title verify__title">That link didn’t work</h1>
+        <p class="adm-msg-err verify__msg">{{ message }}</p>
+        <RouterLink to="/admin/login" class="adm-btn adm-btn--primary verify__btn">Back to sign in</RouterLink>
+      </template>
+    </div>
   </section>
 </template>
 
 <style scoped>
-.verify { text-align: center; padding: 4rem 1rem; }
-.err { color: #ff8080; }
+.verify { display: flex; align-items: flex-start; justify-content: center; padding-top: 4rem; }
+.verify__card { max-width: 440px; width: 100%; padding: 2rem 2.1rem; text-align: center; }
+.verify__title { margin-top: 0.4rem; }
+.verify__msg { margin-top: 0.6rem; }
+.verify__btn { margin-top: 1rem; display: inline-flex; }
 </style>

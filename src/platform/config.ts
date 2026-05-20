@@ -14,7 +14,7 @@
 export const PLATFORM_ENABLED = import.meta.env.VITE_PLATFORM_ENABLED === 'true'
 
 /** Backend base URL (no trailing slash). */
-export const PLATFORM_API = (import.meta.env.VITE_CONTENT_API || '').replace(/\/$/, '')
+export const PLATFORM_API = (import.meta.env.VITE_CONTENT_API || '').replace(/\/$/, '').replace(/\/v1$/, '')
 
 /** This site's slug in the backend. */
 export const PLATFORM_SLUG = import.meta.env.VITE_SITE_SLUG || ''

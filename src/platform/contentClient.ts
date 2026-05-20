@@ -1,21 +1,13 @@
 /**
  * Thin fetch wrapper around the archetype-service API.
- * Session is stored in localStorage and sent as an Authorization: Bearer header
- * so it works cross-domain (third-party cookies are blocked in modern browsers).
+ * Sends credentials (cookie session for admin endpoints); throws on non-2xx.
  */
 import { PLATFORM_API, PLATFORM_SLUG } from './config'
 
 const SESSION_KEY = 'archetype_session'
-
-export function getStoredToken(): string | null {
-  try { return localStorage.getItem(SESSION_KEY) } catch { return null }
-}
-export function storeSessionToken(t: string) {
-  try { localStorage.setItem(SESSION_KEY, t) } catch { /* SSR / private browsing */ }
-}
-export function clearSessionToken() {
-  try { localStorage.removeItem(SESSION_KEY) } catch { /* ignore */ }
-}
+export function getStoredToken(): string | null { try { return localStorage.getItem(SESSION_KEY) } catch { return null } }
+export function storeSessionToken(t: string) { try { localStorage.setItem(SESSION_KEY, t) } catch {} }
+export function clearSessionToken() { try { localStorage.removeItem(SESSION_KEY) } catch {} }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   if (!PLATFORM_API) throw new Error('VITE_CONTENT_API not configured')
@@ -25,7 +17,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   if (token) headers['Authorization'] = `Bearer ${token}`
   const res = await fetch(`${PLATFORM_API}${path}`, {
     method,
-    credentials: 'include', // still send cookie as fallback for same-domain setups
+    credentials: 'include',
     headers,
     body: body ? JSON.stringify(body) : undefined,
   })
@@ -65,32 +57,26 @@ export const contentClient = {
   requestMagicLink: (email: string, name?: string) =>
     request<{ ok: true }>('POST', `/auth/request-link`, { email, name }),
   verifyMagicToken: async (token: string) => {
-    const res = await request<{ ok: true; sessionToken: string; owner: { id: string; email: string; name?: string } }>(
-      'GET', `/auth/callback?token=${encodeURIComponent(token)}`,
-    )
-    storeSessionToken(res.sessionToken)
-    return res
+    const data = await request<{ ok: true; sessionToken: string; owner: { id: string; email: string; name?: string } }>('GET', `/auth/callback?token=${encodeURIComponent(token)}`)
+    if (data.sessionToken) storeSessionToken(data.sessionToken)
+    return data
   },
   passwordRegister: async (email: string, password: string, name?: string) => {
-    const res = await request<{ ok: true; sessionToken: string; owner: { id: string; email: string; name?: string } }>(
-      'POST', `/auth/register`, { email, password, name },
-    )
-    storeSessionToken(res.sessionToken)
-    return res
+    const data = await request<{ ok: true; sessionToken: string; owner: { id: string; email: string; name?: string } }>('POST', `/auth/register`, { email, password, name })
+    if (data.sessionToken) storeSessionToken(data.sessionToken)
+    return data
   },
   passwordLogin: async (email: string, password: string) => {
-    const res = await request<{ ok: true; sessionToken: string; owner: { id: string; email: string; name?: string } }>(
-      'POST', `/auth/login`, { email, password },
-    )
-    storeSessionToken(res.sessionToken)
-    return res
+    const data = await request<{ ok: true; sessionToken: string; owner: { id: string; email: string; name?: string } }>('POST', `/auth/login`, { email, password })
+    if (data.sessionToken) storeSessionToken(data.sessionToken)
+    return data
   },
   setPassword: (password: string) =>
     request<{ ok: true }>('POST', `/auth/set-password`, { password }),
   me: () => request<{ owner: { id: string; email: string; name?: string; hasPassword?: boolean } }>('GET', '/auth/me'),
   logout: async () => {
     clearSessionToken()
-    return request<{ ok: true }>('POST', '/auth/logout').catch(() => ({ ok: true as const }))
+    return request<{ ok: true }>('POST', '/auth/logout')
   },
 
   // --- Admin ---
@@ -124,8 +110,13 @@ export const contentClient = {
   retryOrder: (orderId: string) => request<{ ok: true }>('POST', `/admin/orders/${orderId}/retry`),
   getDeployLogs: (siteId: string) => request<Array<{ step: string; status: string; message?: string; durationMs?: number; createdAt: string }>>('GET', `/admin/sites/${siteId}/deploy-logs`),
   redeploySite: (siteId: string) => request<{ ok: boolean; deploymentId: string; url: string }>('POST', `/admin/sites/${siteId}/redeploy`),
+
+  /** Compare the site's recorded template commit against the latest commit on the template repo. */
   getUpdateStatus: (siteId: string) => request<{ current: string | null; latest: string | null; hasUpdate: boolean; neverChecked?: boolean }>('GET', `/admin/sites/${siteId}/update-status`),
-  updateSite: (siteId: string) => request<{ ok: boolean; jobId: string }>('POST', `/admin/sites/${siteId}/update`),
+  /** Queue a job that syncs template files into the customer's repo and triggers a redeploy. */
+  updateSite: (siteId: string) => request<{ ok: true; jobId: string | number }>('POST', `/admin/sites/${siteId}/update`),
+  /** URL of the cached screenshot PNG for a site. Pass fresh=true to force recapture. */
+  screenshotUrl: (siteId: string, fresh = false) => `${PLATFORM_API}/admin/sites/${siteId}/screenshot${fresh ? '?fresh=1' : ''}`,
 
   // --- Orders / checkout (public) ---
   createOrder: (payload: {
@@ -136,4 +127,19 @@ export const contentClient = {
     owner: { email: string; name?: string }
   }) => request<{ orderId: string; checkoutUrl: string | null; dryRun?: boolean }>('POST', '/orders', payload),
   getOrder: (id: string) => request<{ id: string; status: string; siteId?: string; failureReason?: string }>('GET', `/orders/${id}`),
+
+  // --- AI copy assistant (public — wizard uses this without auth) ---
+  aiSuggest: (payload: {
+    archetype: string
+    brand: string
+    field: string
+    context?: Record<string, string>
+  }) => {
+    if (!PLATFORM_API) return Promise.resolve({ text: '' })
+    return fetch(`${PLATFORM_API}/v1/ai/suggest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(r => r.ok ? r.json() as Promise<{ text: string }> : Promise.resolve({ text: '' }))
+  },
 }

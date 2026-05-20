@@ -8,7 +8,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { contentClient, clearSessionToken } from './contentClient'
 
-export interface AdminOwner { id: string; email: string; name?: string }
+export interface AdminOwner { id: string; email: string; name?: string; hasPassword?: boolean }
 
 export const useAdminAuthStore = defineStore('adminAuth', () => {
   const owner = ref<AdminOwner | null>(null)
