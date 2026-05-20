@@ -55,8 +55,15 @@ function initials(email?: string) {
   if (!email) return '·'
   const local = email.split('@')[0] || ''
   const parts = local.split(/[._-]/).filter(Boolean)
-  if (!parts.length) return email[0]?.toUpperCase() ?? '·'
-  return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase()
+
+  if (parts.length === 0) {
+    return local[0]?.toUpperCase() ?? '·'
+  }
+
+  const firstInitial = parts[0][0]?.toUpperCase() ?? ''
+  const secondInitial = parts[1]?.[0]?.toUpperCase() ?? ''
+
+  return (firstInitial + secondInitial) || '·'
 }
 </script>
 
