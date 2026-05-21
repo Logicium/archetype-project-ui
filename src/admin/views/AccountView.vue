@@ -3,9 +3,11 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminAuthStore } from '../../platform/adminAuthStore'
 import { contentClient } from '../../platform/contentClient'
+import { usePreferences } from '../../composables/usePreferences'
 
 const auth = useAdminAuthStore()
 const router = useRouter()
+const { state: prefs, setThemePickerVisibility } = usePreferences()
 
 const newPassword = ref('')
 const confirmPassword = ref('')
@@ -118,6 +120,46 @@ async function doLogout() {
           <p class="adm-card__sub">Sign out of this browser. Other devices stay signed in.</p>
           <button type="button" class="adm-btn adm-btn--danger" @click="doLogout">Sign out</button>
         </div>
+
+        <div class="adm-card">
+          <h3 class="adm-card__title">Theme picker</h3>
+          <p class="adm-card__sub">
+            The floating theme picker lets you tune your site's colors and styles.
+            By default it shows when you're signed in. You can override that here.
+          </p>
+          <div class="acct-radios">
+            <label class="acct-radio">
+              <input
+                type="radio"
+                name="theme-picker-visible"
+                value="auto"
+                :checked="prefs.themePickerVisible === 'auto'"
+                @change="setThemePickerVisibility('auto')"
+              />
+              <span><strong>Auto</strong> — show only when signed in (recommended)</span>
+            </label>
+            <label class="acct-radio">
+              <input
+                type="radio"
+                name="theme-picker-visible"
+                value="on"
+                :checked="prefs.themePickerVisible === 'on'"
+                @change="setThemePickerVisibility('on')"
+              />
+              <span><strong>Always show</strong></span>
+            </label>
+            <label class="acct-radio">
+              <input
+                type="radio"
+                name="theme-picker-visible"
+                value="off"
+                :checked="prefs.themePickerVisible === 'off'"
+                @change="setThemePickerVisibility('off')"
+              />
+              <span><strong>Always hide</strong></span>
+            </label>
+          </div>
+        </div>
       </div>
     </template>
   </section>
@@ -141,4 +183,7 @@ async function doLogout() {
 .acct-list dd { margin: 0; color: var(--adm-text); font-size: 0.9rem; word-break: break-all; }
 .acct-mono { font-family: var(--adm-font-mono); font-size: 0.78rem; }
 .acct-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.acct-radios { display: flex; flex-direction: column; gap: 0.5rem; }
+.acct-radio { display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-size: 0.88rem; }
+.acct-radio input { margin-top: 0.15rem; }
 </style>

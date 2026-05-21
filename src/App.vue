@@ -5,6 +5,7 @@ import { siteConfig } from './config/site.config'
 import { useSiteTheme } from './composables/useSiteTheme'
 import { useImagePreload } from './composables/useImagePreload'
 import { useApScrollbar } from './composables/useApScrollbar'
+import { usePreferences } from './composables/usePreferences'
 import AppHeader from './components/layout/AppHeader.vue'
 import AppFooter from './components/layout/AppFooter.vue'
 import AppLoader from './components/AppLoader.vue'
@@ -12,6 +13,7 @@ import ThemeSwitcher from './components/ThemeSwitcher.vue'
 
 const { init } = useSiteTheme()
 const { isReady, preloadCritical } = useImagePreload()
+const { themePickerVisible } = usePreferences()
 
 onMounted(async () => {
   init(siteConfig.theme, siteConfig.swatch, 'essentials', 'project')
@@ -22,7 +24,7 @@ onMounted(async () => {
   ])
 })
 
-const showSwitcher = true
+const showSwitcher = themePickerVisible
 
 const navLinks = [
   { to: '/', label: 'Overview' },

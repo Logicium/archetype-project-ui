@@ -128,11 +128,10 @@ async function loadScreenshot(siteId: string) {
   try {
     const url = contentClient.screenshotUrl(siteId)
     const token = getStoredToken()
-    // credentials: 'include' sends the archetype_session cookie cross-origin
-    // (Vercel → Render). Bearer header is the fallback when no cookie exists.
+    // Bearer-only auth (no cookies). The screenshot endpoint is JWT-guarded; the
+    // token is read from localStorage on whichever origin the user signed in at.
     const res = await fetch(url, {
       cache: 'no-store',
-      credentials: 'include',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
     if (!res.ok) { screenshotErr.value[siteId] = true; return }
@@ -153,7 +152,6 @@ async function refreshScreenshot(siteId: string) {
     const token = getStoredToken()
     const res = await fetch(url, {
       cache: 'no-store',
-      credentials: 'include',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
     if (!res.ok) { screenshotErr.value[siteId] = true; return }

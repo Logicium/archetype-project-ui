@@ -26,6 +26,7 @@ const navItems = [
   { to: '/admin/analytics', label: 'Analytics' },
   { to: '/admin/domain', label: 'Domain' },
   { to: '/admin/billing', label: 'Billing' },
+  { to: '/admin/deployments', label: 'Deployments' },
 ]
 
 // Don't gate the verify page — it handles its own session flow and must always render.
@@ -70,61 +71,65 @@ function initials(email?: string) {
 <template>
   <div class="admin-shell">
     <header class="admin-bar">
-      <RouterLink to="/admin" class="brand">
-        <span class="brand__mark">A</span>
-        <span class="brand__name">Apotome</span>
-        <span class="brand__divider">·</span>
-        <span class="brand__suffix">Admin</span>
-      </RouterLink>
+      <div class="admin-bar__top">
+        <RouterLink to="/admin" class="brand">
+          <span class="brand__mark">A</span>
+          <span class="brand__name">Apotome</span>
+          <span class="brand__divider">·</span>
+          <span class="brand__suffix">Admin</span>
+        </RouterLink>
 
-      <nav v-if="auth.owner" class="admin-nav" aria-label="Admin sections">
+        <div class="admin-bar__top-spacer" />
+
+        <div v-if="showSiteSwitcher" class="site-switcher" title="Active site">
+          <select
+            :value="activeSites.activeId"
+            @change="activeSites.setActive(($event.target as HTMLSelectElement).value)"
+          >
+            <option v-for="s in activeSites.sites" :key="s.id" :value="s.id">
+              {{ s.slug }} · {{ s.archetype }}
+            </option>
+          </select>
+        </div>
+
+        <div class="admin-user" ref="menuRef">
+          <template v-if="auth.owner">
+            <button
+              type="button"
+              class="user-pill"
+              :class="{ 'is-open': menuOpen }"
+              @click.stop="toggleMenu"
+              :aria-expanded="menuOpen"
+              aria-haspopup="menu"
+            >
+              <span class="user-pill__avatar">{{ initials(auth.owner.email) }}</span>
+              <span class="user-pill__email">{{ auth.owner.email }}</span>
+              <span class="user-pill__caret" aria-hidden="true">▾</span>
+            </button>
+            <div v-if="menuOpen" class="user-menu" role="menu" @click.stop>
+              <div class="user-menu__head">
+                <span class="user-menu__email">{{ auth.owner.email }}</span>
+                <span class="user-menu__name" v-if="auth.owner.name">{{ auth.owner.name }}</span>
+              </div>
+              <RouterLink to="/admin/account" class="user-menu__item" role="menuitem" @click="closeMenu">Account</RouterLink>
+              <RouterLink to="/admin/billing" class="user-menu__item" role="menuitem" @click="closeMenu">Billing</RouterLink>
+              <RouterLink to="/admin/domain" class="user-menu__item" role="menuitem" @click="closeMenu">Domain</RouterLink>
+              <div class="user-menu__divider" />
+              <button type="button" class="user-menu__item user-menu__item--danger" role="menuitem" @click="doLogout">Sign out</button>
+            </div>
+          </template>
+          <template v-else-if="route.name !== 'admin-login' && route.name !== 'admin-verify'">
+            <RouterLink to="/admin/login" class="adm-btn adm-btn--primary adm-btn--sm">Sign in</RouterLink>
+          </template>
+        </div>
+      </div>
+
+      <nav v-if="auth.owner" class="admin-nav admin-bar__bottom" aria-label="Admin sections">
         <RouterLink
           v-for="n in navItems" :key="n.to" :to="n.to"
           :exact-active-class="n.exact ? 'active' : ''" active-class="active"
         >{{ n.label }}</RouterLink>
       </nav>
-
-      <div v-if="showSiteSwitcher" class="site-switcher" title="Active site">
-        <select
-          :value="activeSites.activeId"
-          @change="activeSites.setActive(($event.target as HTMLSelectElement).value)"
-        >
-          <option v-for="s in activeSites.sites" :key="s.id" :value="s.id">
-            {{ s.slug }} · {{ s.archetype }}
-          </option>
-        </select>
-      </div>
-
-      <div class="admin-user" ref="menuRef">
-        <template v-if="auth.owner">
-          <button
-            type="button"
-            class="user-pill"
-            :class="{ 'is-open': menuOpen }"
-            @click.stop="toggleMenu"
-            :aria-expanded="menuOpen"
-            aria-haspopup="menu"
-          >
-            <span class="user-pill__avatar">{{ initials(auth.owner.email) }}</span>
-            <span class="user-pill__email">{{ auth.owner.email }}</span>
-            <span class="user-pill__caret" aria-hidden="true">▾</span>
-          </button>
-          <div v-if="menuOpen" class="user-menu" role="menu" @click.stop>
-            <div class="user-menu__head">
-              <span class="user-menu__email">{{ auth.owner.email }}</span>
-              <span class="user-menu__name" v-if="auth.owner.name">{{ auth.owner.name }}</span>
-            </div>
-            <RouterLink to="/admin/account" class="user-menu__item" role="menuitem" @click="closeMenu">Account</RouterLink>
-            <RouterLink to="/admin/billing" class="user-menu__item" role="menuitem" @click="closeMenu">Billing</RouterLink>
-            <RouterLink to="/admin/domain" class="user-menu__item" role="menuitem" @click="closeMenu">Domain</RouterLink>
-            <div class="user-menu__divider" />
-            <button type="button" class="user-menu__item user-menu__item--danger" role="menuitem" @click="doLogout">Sign out</button>
-          </div>
-        </template>
-        <template v-else-if="route.name !== 'admin-login' && route.name !== 'admin-verify'">
-          <RouterLink to="/admin/login" class="adm-btn adm-btn--primary adm-btn--sm">Sign in</RouterLink>
-        </template>
-      </div>
     </header>
 
     <main class="admin-main">
@@ -151,15 +156,34 @@ function initials(email?: string) {
   font-family: var(--adm-font-sans);
 }
 
-/* ── Top bar (compact) ─────────────────────────────────── */
+/* ── Top bar (two rows) ─────────────────────────────────
+   Row 1 (top): brand, site picker, user pill — same compact height as the
+   public site navbar so it visually replaces it. Always visible.
+   Row 2 (bottom): full dashboard nav, scrolls horizontally on small screens.
+   The whole admin shell overlays the public layout (router renders it as a
+   full route, the public AppHeader doesn't render under /admin). */
 .admin-bar {
-  display: flex; align-items: center; gap: 1.25rem;
-  padding: 0.5rem clamp(1rem, 4vw, 2.5rem);
+  display: flex; flex-direction: column;
   border-bottom: 1px solid var(--adm-border);
   background: color-mix(in srgb, var(--adm-bg) 78%, transparent);
   backdrop-filter: blur(12px);
-  position: sticky; top: var(--ap-header-h, 0px); z-index: 50;
+  position: sticky; top: 0; z-index: 50;
 }
+.admin-bar__top {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.5rem clamp(1rem, 4vw, 2.5rem);
+  min-height: 52px;
+}
+.admin-bar__top-spacer { flex: 1; }
+.admin-bar__bottom {
+  display: flex; gap: 0.15rem;
+  padding: 0.25rem clamp(1rem, 4vw, 2.5rem) 0.4rem;
+  border-top: 1px solid var(--adm-border-soft);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.admin-bar__bottom::-webkit-scrollbar { height: 4px; }
+.admin-bar__bottom::-webkit-scrollbar-thumb { background: var(--adm-border-strong); border-radius: 2px; }
 
 .brand {
   display: inline-flex; align-items: center; gap: 0.5rem;
@@ -179,14 +203,15 @@ function initials(email?: string) {
 .brand__divider { color: var(--adm-text-subtle); margin: 0 0.05rem; }
 .brand__suffix { color: var(--adm-text-muted); font-size: 0.85rem; }
 
-.admin-nav { display: flex; gap: 0.15rem; flex: 1; margin-left: 0.75rem; }
+.admin-nav { display: flex; gap: 0.15rem; }
 .admin-nav a {
   color: var(--adm-text-muted);
   text-decoration: none;
-  padding: 0.35rem 0.7rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 500;
+  white-space: nowrap;
   transition: background 140ms, color 140ms;
 }
 .admin-nav a:hover { color: var(--adm-text); background: var(--adm-surface); }
@@ -276,8 +301,8 @@ function initials(email?: string) {
 .admin-gate { padding-top: 2rem; }
 
 @media (max-width: 880px) {
-  .admin-bar { flex-wrap: wrap; padding: 0.5rem 0.85rem; }
-  .admin-nav { order: 3; flex-basis: 100%; overflow-x: auto; padding-bottom: 0.2rem; }
+  .admin-bar__top { padding: 0.5rem 0.85rem; gap: 0.5rem; }
+  .admin-bar__bottom { padding-left: 0.85rem; padding-right: 0.85rem; }
   .user-pill__email { display: none; }
 }
 </style>
