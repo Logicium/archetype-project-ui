@@ -128,10 +128,8 @@ async function loadScreenshot(siteId: string) {
   try {
     const url = contentClient.screenshotUrl(siteId)
     const token = getStoredToken()
-    // cache: 'no-store' bypasses the HTTP cache so a page refresh after a
-    // reprovision (new Vercel URL) actually gets the new screenshot.
-    // credentials:'include' sends the HttpOnly session cookie too — needed
-    // when the deployed origin has no bearer token in localStorage.
+    // credentials: 'include' sends the archetype_session cookie cross-origin
+    // (Vercel → Render). Bearer header is the fallback when no cookie exists.
     const res = await fetch(url, {
       cache: 'no-store',
       credentials: 'include',
@@ -139,7 +137,6 @@ async function loadScreenshot(siteId: string) {
     })
     if (!res.ok) { screenshotErr.value[siteId] = true; return }
     const blob = await res.blob()
-    // Revoke any previous blob URL to avoid memory leaks
     const prev = screenshotBlob.value[siteId]
     if (prev) URL.revokeObjectURL(prev)
     screenshotBlob.value[siteId] = URL.createObjectURL(blob)
