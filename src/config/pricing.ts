@@ -1,0 +1,115 @@
+/** Pricing for the Apotome Trinidad website program. Single source of truth. */
+export interface PriceItem {
+  id: string
+  name: string
+  price: number
+  unit?: string
+  blurb: string
+  /** Recommended bundle item is highlighted. */
+  featured?: boolean
+  category: 'website' | 'marketing' | 'addons'
+  includes?: string[]
+}
+
+export const PRICING: PriceItem[] = [
+  {
+    id: 'website',
+    name: 'Website (Essentials)',
+    price: 200,
+    blurb: 'A polished one-of-three template, configured for your business with up to 8 photos.',
+    category: 'website',
+    featured: true,
+    includes: [
+      'Choice of three design themes (Studio, Heritage, Vibrant)',
+      'Choice of eight color swatches',
+      'Hosted, fast, mobile-ready',
+      '6–8 of your photos placed and captioned',
+      'Hours, contact, and map embedded',
+    ],
+  },
+  {
+    id: 'website-extended',
+    name: 'Website (Portfolio)',
+    price: 250,
+    blurb: 'The extended template with a dedicated gallery and 12–16 photos.',
+    category: 'website',
+    includes: [
+      'Everything in Essentials',
+      'Dedicated gallery / lookbook page',
+      '12–16 of your photos placed and captioned',
+      'Extra section per page (menu, rooms, products)',
+    ],
+  },
+  {
+    id: 'tuneup',
+    name: 'Website tune-up',
+    price: 100,
+    unit: 'per visit',
+    blurb: 'Refresh your site after a season change, menu update, or new product line.',
+    category: 'website',
+    includes: ['Up to 3 hours of edits', 'Photo swap-outs', 'Copy refresh'],
+  },
+  {
+    id: 'photo',
+    name: 'Photo campaign',
+    price: 100,
+    blurb: 'A short photo session that delivers the 8 photos your Essentials site needs.',
+    category: 'marketing',
+    includes: ['On-location shoot', '8 web-ready edited photos', 'Named to match your site'],
+  },
+  {
+    id: 'photo-extended',
+    name: 'Photo campaign (Extended)',
+    price: 150,
+    blurb: 'A longer session that delivers the 16 photos your Portfolio site needs.',
+    category: 'marketing',
+    includes: ['Two-hour on-location shoot', '16 web-ready edited photos', 'Lifestyle + product + interior coverage'],
+  },
+  {
+    id: 'gmaps',
+    name: 'Google Business Profile',
+    price: 50,
+    blurb: 'We set up — or fix — your Google Maps profile so locals can find you.',
+    category: 'addons',
+    includes: ['Profile creation or claim', 'Hours, photos, links', 'Verification walkthrough'],
+  },
+  {
+    id: 'gsc',
+    name: 'Google Search Console',
+    price: 50,
+    blurb: 'We connect your site to Google so it gets indexed faster and you can see search traffic.',
+    category: 'addons',
+    includes: ['Property setup', 'Sitemap submission', 'A 1-page guide for reading your stats'],
+  },
+  {
+    id: 'instagram-gmaps',
+    name: 'Instagram + Google Reviews',
+    price: 50,
+    blurb: 'Embed your latest Instagram posts and live Google star ratings directly on your site — keeps content fresh automatically.',
+    category: 'addons',
+    includes: [
+      'Instagram feed widget (latest posts, auto-updated)',
+      'Google Maps star rating + review carousel',
+      'No manual updates needed',
+    ],
+  },
+]
+
+export const BUNDLES = [
+  {
+    id: 'starter',
+    name: 'Trinidad Starter',
+    price: 350,
+    items: ['Website (Essentials)', 'Photo campaign', 'Google Business Profile'],
+    saves: 0,
+    blurb: 'Everything a new business needs to be online and findable.',
+  },
+  {
+    id: 'pro',
+    name: 'Trinidad Portfolio',
+    price: 450,
+    items: ['Website (Portfolio)', 'Photo campaign (Extended)', 'Google Business Profile'],
+    saves: 0,
+    blurb: 'For established businesses ready to show their full story.',
+  },
+] as const
