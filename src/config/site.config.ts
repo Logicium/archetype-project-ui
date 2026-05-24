@@ -25,7 +25,9 @@ export interface ProjectSiteConfig {
   social: Array<{ label: string; href: string }>
 }
 
-export const siteConfig: ProjectSiteConfig = {
+import { reactive } from 'vue'
+
+export const siteConfig: ProjectSiteConfig = reactive(({
   brand: 'Apotome Archetypes',
   tagline: 'A website for every Trinidad business',
   mission:
@@ -114,4 +116,4 @@ export const siteConfig: ProjectSiteConfig = {
     { label: 'Instagram', href: 'https://instagram.com' },
     { label: 'GitHub', href: 'https://github.com' },
   ],
-}
+}))
