@@ -17,10 +17,10 @@ interface SocialLink { label: string; href: string }
 interface FactRow { label: string; value: string }
 interface Testimonial { quote: string; author: string; source?: string }
 // Archetype-specific item types
-interface RoomItem    { name: string; description: string; rate?: string; capacity?: string; photo?: string }
-interface ServiceItem { name: string; description: string; price?: string; duration?: string }
-interface ProductItem { name: string; description: string; price?: string; photo?: string; href?: string }
-interface PillarItem  { title: string; body: string }
+interface RoomItem    { name: string; description?: string; rate?: string; capacity?: string; photo?: string }
+interface ServiceItem { name: string; description?: string; price?: string; duration?: string }
+interface ProductItem { name: string; description?: string; price?: string; photo?: string; href?: string }
+interface PillarItem  { title: string; body?: string }
 
 interface SiteContent {
   brand: string; tagline: string; blurb: string; favicon?: string; theme: string; swatch: string; variant: string
@@ -201,11 +201,10 @@ async function save(publish = false) {
 }
 
 // ─── Image upload ─────────────────────────────────────────────────────────────
-// Canvas.toDataURL('image/webp', q) is always lossy; q=1.0 is max-quality lossy
-// and for photos typically produces files LARGER than the source JPEG, which
-// blows past the server's 8MB upload cap. 0.85 is visually indistinguishable
-// from the source for photos while reliably shrinking the payload.
-const WEBP_QUALITY = 0.85
+// Re-encode photos as lossless WebP before upload. Quality 1.0 keeps every
+// pixel of the source intact while still benefiting from WebP's better
+// compression vs. JPEG/PNG.
+const WEBP_QUALITY = 1.0
 
 function readAsDataUrl(file: Blob): Promise<string> {
   return new Promise((res, rej) => {
@@ -266,7 +265,7 @@ async function onBulkGalleryFiles(evt: Event) {
     const slot: PhotoSlot = { src: '', alt: '' }
     c.photos.gallery.push(slot)
     const idx = c.photos.gallery.length - 1
-    await uploadImage(slot, `g${idx}`, file)
+    await uploadImage(c.photos.gallery[idx], `g${idx}`, file)
   }
   input.value = ''
 }
@@ -595,7 +594,7 @@ watch(siteId, loadDraft)
               <button type="button" class="btn-remove btn-remove--icon" :title="'Remove paragraph'" @click="removeParagraph(i)">×</button>
             </div>
           </div>
-          <TextAreaField :modelValue="c.story.paragraphs[i] ?? ''" @update:modelValue="c.story.paragraphs[i] = $event" :rows="4" :maxlength="600" placeholder="Paragraph text…" />
+          <TextAreaField v-model="c.story.paragraphs[i]" :rows="4" :maxlength="600" placeholder="Paragraph text…" />
         </div>
         <button type="button" class="btn-add" @click="addParagraph">+ Add paragraph</button>
 
