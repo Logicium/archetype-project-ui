@@ -69,15 +69,19 @@ export const useSiteContentStore = defineStore('siteContent', () => {
   }
 
   async function loadGoogleReviews() {
-    if (!isPlatform.value || googleReviewsLoaded.value) return
+    if (!isPlatform.value) return
     try {
       const list = await contentClient.fetchReviews()
-      googleReviews.value = list.map(r => ({
-        quote: r.text,
-        author: r.author,
-        source: r.source || 'Google',
-        rating: r.rating,
-      }))
+      // Public site only shows reviews that actually have substance: at least
+      // four stars and a non-empty body. Anything else feels like clutter.
+      googleReviews.value = list
+        .filter(r => (r.rating ?? 0) >= 4 && !!r.text && r.text.trim().length > 0)
+        .map(r => ({
+          quote: r.text,
+          author: r.author,
+          source: r.source || 'Google',
+          rating: r.rating,
+        }))
       googleReviewsLoaded.value = true
     } catch { /* ignore — testimonials remain the fallback */ }
   }
@@ -89,12 +93,32 @@ export const useSiteContentStore = defineStore('siteContent', () => {
       const res = await contentClient.fetchContent()
       config.value = deepMerge(config.value, res.content)
       hydrated.value = true
+      applyFavicon()
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e)
       // swallow — fall back to build-time config
     } finally {
       hydrating.value = false
     }
+  }
+
+  /**
+   * Swap the document's `<link rel="icon">` if the published config defines a
+   * custom favicon URL. Runs after hydrate so visitors always see the owner's
+   * latest tab icon without needing a per-template touch.
+   */
+  function applyFavicon() {
+    if (typeof document === 'undefined') return
+    const cfg = config.value as { favicon?: string; brand?: { favicon?: string } } | null
+    const url = cfg?.favicon || cfg?.brand?.favicon
+    if (!url) return
+    let link = document.querySelector<HTMLLinkElement>('link[rel~="icon"]')
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'icon'
+      document.head.appendChild(link)
+    }
+    link.href = url
   }
 
   // Whenever the public site is configured for Google reviews, fetch them once.
