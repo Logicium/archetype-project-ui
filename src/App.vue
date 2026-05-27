@@ -11,7 +11,7 @@ import AppLoader from '@apotome/archetype-shared/components/AppLoader.vue'
 import ThemeSwitcher from '@apotome/archetype-shared/components/ThemeSwitcher.vue'
 
 const { init } = useSiteTheme()
-const { isReady, preloadCritical } = useImagePreload()
+const { isReady, progress, loaded, total, label, preloadCritical } = useImagePreload()
 onMounted(async () => {
   init(siteConfig.theme, siteConfig.swatch, 'essentials', 'project')
   useApScrollbar()
@@ -29,7 +29,7 @@ const navLinks = [
 </script>
 
 <template>
-  <AppLoader :brand="siteConfig.brand" :visible="!isReady" />
+  <AppLoader :brand="siteConfig.brand" :visible="!isReady" :progress="progress" :loaded="loaded" :total="total" :label="label" />
   <AppHeader
     :brand="siteConfig.brand"
     :tagline="siteConfig.tagline"

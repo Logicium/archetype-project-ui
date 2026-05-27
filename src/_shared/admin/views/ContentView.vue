@@ -201,10 +201,9 @@ async function save(publish = false) {
 }
 
 // ─── Image upload ─────────────────────────────────────────────────────────────
-// Re-encode photos as lossless WebP before upload. Quality 1.0 keeps every
-// pixel of the source intact while still benefiting from WebP's better
-// compression vs. JPEG/PNG.
-const WEBP_QUALITY = 1.0
+// Upload the original file as-is. Canvas-based WebP re-encoding routinely
+// produced larger files than the source (browsers can't beat the camera's
+// own encoder on already-compressed JPEGs), so we skip it.
 
 function readAsDataUrl(file: Blob): Promise<string> {
   return new Promise((res, rej) => {
@@ -215,31 +214,14 @@ function readAsDataUrl(file: Blob): Promise<string> {
   })
 }
 
-function loadImage(dataUrl: string): Promise<HTMLImageElement> {
-  return new Promise((res, rej) => {
-    const img = new Image()
-    img.onload = () => res(img)
-    img.onerror = rej
-    img.src = dataUrl
-  })
-}
-
-/** Re-encode the file as WebP at WEBP_QUALITY. SVGs/GIFs/already-WebP files
- *  are passed through untouched. Returns base64 + new contentType + filename. */
+/** Read the file's bytes into base64 and pass through its original mime / name. */
 async function prepareImage(file: File): Promise<{ base64: string; contentType: string; filename: string }> {
-  if (/^image\/(svg|gif|webp)/.test(file.type)) {
-    const dataUrl = await readAsDataUrl(file)
-    return { base64: dataUrl.split(',')[1] ?? '', contentType: file.type, filename: file.name }
+  const dataUrl = await readAsDataUrl(file)
+  return {
+    base64: dataUrl.split(',')[1] ?? '',
+    contentType: file.type || 'application/octet-stream',
+    filename: file.name,
   }
-  const img = await loadImage(await readAsDataUrl(file))
-  const canvas = document.createElement('canvas')
-  canvas.width = img.naturalWidth
-  canvas.height = img.naturalHeight
-  const ctx = canvas.getContext('2d')!
-  ctx.drawImage(img, 0, 0)
-  const dataUrl = canvas.toDataURL('image/webp', WEBP_QUALITY)
-  const baseName = file.name.replace(/\.[^.]+$/, '') || 'image'
-  return { base64: dataUrl.split(',')[1] ?? '', contentType: 'image/webp', filename: `${baseName}.webp` }
 }
 
 async function uploadImage(slot: PhotoSlot, key: string, file: File) {
