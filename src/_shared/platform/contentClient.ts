@@ -90,7 +90,7 @@ export const contentClient = {
   },
 
   // --- Admin ---
-  listSites: (opts: { includeDeactivated?: boolean } = {}) => request<Array<{ id: string; slug: string; displayName: string | null; archetype: string; status: string; productionUrl?: string; customDomain?: string; deactivatedAt?: string | null }>>('GET', `/admin/sites${opts.includeDeactivated ? '?includeDeactivated=1' : ''}`),
+  listSites: (opts: { includeDeactivated?: boolean } = {}) => request<Array<{ id: string; slug: string; displayName: string | null; archetype: string; status: string; productionUrl?: string; customDomain?: string; deactivatedAt?: string | null; screenshotUrl?: string | null; screenshotCapturedAt?: string | null }>>('GET', `/admin/sites${opts.includeDeactivated ? '?includeDeactivated=1' : ''}`),
   renameSite: (siteId: string, displayName: string) => request<{ id: string; displayName: string | null }>('PUT', `/admin/sites/${siteId}`, { displayName }),
   deactivateSite: (siteId: string) => request<{ id: string; deactivatedAt: string }>('POST', `/admin/sites/${siteId}/deactivate`),
   activateSite: (siteId: string) => request<{ id: string; deactivatedAt: string | null }>('POST', `/admin/sites/${siteId}/activate`),
@@ -180,6 +180,12 @@ export const contentClient = {
   resolveBilling: (siteId: string) => request<{ ok: true; orderId: string; orderStatus: string }>('POST', `/admin/sites/${siteId}/resolve-billing`),
   /** URL of the cached screenshot PNG for a site. Pass fresh=true to force recapture. */
   screenshotUrl: (siteId: string, fresh = false) => `${PLATFORM_API}/admin/sites/${siteId}/screenshot${fresh ? '?fresh=1' : ''}`,
+
+  /** Returns the persisted screenshot metadata `{ url, capturedAt, sourceUrl }` for a site. */
+  getScreenshot: (siteId: string) => request<{ url: string | null; capturedAt: string | null; sourceUrl: string | null }>('GET', `/admin/sites/${siteId}/screenshot`),
+
+  /** Triggers a fresh capture of the site's current production URL, persists the result, returns the new metadata. */
+  refreshScreenshot: (siteId: string) => request<{ url: string | null; capturedAt: string | null; sourceUrl: string | null; error?: string }>('POST', `/admin/sites/${siteId}/screenshot/refresh`),
 
   // --- Orders / checkout (public) ---
   createOrder: (payload: {

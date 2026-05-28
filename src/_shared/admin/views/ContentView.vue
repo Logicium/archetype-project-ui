@@ -947,8 +947,9 @@ textarea { resize: vertical; }
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
 
-/* List rows */
-.list-row { display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem; }
+/* List rows — align children to bottom so a row's delete button shares
+   its baseline with the inputs in the same row. */
+.list-row { display: flex; align-items: end; gap: 0.5rem; margin-bottom: 0.5rem; }
 .flex-1 { flex: 1; }
 .flex-2 { flex: 2; }
 .flex-3 { flex: 3; }

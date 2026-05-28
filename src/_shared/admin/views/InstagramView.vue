@@ -138,6 +138,7 @@ watch(siteId, loadConnect)
   position: relative;
   max-width: 580px; margin: 0 auto;
   display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start;
+  text-align: left;
 }
 .ig-soon__mark {
   width: 58px; height: 58px; border-radius: 14px;
@@ -153,7 +154,7 @@ watch(siteId, loadConnect)
   font-weight: 500; letter-spacing: -0.01em;
   margin: 0.2rem 0 0.3rem;
 }
-.ig-soon__body { color: var(--adm-text-muted); margin: 0 0 1.25rem; max-width: 52ch; }
+.ig-soon__body { color: var(--adm-text-muted); margin: 0 0 1.25rem; max-width: 52ch; text-align: left; }
 .ig-soon__list {
   display: flex; flex-direction: column; gap: 0.9rem;
   width: 100%; margin: 0.5rem 0 1.5rem;
