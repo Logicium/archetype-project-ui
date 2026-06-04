@@ -55,6 +55,12 @@ export const useSiteContentStore = defineStore('siteContent', () => {
   const ownedSiteId = ref<string | null>(null)
   let ownedSiteLookup: Promise<string | null> | null = null
 
+  /** Add-ons enabled on this site (e.g. 'appointments'). Populated by hydrate(). */
+  const addOns = ref<string[]>([])
+  function hasAddOn(name: string): boolean {
+    return addOns.value.includes(name)
+  }
+
   const isPlatform = computed(() => PLATFORM_ENABLED && !!PLATFORM_SITE_KEY)
 
   /** 'manual' (hand-written testimonials) or 'google' (live reviews). */
@@ -92,6 +98,7 @@ export const useSiteContentStore = defineStore('siteContent', () => {
     try {
       const res = await contentClient.fetchContent()
       config.value = deepMerge(config.value, res.content)
+      addOns.value = res.addOns ?? []
       hydrated.value = true
       applyFavicon()
     } catch (e) {
@@ -179,6 +186,7 @@ export const useSiteContentStore = defineStore('siteContent', () => {
     config, hydrated, hydrating, error, isPlatform,
     reviewsSource, googleReviews,
     ownedSiteId,
+    addOns, hasAddOn,
     hydrate, setBuildTimeConfig, loadGoogleReviews,
     resolveOwnedSiteId, saveThemePatch,
   }

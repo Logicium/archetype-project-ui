@@ -90,7 +90,7 @@ export interface ThemeTokens {
 
 export type SiteVariant = 'essentials' | 'portfolio'
 
-export type Archetype = 'dine' | 'stay' | 'shop' | 'project' | 'utility'
+export type Archetype = 'dine' | 'stay' | 'shop' | 'venue' | 'project' | 'utility'
 
 /** How many photos each variant expects in each gallery slot. */
 export const VARIANT_PHOTO_COUNT: Record<SiteVariant, { gallery: number; max: number }> = {

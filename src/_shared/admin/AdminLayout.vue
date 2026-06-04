@@ -30,10 +30,44 @@ const navItems = [
   { to: '/admin/deployments', label: 'Deployments' },
 ]
 
+const keystoneNavItems = [
+  ...navItems.slice(0, 9),
+  { to: '/admin/appointments', label: 'Appointments' },
+]
+
+const hearthNavItems = [
+  ...navItems.slice(0, 9),
+  { to: '/admin/lodging', label: 'Lodging' },
+]
+
+const vaultNavItems = [
+  ...navItems.slice(0, 9),
+  { to: '/admin/shop', label: 'Shop' },
+]
+
+const mesaNavItems = [
+  ...navItems.slice(0, 9),
+  { to: '/admin/ordering', label: 'Ordering' },
+]
+
+const marqueeNavItems = [
+  ...navItems.slice(0, 9),
+  { to: '/admin/ticketing', label: 'Ticketing' },
+]
+
+const visibleNavItems = computed(() => {
+  const arche = activeSites.sites.find(s => s.id === activeSites.activeId)?.archetype
+  if (arche === 'keystone') return keystoneNavItems
+  if (arche === 'hearth') return hearthNavItems
+  if (arche === 'vault') return vaultNavItems
+  if (arche === 'mesa') return mesaNavItems
+  if (arche === 'marquee') return marqueeNavItems
+  return navItems
+})
+
 // Don't gate the verify page — it handles its own session flow and must always render.
 const requiresLogin = computed(() => !auth.owner && !auth.loading && route.name !== 'admin-login' && route.name !== 'admin-verify')
-// The Sites tab itself is a multi-site overview, so don't show the dropdown there.
-const showSiteSwitcher = computed(() => !!auth.owner && route.path !== '/admin' && activeSites.sites.length > 0)
+const showSiteSwitcher = computed(() => !!auth.owner && activeSites.sites.length > 0)
 
 const activeSite = computed(() => activeSites.sites.find(s => s.id === activeSites.activeId) ?? null)
 function siteLabel(s: { slug: string; displayName?: string | null }) {
@@ -167,7 +201,7 @@ function initials(email?: string) {
       <nav v-if="auth.owner" class="admin-nav admin-bar__bottom" aria-label="Admin sections">
         <div class="admin-bar__inner admin-bar__inner--bottom">
           <RouterLink
-            v-for="n in navItems" :key="n.to" :to="n.to"
+            v-for="n in visibleNavItems" :key="n.to" :to="n.to"
             :exact-active-class="n.exact ? 'active' : ''" active-class="active"
           >{{ n.label }}</RouterLink>
         </div>

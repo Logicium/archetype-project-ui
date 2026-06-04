@@ -17,8 +17,10 @@ export default defineConfig({
       png: { quality: 80 },
     }),
   ],
-  // Read .env.local from the monorepo root so all templates share one file.
-  envDir: '..',
+  define: {
+    // Ensure VITE_SITE_SLUG is always available for this project
+    'import.meta.env.VITE_SITE_SLUG': JSON.stringify(process.env.VITE_SITE_SLUG || 'apotome-projects'),
+  },
   resolve: { alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@apotome/archetype-shared/': fileURLToPath(new URL('./src/_shared/', import.meta.url)),

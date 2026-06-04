@@ -247,7 +247,9 @@ async function onBulkGalleryFiles(evt: Event) {
     const slot: PhotoSlot = { src: '', alt: '' }
     c.photos.gallery.push(slot)
     const idx = c.photos.gallery.length - 1
-    await uploadImage(c.photos.gallery[idx], `g${idx}`, file)
+    // Use the slot we just pushed; indexing back through the array yields
+    // `PhotoSlot | undefined` under noUncheckedIndexedAccess.
+    await uploadImage(slot, `g${idx}`, file)
   }
   input.value = ''
 }

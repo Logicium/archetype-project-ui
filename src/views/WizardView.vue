@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import ContentWizardSection from '../components/sections/ContentWizardSection.vue'
+import BookingSection from '@apotome/archetype-shared/components/sections/BookingSection.vue'
 import { PLATFORM_ENABLED } from '@apotome/archetype-shared/platform/config'
 import { contentClient } from '@apotome/archetype-shared/platform/contentClient'
 
@@ -83,6 +84,13 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
         <p>Check your email — we sent a sign-in link so you can log in and manage your site.</p>
         <a href="/admin" class="ap-btn">Go to dashboard</a>
         <a href="/wizard" class="ap-btn ap-btn--ghost">Start another</a>
+        <div class="wiz-result__booking">
+          <BookingSection
+            eyebrow="While you're here"
+            title="Book a session with us"
+            intro="Get the most out of your new site — schedule a demo, a personal walkthrough, or a photo campaign to refresh your imagery."
+          />
+        </div>
       </template>
       <template v-else-if="order.status === 'failed'">
         <p class="wiz-result__icon wiz-result__icon--err">✕</p>
@@ -132,6 +140,12 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
   margin: 0;
 }
 .wiz-result__box p { color: var(--ap-ink-muted); margin: 0; }
+.wiz-result__booking {
+  margin-top: 2.5rem;
+  width: 100vw;
+  max-width: 1200px;
+  text-align: left;
+}
 .wiz-result__icon {
   font-size: 3rem;
   line-height: 1;
