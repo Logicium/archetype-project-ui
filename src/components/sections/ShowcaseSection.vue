@@ -17,7 +17,7 @@ defineProps<{
     <div class="ap-container">
       <div class="ap-section-head">
         <span v-if="eyebrow" class="ap-eyebrow">{{ eyebrow }}</span>
-        <h2>{{ title || 'The three archetypes' }}</h2>
+        <h2>{{ title || 'The five archetypes' }}</h2>
         <p v-if="intro" style="color: var(--ap-ink-muted)">{{ intro }}</p>
       </div>
 

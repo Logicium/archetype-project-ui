@@ -20,7 +20,7 @@ import FAQSection from '../components/sections/FAQSection.vue'
   <PillarsSection eyebrow="The plan" title="Built for Trinidad" :pillars="siteConfig.pillars" />
   <ShowcaseSection
     eyebrow="The work"
-    title="Three templates, every business covered"
+    title="Five templates, every business covered"
     :sites="siteConfig.showcase"
   />
   <div id="pricing">

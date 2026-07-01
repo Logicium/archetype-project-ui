@@ -3,13 +3,17 @@ import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useSiteTheme } from '../../composables/useSiteTheme'
 
-defineProps<{
+withDefaults(defineProps<{
   brand: string
   tagline?: string
+  /** App icon shown left of the brand name. Each app serves its own at /icon.svg. */
+  icon?: string
   links: Array<{ to: string; label: string }>
   ctaLabel?: string
   ctaTo?: string
-}>()
+}>(), {
+  icon: '/icon.svg',
+})
 
 const route = useRoute()
 const { heroStyle, subheroStyle } = useSiteTheme()
@@ -80,8 +84,11 @@ onUnmounted(() => {
   >
     <div class="ap-container ap-header__row">
       <RouterLink to="/" class="ap-header__brand" @click="open = false">
-        <span class="ap-header__brand-name">{{ brand }}</span>
-        <span v-if="tagline" class="ap-header__brand-tag">{{ tagline }}</span>
+        <img v-if="icon" :src="icon" alt="" aria-hidden="true" class="ap-header__brand-icon" width="36" height="36" />
+        <span class="ap-header__brand-text">
+          <span class="ap-header__brand-name">{{ brand }}</span>
+          <span v-if="tagline" class="ap-header__brand-tag">{{ tagline }}</span>
+        </span>
       </RouterLink>
 
       <button
@@ -144,8 +151,14 @@ onUnmounted(() => {
   padding-top: 1rem; padding-bottom: 1rem; gap: 1.5rem;
 }
 .ap-header__brand {
-  display: flex; flex-direction: column; line-height: 1;
+  display: flex; flex-direction: row; align-items: center; gap: 0.7rem;
   color: var(--ap-ink); border-bottom: none;
+}
+.ap-header__brand-icon {
+  width: 36px; height: 36px; display: block; flex: none;
+}
+.ap-header__brand-text {
+  display: flex; flex-direction: column; line-height: 1;
 }
 .ap-header__brand-name {
   font-family: var(--ap-font-heading);

@@ -189,7 +189,7 @@ export const contentClient = {
 
   // --- Orders / checkout (public) ---
   createOrder: (payload: {
-    archetype: 'mesa' | 'hearth' | 'vault' | 'keystone' | 'keystone'
+    archetype: 'mesa' | 'hearth' | 'vault' | 'keystone' | 'marquee'
     plan: string
     addOns: string[]
     wizardPayload: Record<string, unknown>
@@ -400,7 +400,7 @@ export const contentClient = {
       'PUT', `/admin/sites/${siteId}/ordering-config`, { config },
     ),
 
-  // --- Ticketing (Marquee Ticket Sales add-on) ---
+  // --- Ticketing (Marquee Events add-on) — public ---
   ticketingListEvents: (siteSlug: string) =>
     request<EventDTO[]>('GET', `/ticketing/events?siteSlug=${encodeURIComponent(siteSlug)}`),
   ticketingGetEvent: (siteSlug: string, eventId: string) =>
@@ -415,6 +415,10 @@ export const contentClient = {
   }) => request<TicketOrderDTO>('POST', '/ticketing/purchase', payload),
   ticketingGetOrder: (orderId: string) =>
     request<TicketOrderDTO>('GET', `/ticketing/orders/${orderId}`),
+  ticketingCancelByToken: (ticketId: string, token: string) =>
+    request<TicketDTO>('GET', `/ticketing/tickets/${ticketId}/cancel?token=${encodeURIComponent(token)}`),
+
+  // --- Admin: Ticketing (Marquee Events add-on) ---
   ticketingListSiteEvents: (siteId: string) =>
     request<EventDTO[]>('GET', `/admin/sites/${siteId}/events`),
   ticketingCreateEvent: (siteId: string, input: EventInput) =>
@@ -617,18 +621,23 @@ export interface OrderingConfigDTO {
   notifyEmail?: string
 }
 
+// --- Ticketing (Marquee Events add-on) ---
+
+export type EventStatusDTO = 'draft' | 'on_sale' | 'sold_out' | 'cancelled' | 'past'
+
 export interface TicketTierDTO {
   id: string
   label: string
   description?: string
   priceCents: number
+  /** -1 = unlimited. */
   capacity: number
   active?: boolean
+  /** Present on server reads (admin + public event). */
   sold?: number
+  /** -1 = unlimited. Present on server reads. */
   remaining?: number
 }
-
-export type EventStatusDTO = 'draft' | 'on_sale' | 'sold_out' | 'cancelled' | 'past'
 
 export interface EventDTO {
   id: string
@@ -638,6 +647,7 @@ export interface EventDTO {
   endsAt?: string
   venue?: string
   imageUrl?: string
+  /** -1 = unlimited. */
   capacity: number
   currency: string
   status: EventStatusDTO
@@ -669,8 +679,8 @@ export interface TicketDTO {
   name: string
   email: string
   phone?: string
-  status: 'confirmed' | 'cancelled' | 'checked_in'
-  cancelToken: string
+  status: 'confirmed' | 'checked_in' | 'cancelled'
+  cancelToken?: string
   createdAt: string
 }
 

@@ -1,9 +1,9 @@
 import type { ThemeName, SwatchName } from '@apotome/archetype-shared/themes/tokens'
 
 export interface ShowcaseSite {
-  id: 'mesa' | 'hearth' | 'vault' | 'keystone'
+  id: 'mesa' | 'hearth' | 'vault' | 'keystone' | 'marquee'
   name: string
-  archetype: 'Dine' | 'Stay' | 'Shop' | 'Utility'
+  archetype: 'Dine' | 'Stay' | 'Shop' | 'Utility' | 'Venue'
   blurb: string
   image: string
   themes: ThemeName[]
@@ -43,21 +43,21 @@ export const siteConfig: ProjectSiteConfig = reactive(({
     eyebrow: 'The Trinidad campaign',
     title: 'A website for every business in town.',
     subtitle:
-      'Three robust templates — Mesa for restaurants, Hearth for hotels, Vault for shops — each with three design themes and eight color swatches. $200 to launch.',
+      'Five templates — Mesa for restaurants, Hearth for stays, Vault for shops, Keystone for trades, and Marquee for venues — each with four design themes and twenty color swatches. $200 to launch.',
     image: '/showcase/hero.jpg',
   },
   pillars: [
     {
-      title: 'Three archetypes',
-      body: 'Mesa (Dine), Hearth (Stay), Vault (Shop). Each archetype is purpose-built for the way that kind of business works — menus, rooms, products.',
+      title: 'Five archetypes',
+      body: 'Mesa (Dine), Hearth (Stay), Vault (Shop), Keystone (Utility), and Marquee (Venue). Each archetype is purpose-built for the way that kind of business works — menus, rooms, products, dispatch, or an events calendar.',
     },
     {
-      title: 'Three design themes',
-      body: 'The Studio (modern minimal), The Heritage (classic editorial), The Vibrant (bold and local). Switch instantly to match your brand.',
+      title: 'Four design themes',
+      body: 'The Studio (modern minimal), The Heritage (classic editorial), The Vibrant (bold and local), and The Ironwood (industrial utility). Switch instantly to match your brand.',
     },
     {
-      title: 'Eight color swatches',
-      body: 'Pick from a curated palette — sand, forest, sunset, midnight, rose, stone, sage, fiesta — or let us tailor one to your brand.',
+      title: 'Twenty color swatches',
+      body: 'A curated palette from soft neutrals to bold neon — sand, forest, sage, sunset, midnight, ember, and more — or let us tailor one to your brand.',
     },
     {
       title: 'Two sizes',
@@ -100,10 +100,20 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       name: 'Keystone',
       archetype: 'Utility',
       blurb: 'For auto shops, contractors, welders, and mills. Services, capabilities, dispatch line, work gallery.',
-      image: '/showcase/vault.jpg',
-      themes: ['ironwood', 'studio', 'heritage', 'vibrant'],
+      image: '/showcase/keystone.jpg',
+      themes: ['ironwood', 'studio', 'heritage'],
       swatches: ['stone', 'midnight', 'forest'],
       liveUrl: 'https://archetype-keystone-ui.vercel.app',
+    },
+    {
+      id: 'marquee',
+      name: 'Marquee',
+      archetype: 'Venue',
+      blurb: 'For venues, galleries, theaters, and festivals. Events calendar, ticketing, performers, and recurring series.',
+      image: '/showcase/marquee.jpg',
+      themes: ['heritage', 'vibrant', 'studio'],
+      swatches: ['ember', 'midnight', 'sunset'],
+      liveUrl: 'https://archetype-marquee-ui.vercel.app',
     },
   ],
   faq: [

@@ -21,7 +21,7 @@ const WYG = [
   { icon: Zap, label: 'Fast & cloud-hosted', desc: 'Sub-3s load on Vercel\'s global CDN — no server to manage.' },
   { icon: MapPin, label: 'Google Maps embedded', desc: 'Customers find your address and get directions in one tap.' },
   { icon: Mail, label: 'Contact form ready', desc: 'Inquiries go straight to your inbox the moment they\'re sent.' },
-  { icon: Palette, label: '3 themes · 8 color swatches', desc: 'Pick the exact look that fits your brand.' },
+  { icon: Palette, label: '4 themes · 20 color swatches', desc: 'Pick the exact look that fits your brand.' },
   { icon: Wrench, label: 'Easy updates', desc: 'Tune-up service available any time your site needs a refresh.' },
 ]
 </script>
