@@ -2,18 +2,15 @@
 import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useSiteTheme } from '../../composables/useSiteTheme'
+import BrandMark from '../BrandMark.vue'
 
-withDefaults(defineProps<{
+defineProps<{
   brand: string
   tagline?: string
-  /** App icon shown left of the brand name. Each app serves its own at /icon.svg. */
-  icon?: string
   links: Array<{ to: string; label: string }>
   ctaLabel?: string
   ctaTo?: string
-}>(), {
-  icon: '/icon.svg',
-})
+}>()
 
 const route = useRoute()
 const { heroStyle, subheroStyle } = useSiteTheme()
@@ -84,7 +81,7 @@ onUnmounted(() => {
   >
     <div class="ap-container ap-header__row">
       <RouterLink to="/" class="ap-header__brand" @click="open = false">
-        <img v-if="icon" :src="icon" alt="" aria-hidden="true" class="ap-header__brand-icon" width="36" height="36" />
+        <BrandMark class="ap-header__brand-icon" :size="36" />
         <span class="ap-header__brand-text">
           <span class="ap-header__brand-name">{{ brand }}</span>
           <span v-if="tagline" class="ap-header__brand-tag">{{ tagline }}</span>
