@@ -43,7 +43,7 @@ export const siteConfig: ProjectSiteConfig = reactive(({
     eyebrow: 'The Trinidad campaign',
     title: 'A website for every business in town.',
     subtitle:
-      'Five templates — Mesa for restaurants, Hearth for stays, Vault for shops, Keystone for trades, and Marquee for venues — each with four design themes and twenty color swatches. $200 to launch.',
+      'Five templates — Mesa for restaurants, Hearth for stays, Vault for shops, Keystone for trades, and Marquee for venues — each with four design themes and a research-backed color system. $200 to launch.',
     image: '/showcase/hero.jpg',
   },
   pillars: [
@@ -56,8 +56,8 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       body: 'The Studio (modern minimal), The Heritage (classic editorial), The Vibrant (bold and local), and The Ironwood (industrial utility). Switch instantly to match your brand.',
     },
     {
-      title: 'Twenty color swatches',
-      body: 'A curated palette from soft neutrals to bold neon — sand, forest, sage, sunset, midnight, ember, and more — or let us tailor one to your brand.',
+      title: 'A color system, not a color list',
+      body: 'Twenty-three palettes organized by color theory — earthen, serene, warm, bold, dark, and neon — each tuned for a documented psychological effect. Or build and save your own in the Color Lab.',
     },
     {
       title: 'Two sizes',

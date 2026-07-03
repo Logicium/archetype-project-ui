@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { contentClient, type ShopProductDTO, type ShippingAddressDTO } from '../../platform/contentClient'
-import { PLATFORM_SLUG } from '../../platform/config'
+import { apiClient } from '../../platform/apiClient'
+import { PLATFORM_SLUG, DEMO_MODE } from '../../platform/config'
+import DemoBadge from '../DemoBadge.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -13,7 +15,7 @@ const props = withDefaults(
   { eyebrow: 'Shop', title: 'In the shop' },
 )
 
-const slug = computed(() => props.siteSlug || PLATFORM_SLUG)
+const slug = computed(() => props.siteSlug || PLATFORM_SLUG || (DEMO_MODE ? 'demo' : ''))
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -53,7 +55,7 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    const data = await contentClient.shopListProducts(slug.value)
+    const data = await apiClient.shopListProducts(slug.value)
     products.value = data.products
     currency.value = data.currency
     fulfillmentOptions.value = data.fulfillment
@@ -94,7 +96,7 @@ async function checkout() {
   submitting.value = true
   submitError.value = null
   try {
-    const res = await contentClient.shopCreateOrder({
+    const payload = {
       siteSlug: slug.value,
       name: form.name.trim(),
       email: form.email.trim(),
@@ -103,8 +105,23 @@ async function checkout() {
       fulfillment: form.fulfillment,
       shippingAddress: form.fulfillment === 'shipping' ? { ...form.shipping } : undefined,
       items: cart.value.map(l => ({ productId: l.productId, quantity: l.quantity })),
-    })
-    confirmed.value = { id: res.id, totalCents: res.totalCents, currency: res.currency }
+    }
+
+    // Live sites route through Stripe Checkout (destination charge to the
+    // owner). Demo mode has no backend session, so it places the order
+    // directly and shows the simulated confirmation.
+    if (!DEMO_MODE) {
+      const res = await contentClient.shopCheckout(payload)
+      if (res.checkoutUrl) {
+        window.location.href = res.checkoutUrl
+        return
+      }
+      // Owner not payment-onboarded yet — order is placed, no charge.
+      confirmed.value = { id: res.order.id, totalCents: res.order.totalCents, currency: res.order.currency }
+    } else {
+      const res = await apiClient.shopCreateOrder(payload)
+      confirmed.value = { id: res.id, totalCents: res.totalCents, currency: res.currency }
+    }
     cart.value = []
     cartOpen.value = false
     await load()
@@ -123,12 +140,31 @@ function reset() {
   form.notes = ''
 }
 
-onMounted(load)
+/** After returning from Stripe Checkout, verify payment and show confirmation. */
+async function handleCheckoutReturn() {
+  if (DEMO_MODE) return
+  const params = new URLSearchParams(window.location.search)
+  const orderId = params.get('order')
+  const status = params.get('status')
+  if (!orderId || status !== 'success') return
+  try {
+    const order = await contentClient.shopConfirmOrder(orderId)
+    confirmed.value = { id: order.id, totalCents: order.totalCents, currency: order.currency }
+  } catch { /* leave the storefront as-is if confirmation fails */ }
+  // Strip the query so a refresh doesn't re-confirm.
+  window.history.replaceState({}, '', window.location.pathname)
+}
+
+onMounted(async () => {
+  await load()
+  await handleCheckoutReturn()
+})
 </script>
 
 <template>
   <section class="ap-section ap-shop" :aria-label="title">
     <div class="ap-container">
+      <DemoBadge add-on="E-Shop" />
       <header class="ap-section-head">
         <span v-if="eyebrow" class="ap-eyebrow">{{ eyebrow }}</span>
         <h2>{{ title }}</h2>

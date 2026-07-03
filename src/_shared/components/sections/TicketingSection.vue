@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { contentClient } from '../../platform/contentClient'
+import { apiClient } from '../../platform/apiClient'
 import type { EventDTO, TicketOrderDTO, TicketTierDTO } from '../../platform/contentClient'
-import { PLATFORM_SLUG } from '../../platform/config'
+import { PLATFORM_SLUG, DEMO_MODE } from '../../platform/config'
+import DemoBadge from '../DemoBadge.vue'
 
 const props = withDefaults(
   defineProps<{ siteSlug?: string }>(),
   {},
 )
-const slug = computed(() => props.siteSlug || PLATFORM_SLUG)
+const slug = computed(() => props.siteSlug || PLATFORM_SLUG || (DEMO_MODE ? 'demo' : ''))
 
 const events = ref<EventDTO[]>([])
 const loading = ref(false)
@@ -25,7 +26,7 @@ async function load() {
   loading.value = true
   loadError.value = null
   try {
-    events.value = await contentClient.ticketingListEvents(slug.value)
+    events.value = await apiClient.ticketingListEvents(slug.value)
   } catch (e) {
     loadError.value = (e as Error).message
   } finally {
@@ -90,7 +91,7 @@ async function submit() {
   submitting.value = true
   submitError.value = null
   try {
-    order.value = await contentClient.ticketingPurchase({
+    order.value = await apiClient.ticketingPurchase({
       siteSlug: slug.value,
       eventId: selectedEvent.value.id,
       name: buyer.name,
@@ -116,6 +117,7 @@ function startOver() {
 
 <template>
   <section class="ap-ticketing ap-container">
+    <DemoBadge add-on="Event ticketing" />
     <p v-if="loading" class="ap-ticketing__status">Loading events…</p>
     <p v-else-if="loadError" class="ap-ticketing__status ap-ticketing__status--error">{{ loadError }}</p>
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { siteConfig } from '../config/site.config'
 import HeroSection from '@apotome/archetype-shared/components/sections/HeroSection.vue'
-import ContactSection from '../components/sections/ContactSection.vue'
+import ContactSection from '@apotome/archetype-shared/components/sections/ContactSection.vue'
 import BookingSection from '@apotome/archetype-shared/components/sections/BookingSection.vue'
 </script>
 

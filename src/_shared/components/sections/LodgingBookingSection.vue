@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { contentClient } from '../../platform/contentClient'
-import { PLATFORM_SLUG } from '../../platform/config'
+import type { contentClient } from '../../platform/contentClient'
+import { apiClient } from '../../platform/apiClient'
+import { PLATFORM_SLUG, DEMO_MODE } from '../../platform/config'
+import DemoBadge from '../DemoBadge.vue'
 
 type RoomAvailability = Awaited<ReturnType<typeof contentClient.lodgingAvailability>>['rooms'][number]
 
@@ -15,7 +17,7 @@ const props = withDefaults(
   { eyebrow: 'Reserve', title: 'Book your stay' },
 )
 
-const slug = computed(() => props.siteSlug || PLATFORM_SLUG)
+const slug = computed(() => props.siteSlug || PLATFORM_SLUG || (DEMO_MODE ? 'demo' : ''))
 
 function todayPlus(days: number): string {
   const d = new Date()
@@ -67,7 +69,7 @@ async function search() {
   error.value = null
   selected.value = null
   try {
-    result.value = await contentClient.lodgingAvailability(
+    result.value = await apiClient.lodgingAvailability(
       slug.value, checkIn.value, checkOut.value, partySize.value,
     )
   } catch (e) {
@@ -83,7 +85,7 @@ async function submit() {
   submitting.value = true
   submitError.value = null
   try {
-    const res = await contentClient.createReservation({
+    const res = await apiClient.createReservation({
       siteSlug: slug.value,
       roomId: selected.value.id,
       checkIn: result.value.checkIn,
@@ -124,6 +126,7 @@ watch([checkIn, checkOut, partySize], () => { selected.value = null })
 <template>
   <section class="ap-section ap-lodging" :aria-label="title">
     <div class="ap-container">
+      <DemoBadge add-on="Room reservations" />
       <header class="ap-section-head">
         <span v-if="eyebrow" class="ap-eyebrow">{{ eyebrow }}</span>
         <h2>{{ title }}</h2>

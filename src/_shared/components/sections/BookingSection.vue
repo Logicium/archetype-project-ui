@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { contentClient, type BookingServiceDTO } from '../../platform/contentClient'
-import { PLATFORM_SLUG } from '../../platform/config'
+import { type BookingServiceDTO } from '../../platform/contentClient'
+import { apiClient } from '../../platform/apiClient'
+import { PLATFORM_SLUG, DEMO_MODE } from '../../platform/config'
+import DemoBadge from '../DemoBadge.vue'
 
 type PlatformBookingType = 'demo' | 'walkthrough' | 'photo-campaign'
 
@@ -37,7 +39,7 @@ const PLATFORM_DESC: Record<PlatformBookingType, string> = {
   'photo-campaign': 'On-site shoot to refresh your imagery.',
 }
 
-const slug = computed(() => props.siteSlug || PLATFORM_SLUG)
+const slug = computed(() => props.siteSlug || PLATFORM_SLUG || (DEMO_MODE ? 'demo' : ''))
 
 // Wizard state
 const type = ref<string>(props.defaultType || 'demo')
@@ -144,7 +146,7 @@ async function loadAvailability() {
   loadingSlots.value = true
   loadError.value = null
   try {
-    const res = await contentClient.bookingAvailability(slug.value, type.value)
+    const res = await apiClient.bookingAvailability(slug.value, type.value)
     slots.value = res.slots
     durationMinutes.value = res.durationMinutes
     timezone.value = res.timezone
@@ -172,7 +174,7 @@ async function submit() {
   submitError.value = null
   submitting.value = true
   try {
-    const res = await contentClient.createBooking({
+    const res = await apiClient.createBooking({
       siteSlug: slug.value,
       type: type.value,
       name: form.value.name.trim(),
@@ -212,6 +214,7 @@ onMounted(() => { loadAvailability() })
 <template>
   <section class="ap-section ap-booking" :aria-label="title">
     <div class="ap-container">
+      <DemoBadge add-on="Appointments" note="Everything below is fully interactive — bookings are simulated and no calendar invite is sent." />
       <header class="ap-section-head">
         <span v-if="eyebrow" class="ap-eyebrow">{{ eyebrow }}</span>
         <h2>{{ title }}</h2>

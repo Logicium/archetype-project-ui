@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { UtensilsCrossed, BedDouble, ShoppingBag, Wrench, Sparkles } from 'lucide-vue-next'
+import { UtensilsCrossed, BedDouble, ShoppingBag, Wrench, Sparkles, Rocket } from 'lucide-vue-next'
 import IconPickerInput from '../IconPickerInput.vue'
-import { SWATCHES } from '@apotome/archetype-shared/themes/swatches'
+import HeroSection from '@apotome/archetype-shared/components/sections/HeroSection.vue'
+import { SWATCHES, SWATCH_LIST } from '@apotome/archetype-shared/themes/swatches'
+import { SWATCH_THEORIES } from '@apotome/archetype-shared/themes/tokens'
 
 // ─── Color preview helpers ────────────────────────────────────────────────────
 function swatchOf(name: string) {
@@ -50,14 +52,14 @@ interface WizardForm {
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'ap-site-wizard-v1'
 const THEME_OPTS = ['studio', 'heritage', 'vibrant', 'ironwood'] as const
-const SWATCH_GROUPS = [
-  { label: 'Earth',  swatches: ['sand', 'stone', 'sage', 'forest', 'citrus'] },
-  { label: 'Warm',   swatches: ['sunset', 'rose', 'fiesta', 'mango'] },
-  { label: 'Bold',   swatches: ['electric', 'punch', 'carnival'] },
-  { label: 'Dark',   swatches: ['midnight', 'obsidian', 'ember', 'plum'] },
-  { label: 'Neon',   swatches: ['neon', 'aurora', 'acid', 'synthwave'] },
-]
-const VARIANT_OPTS = ['essentials', 'portfolio'] as const
+// Swatch groups mirror the shared color theories — one source of truth for
+// grouping, psychology copy, and membership across the switcher + wizard.
+const SWATCH_GROUPS = SWATCH_THEORIES.map(t => ({
+  label: t.label,
+  psychology: t.psychology,
+  swatches: SWATCH_LIST.filter(s => s.group === t.id).map(s => s.name),
+}))
+const VARIANT_OPTS = ['essentials', 'portfolio', 'extended'] as const
 const STEPS = [
   { id: 'archetype',    label: 'Archetype' },
   { id: 'brand',        label: 'Brand' },
@@ -68,7 +70,7 @@ const STEPS = [
   { id: 'content',      label: 'Content' },
   { id: 'testimonials', label: 'Testimonials' },
   { id: 'social',       label: 'Social' },
-  { id: 'export',       label: 'Export' },
+  { id: 'launch',       label: 'Launch' },
 ]
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -464,8 +466,11 @@ const CHECKOUT_WEBSITE_ITEMS = PRICING.filter(p => p.category === 'website')
 const CHECKOUT_MARKETING = PRICING.filter(p => p.category === 'marketing')
 const CHECKOUT_ADDONS = PRICING.filter(p => p.category === 'addons')
 
-const plan = ref<string>(form.variant === 'portfolio' ? 'pro' : 'starter')
-watch(() => form.variant, v => { plan.value = v === 'portfolio' ? 'pro' : 'starter' })
+function planForVariant(v: string): string {
+  return v === 'extended' ? 'premium' : v === 'portfolio' ? 'pro' : 'starter'
+}
+const plan = ref<string>(planForVariant(form.variant))
+watch(() => form.variant, v => { plan.value = planForVariant(v) })
 const addOns = ref<string[]>([])
 const owner = reactive({ email: '', name: '' })
 const checkoutBusy = ref(false)
@@ -573,16 +578,22 @@ const photoGuide = computed(() => {
 
 <template>
   <section class="wiz">
-    <div class="ap-container">
+    <!-- ── Header — the shared subpage hero, so the wizard wears whatever
+         subhero style the theme picker selects (compact / banner / centered /
+         broadsheet / split), same as every other subpage. ── -->
+    <HeroSection
+      subpage
+      eyebrow="Site setup wizard"
+      title="Build your site."
+      subtitle="Answer the questions below — progress saves automatically, so come back any time. The last step launches your site."
+      image="/showcase/hero.jpg"
+    />
 
-      <!-- ── Header ──────────────────────────────────────────────────────── -->
-      <div class="wiz__header">
-        <p class="ap-eyebrow">Site setup wizard</p>
-        <h1 class="wiz__title">Build your site config</h1>
-        <p class="wiz__lead">
-          Answer the questions below. Your progress saves automatically — come back any time.
-          At the end you'll get a ready-to-paste TypeScript config file.
-        </p>
+    <div class="ap-container wiz__body-wrap">
+
+      <!-- ── Toolbar: step meta + reset ──────────────────────────────────── -->
+      <div class="wiz__toolbar">
+        <span class="wiz__toolbar-step">Step {{ step + 1 }} of {{ STEPS.length }} · {{ STEPS[step]?.label }}</span>
         <button type="button" class="wiz__clear" @click="clearAll">Clear all progress</button>
       </div>
 
@@ -716,6 +727,7 @@ const photoGuide = computed(() => {
               <div class="wiz__swatch-groups">
                 <div v-for="group in SWATCH_GROUPS" :key="group.label" class="wiz__swatch-group">
                   <p class="wiz__swatch-group-label">{{ group.label }}</p>
+                  <p class="wiz__swatch-group-psy">{{ group.psychology }}</p>
                   <div class="wiz__swatch-row">
                     <button
                       v-for="s in group.swatches" :key="s"
@@ -812,6 +824,7 @@ const photoGuide = computed(() => {
                   <strong>{{ v }}</strong>
                   <span v-if="v === 'essentials'">6-8 gallery photos · Standard sections</span>
                   <span v-if="v === 'portfolio'">12-16 gallery photos · Full content depth</span>
+                  <span v-if="v === 'extended'">20-28 gallery photos · Maximum content depth</span>
                 </button>
               </div>
             </div>
@@ -898,7 +911,7 @@ const photoGuide = computed(() => {
 
           <!-- Gallery alt texts -->
           <h3 class="wiz__sub">Gallery photos</h3>
-          <p class="wiz__step-desc">You'll need {{ form.variant === 'portfolio' ? '12–16' : '6–8' }} gallery photos. Fill in alt text for each.</p>
+          <p class="wiz__step-desc">You'll need {{ form.variant === 'extended' ? '20–28' : form.variant === 'portfolio' ? '12–16' : '6–8' }} gallery photos. Fill in alt text for each.</p>
           <div v-for="(p, i) in form.gallery" :key="i" class="wiz__row-pair">
             <code class="wiz__code wiz__code--inline">gallery-{{ String(i + 1).padStart(2, '0') }}.jpg</code>
             <input v-model="p.alt" type="text" class="wiz__input" :placeholder="`Alt text for photo ${i + 1}`" />
@@ -1164,16 +1177,23 @@ const photoGuide = computed(() => {
           <button type="button" class="wiz__add" @click="form.social.push({ label: '', href: '' })">+ Add link</button>
         </div>
 
-        <!-- STEP 9: Export ──────────────────────────────────────────────── -->
+        <!-- STEP 9: Launch ──────────────────────────────────────────────── -->
         <div v-if="step === 9" class="wiz__step">
-          <h2 class="wiz__step-title">Your site config is ready</h2>
+          <h2 class="wiz__step-title wiz__step-title--launch">
+            <span class="wiz__launch-icon"><Rocket :size="22" :stroke-width="1.8" /></span>
+            Launch your site
+          </h2>
+          <p class="wiz__step-desc">
+            Everything you've entered is packed and ready. Pick a package and we'll
+            take it from here — your site goes live in minutes, not weeks.
+          </p>
 
-          <!-- Buy & Deploy: only when the platform switch is on. -->
+          <!-- Launch flow: only when the platform switch is on. -->
           <div v-if="PLATFORM_ENABLED" class="wiz__buy">
-            <h3 class="wiz__sub">Have us build &amp; host it for you</h3>
+            <h3 class="wiz__sub">Choose your launch package</h3>
             <p class="wiz__step-desc">
-                Pick a package, add any extras, enter your email, and pay. We'll provision your site on GitHub + Vercel
-                within minutes and email you a sign-in link when it's live.
+                Add any extras, enter your email, and pay. We provision your site
+                within minutes and email you a sign-in link the moment it's live.
               </p>
 
               <!-- Bundle selection -->
@@ -1270,39 +1290,47 @@ const photoGuide = computed(() => {
                 </label>
               </div>
 
-              <!-- Total + CTA -->
-              <div class="wiz__checkout-footer">
-                <div class="wiz__total">Total: <strong>${{ checkoutTotal }}</strong></div>
-                <button type="button" class="ap-btn" :disabled="checkoutBusy" @click="buyAndDeploy">
-                  {{ checkoutBusy ? 'Redirecting…' : 'Buy &amp; deploy →' }}
+              <!-- Launch bar -->
+              <div class="wiz__launch-bar">
+                <div class="wiz__total">
+                  <span class="wiz__total-label">Due today</span>
+                  <strong>${{ checkoutTotal }}</strong>
+                </div>
+                <button type="button" class="ap-btn wiz__launch-btn" :disabled="checkoutBusy" @click="buyAndDeploy">
+                  <Rocket :size="16" />
+                  {{ checkoutBusy ? 'Redirecting…' : 'Launch my site' }}
                 </button>
+                <span class="wiz__launch-note">Secure checkout · live in minutes · you own everything</span>
               </div>
               <p v-if="checkoutError" class="wiz__err">{{ checkoutError }}</p>
             </div><!-- /wiz__buy -->
 
-          <p class="wiz__step-desc">
-            Or copy the code below and paste it into <code class="wiz__code">src/config/site.config.ts</code> in your archetype project.
-            Replace the default export with your new config — the site will instantly reflect your content.
-          </p>
+          <details class="wiz__selfhost" :open="!PLATFORM_ENABLED">
+            <summary>Prefer to self-host? Get the config file</summary>
+            <p class="wiz__step-desc">
+              Copy the code below into <code class="wiz__code">src/config/site.config.ts</code> in your archetype project.
+              Replace the default export with your new config — the site will instantly reflect your content.
+            </p>
 
-          <div class="wiz__export-actions">
-            <button type="button" class="ap-btn" @click="copyConfig">
-              {{ copied ? '✓ Copied!' : 'Copy to clipboard' }}
-            </button>
-          </div>
+            <div class="wiz__export-actions">
+              <button type="button" class="ap-btn" @click="copyConfig">
+                {{ copied ? '✓ Copied!' : 'Copy to clipboard' }}
+              </button>
+            </div>
 
-          <pre class="wiz__code-block"><code>{{ configOutput }}</code></pre>
+            <pre class="wiz__code-block"><code>{{ configOutput }}</code></pre>
 
-          <div class="wiz__checklist">
-            <h3 class="wiz__sub">What to do next</h3>
-            <ol class="wiz__ol">
-              <li>Replace the contents of <code class="wiz__code">src/config/site.config.ts</code> with the code above.</li>
-              <li>Place your photos in <code class="wiz__code">public/photos/</code> using the filenames from step 4.</li>
-              <li>Run <code class="wiz__code">npm run dev</code> to preview the site with your content.</li>
-              <li>Use the theme switcher (bottom-right corner) to try different themes, swatches, and hero styles.</li>
-              <li>When happy, run <code class="wiz__code">npm run build</code> and deploy the <code class="wiz__code">dist/</code> folder.</li>
-            </ol>
-          </div>
+            <div class="wiz__checklist">
+              <h3 class="wiz__sub">What to do next</h3>
+              <ol class="wiz__ol">
+                <li>Replace the contents of <code class="wiz__code">src/config/site.config.ts</code> with the code above.</li>
+                <li>Place your photos in <code class="wiz__code">public/photos/</code> using the filenames from step 4.</li>
+                <li>Run <code class="wiz__code">npm run dev</code> to preview the site with your content.</li>
+                <li>Use the theme switcher (bottom-right corner) to try different themes, swatches, and hero styles.</li>
+                <li>When happy, run <code class="wiz__code">npm run build</code> and deploy the <code class="wiz__code">dist/</code> folder.</li>
+              </ol>
+            </div>
+          </details>
         </div>
 
       </div><!-- /wiz__body -->
@@ -1333,17 +1361,20 @@ const photoGuide = computed(() => {
 @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Lora:wght@400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Oswald:wght@500;600;700&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 /* ── Layout ──────────────────────────────────────────────────────────────── */
-.wiz { padding: clamp(3rem, 8vw, 7rem) 0; }
-.wiz__header { max-width: 62ch; margin-bottom: 2.5rem; }
-.wiz__title {
-  font-size: clamp(2rem, 4vw, 3.2rem);
-  letter-spacing: var(--ap-tracking-heading);
-  font-weight: var(--ap-heading-weight);
-  margin: 0.75rem 0;
+.wiz { padding: 0 0 clamp(3rem, 8vw, 7rem); }
+.wiz__body-wrap { margin-top: clamp(1.5rem, 3vw, 2.5rem); }
+.wiz__toolbar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  margin-bottom: 0.9rem;
 }
-.wiz__lead { color: var(--ap-ink-muted); max-width: 54ch; font-size: 1.05rem; line-height: 1.6; }
+.wiz__toolbar-step {
+  font-family: var(--ap-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ap-ink-muted);
+}
 .wiz__clear {
-  margin-top: 0.75rem;
   background: none; border: none; padding: 0;
   color: var(--ap-ink-muted); font-size: 0.8rem;
   cursor: pointer; text-decoration: underline;
@@ -1409,13 +1440,67 @@ const photoGuide = computed(() => {
 }
 .wiz__sub { font-size: 1rem; font-weight: 600; margin: 2rem 0 0.85rem; }
 
+/* ── Launch step ──────────────────────────────────────────────────────────── */
+.wiz__step-title--launch { display: flex; align-items: center; gap: 0.7rem; }
+.wiz__launch-icon {
+  width: 44px; height: 44px;
+  display: inline-grid; place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ap-primary) 14%, transparent);
+  color: var(--ap-primary);
+  flex-shrink: 0;
+}
+.wiz__launch-bar {
+  display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  background: var(--ap-ink);
+  border-radius: var(--ap-radius-lg);
+  color: var(--ap-surface);
+}
+.wiz__total { display: flex; flex-direction: column; line-height: 1.15; }
+.wiz__total-label {
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--ap-surface) 55%, transparent);
+}
+.wiz__total strong {
+  font-family: var(--ap-font-heading);
+  font-size: 1.9rem; font-weight: 700;
+  color: var(--ap-surface);
+}
+.wiz__launch-btn { display: inline-flex; align-items: center; gap: 0.5rem; }
+.wiz__launch-note {
+  font-size: 0.74rem;
+  color: color-mix(in srgb, var(--ap-surface) 55%, transparent);
+  margin-left: auto;
+}
+.wiz__selfhost {
+  margin-top: 1.75rem;
+  border: 1px dashed var(--ap-line);
+  border-radius: var(--ap-radius-lg);
+  padding: 0 1.25rem;
+}
+.wiz__selfhost > summary {
+  cursor: pointer;
+  padding: 1rem 0;
+  font-weight: 600;
+  color: var(--ap-ink-muted);
+  list-style: none;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.wiz__selfhost > summary::-webkit-details-marker { display: none; }
+.wiz__selfhost > summary::before { content: '›'; transition: transform 160ms ease; color: var(--ap-primary); font-size: 1.1rem; }
+.wiz__selfhost[open] > summary::before { transform: rotate(90deg); }
+.wiz__selfhost[open] { padding-bottom: 1.25rem; }
+.wiz__selfhost > summary:hover { color: var(--ap-ink); }
+
 /* ── Buy & deploy ─────────────────────────────────────────────────────────── */
 .wiz__buy {
   background: var(--ap-surface);
   border: 1px solid var(--ap-line);
   border-radius: var(--ap-radius-lg);
   padding: 2rem;
-  margin-bottom: 2.5rem;
+  margin-bottom: 0.5rem;
 }
 
 /* Plans grid */
@@ -1447,7 +1532,9 @@ const photoGuide = computed(() => {
 .wiz__plan-header { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
 .wiz__plan-name { font-weight: 700; font-size: 0.95rem; color: var(--ap-ink); }
 .wiz__plan-price {
-  font-weight: 700; font-size: 1.05rem;
+  font-family: var(--ap-font-heading);
+  font-weight: 700; font-size: 1.35rem;
+  letter-spacing: -0.02em;
   color: var(--ap-primary);
   white-space: nowrap;
 }
@@ -1492,23 +1579,6 @@ const photoGuide = computed(() => {
 
 /* Owner fields — reuse existing wiz__fields grid */
 .wiz__buy-fields { margin-bottom: 1.5rem; }
-
-/* Footer row */
-.wiz__checkout-footer {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
-.wiz__total {
-  font-size: 1.05rem;
-  color: var(--ap-ink-muted);
-}
-.wiz__total strong {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--ap-ink);
-}
 
 /* Error */
 .wiz__err { color: #c0392b; font-size: 0.85rem; margin-top: 0.75rem; }
@@ -1678,7 +1748,11 @@ const photoGuide = computed(() => {
 .wiz__swatch-group-label {
   font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.1em; color: var(--ap-ink-muted);
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.1rem;
+}
+.wiz__swatch-group-psy {
+  font-size: 0.74rem; color: var(--ap-ink-muted);
+  margin: 0 0 0.45rem; max-width: 64ch; line-height: 1.4;
 }
 .wiz__swatch-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 

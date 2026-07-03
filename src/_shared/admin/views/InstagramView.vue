@@ -1,15 +1,35 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { contentClient } from '../../platform/contentClient'
 import { useActiveSiteStore } from '../../platform/activeSiteStore'
 
 const activeSites = useActiveSiteStore()
+const route = useRoute()
+const router = useRouter()
 const siteId = computed(() => activeSites.activeId)
 const connectUrl = ref<string | null>(null)
+const connected = ref(false)
+const expiresAt = ref<string | null>(null)
 const error = ref<string | null>(null)
 const notConfigured = ref(false)
 const loading = ref(false)
+
+/** OAuth round-trip result — the backend callback redirects here with
+    ?instagram=connected|error(&detail=...). Shown once, then cleaned off
+    the URL so a refresh doesn't re-announce it. */
+const oauthResult = ref<'connected' | 'error' | null>(null)
+const oauthDetail = ref('')
+
+function consumeOAuthQuery() {
+  const r = route.query.instagram
+  if (r === 'connected' || r === 'error') {
+    oauthResult.value = r
+    oauthDetail.value = typeof route.query.detail === 'string' ? route.query.detail : ''
+    const { instagram: _i, detail: _d, ...rest } = route.query
+    void router.replace({ query: rest })
+  }
+}
 
 async function loadConnect() {
   if (!siteId.value) return
@@ -18,11 +38,17 @@ async function loadConnect() {
   notConfigured.value = false
   connectUrl.value = null
   try {
-    connectUrl.value = (await contentClient.getInstagramConnect(siteId.value)).url
+    const [conn, status] = await Promise.all([
+      contentClient.getInstagramConnect(siteId.value),
+      contentClient.getInstagramStatus(siteId.value).catch(() => ({ connected: false, expiresAt: null })),
+    ])
+    connectUrl.value = conn.url
+    connected.value = status.connected
+    expiresAt.value = status.expiresAt
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     // Detect "Instagram not configured" — service returns 400 when the
-    // FB_APP_ID/SECRET environment isn't set.
+    // INSTAGRAM_APP_ID/SECRET environment isn't set.
     if (/not configured/i.test(msg) || /400/.test(msg)) {
       notConfigured.value = true
     } else {
@@ -35,9 +61,10 @@ async function loadConnect() {
 async function disconnect() {
   if (!siteId.value) return
   await contentClient.disconnectInstagram(siteId.value)
+  oauthResult.value = null
   await loadConnect()
 }
-onMounted(loadConnect)
+onMounted(() => { consumeOAuthQuery(); void loadConnect() })
 watch(siteId, loadConnect)
 </script>
 
@@ -102,12 +129,33 @@ watch(siteId, loadConnect)
 
     <!-- Normal connect/disconnect -->
     <template v-else>
+      <p v-if="oauthResult === 'connected'" class="adm-msg-ok">
+        Instagram connected — your latest posts will appear in your gallery within a few minutes.
+      </p>
+      <p v-else-if="oauthResult === 'error'" class="adm-msg-err">
+        Instagram connection failed{{ oauthDetail ? `: ${oauthDetail}` : '.' }}
+      </p>
+
       <div class="adm-card">
-        <h3 class="adm-card__title">Connect your account</h3>
-        <p class="adm-card__sub">Authorise Apotome to read your posts. We only fetch media, never publish.</p>
+        <template v-if="connected">
+          <h3 class="adm-card__title">Connected ✓</h3>
+          <p class="adm-card__sub">
+            Your feed is syncing automatically — we renew access in the background.
+            <template v-if="expiresAt"> Current access valid until {{ new Date(expiresAt).toLocaleDateString() }}.</template>
+          </p>
+        </template>
+        <template v-else>
+          <h3 class="adm-card__title">Connect your account</h3>
+          <p class="adm-card__sub">
+            Authorise Apotome to read your posts. We only fetch media, never publish.
+            Your Instagram must be a <strong>professional account</strong> (Business or Creator) —
+            switch for free in the Instagram app under Settings → Account type and tools.
+          </p>
+        </template>
         <div class="ig-actions">
-          <a v-if="connectUrl" :href="connectUrl" class="adm-btn adm-btn--primary">Connect Instagram</a>
-          <button type="button" class="adm-btn" @click="disconnect">Disconnect</button>
+          <a v-if="connectUrl && !connected" :href="connectUrl" class="adm-btn adm-btn--primary">Connect Instagram</a>
+          <a v-else-if="connectUrl && connected" :href="connectUrl" class="adm-btn">Reconnect</a>
+          <button v-if="connected" type="button" class="adm-btn" @click="disconnect">Disconnect</button>
           <span v-if="loading" class="adm-muted">Loading…</span>
         </div>
         <p v-if="error" class="adm-msg-err">{{ error }}</p>

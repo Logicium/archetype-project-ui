@@ -18,6 +18,7 @@ export const adminRoutes: RouteRecordRaw[] = [
       { path: 'instagram', name: 'admin-instagram', component: () => import('./views/InstagramView.vue') },
       { path: 'analytics', name: 'admin-analytics', component: () => import('./views/AnalyticsView.vue') },
       { path: 'domain', name: 'admin-domain', component: () => import('./views/DomainView.vue') },
+      { path: 'payments', name: 'admin-payments', component: () => import('./views/PaymentsView.vue') },
       { path: 'billing', name: 'admin-billing', component: () => import('./views/BillingView.vue') },
       { path: 'deployments', name: 'admin-deployments', component: () => import('./views/DeploymentsView.vue') },
       { path: 'appointments', name: 'admin-appointments', component: () => import('./views/AppointmentsView.vue') },

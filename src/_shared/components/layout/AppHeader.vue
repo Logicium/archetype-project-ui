@@ -10,6 +10,9 @@ defineProps<{
   links: Array<{ to: string; label: string }>
   ctaLabel?: string
   ctaTo?: string
+  /** Optional secondary action rendered as a ghost button before the CTA (e.g. Log in / Dashboard). */
+  secondaryLabel?: string
+  secondaryTo?: string
 }>()
 
 const route = useRoute()
@@ -106,6 +109,9 @@ onUnmounted(() => {
           :class="{ 'is-active': route.path === link.to }"
         >
           {{ link.label }}
+        </RouterLink>
+        <RouterLink v-if="secondaryLabel && secondaryTo" :to="secondaryTo" class="ap-btn ap-btn--ghost ap-header__cta ap-header__secondary">
+          {{ secondaryLabel }}
         </RouterLink>
         <RouterLink v-if="ctaLabel && ctaTo" :to="ctaTo" class="ap-btn ap-header__cta">
           {{ ctaLabel }}

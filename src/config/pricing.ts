@@ -21,7 +21,7 @@ export const PRICING: PriceItem[] = [
     featured: true,
     includes: [
       'Choice of four design themes (Studio, Heritage, Vibrant, Ironwood)',
-      'Choice of twenty color swatches',
+      'Full color library — 23 palettes across six color theories, or build your own',
       'Hosted, fast, mobile-ready',
       '6–8 of your photos placed and captioned',
       'Hours, contact, and map embedded',

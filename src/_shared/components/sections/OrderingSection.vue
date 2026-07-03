@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { contentClient, type MenuItemDTO } from '../../platform/contentClient'
-import { PLATFORM_SLUG } from '../../platform/config'
+import { type MenuItemDTO } from '../../platform/contentClient'
+import { apiClient } from '../../platform/apiClient'
+import { PLATFORM_SLUG, DEMO_MODE } from '../../platform/config'
+import DemoBadge from '../DemoBadge.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -13,7 +15,7 @@ const props = withDefaults(
   { eyebrow: 'Order', title: 'Order for pickup' },
 )
 
-const slug = computed(() => props.siteSlug || PLATFORM_SLUG)
+const slug = computed(() => props.siteSlug || PLATFORM_SLUG || (DEMO_MODE ? 'demo' : ''))
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -76,8 +78,8 @@ async function load() {
   error.value = null
   try {
     const [menu, slotData] = await Promise.all([
-      contentClient.orderingMenu(slug.value),
-      contentClient.orderingSlots(slug.value),
+      apiClient.orderingMenu(slug.value),
+      apiClient.orderingSlots(slug.value),
     ])
     items.value = menu.items
     categories.value = menu.categories.length ? menu.categories : ['']
@@ -118,7 +120,7 @@ async function checkout() {
   submitting.value = true
   submitError.value = null
   try {
-    const res = await contentClient.orderingCreateOrder({
+    const res = await apiClient.orderingCreateOrder({
       siteSlug: slug.value,
       name: form.name.trim(),
       email: form.email.trim(),
@@ -153,6 +155,7 @@ onMounted(load)
 <template>
   <section class="ap-section ap-ordering" :aria-label="title">
     <div class="ap-container">
+      <DemoBadge add-on="Meal ordering" />
       <header class="ap-section-head">
         <span v-if="eyebrow" class="ap-eyebrow">{{ eyebrow }}</span>
         <h2>{{ title }}</h2>

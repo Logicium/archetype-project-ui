@@ -485,7 +485,7 @@ watch(siteId, loadDraft)
           </label>
           <label>Variant
             <select v-model="c.variant">
-              <option>essentials</option><option>portfolio</option>
+              <option>essentials</option><option>portfolio</option><option>extended</option>
             </select>
           </label>
         </div>
@@ -546,7 +546,7 @@ watch(siteId, loadDraft)
           </div>
         </div>
 
-        <p class="section-sub">Gallery <span class="hint">6–8 for essentials · 12–16 for portfolio</span></p>
+        <p class="section-sub">Gallery <span class="hint">6–8 for essentials · 12–16 for portfolio · 20–28 for extended</span></p>
         <div class="gallery-grid">
           <div v-for="(g, i) in c.photos.gallery" :key="i" class="photo-slot photo-slot--sm">
             <img v-if="g.src" :src="g.src" class="photo-thumb" />

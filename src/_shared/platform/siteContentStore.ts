@@ -8,7 +8,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { contentClient } from './contentClient'
-import { PLATFORM_ENABLED, PLATFORM_SITE_KEY, PLATFORM_SITE_ID, PLATFORM_SLUG } from './config'
+import { PLATFORM_ENABLED, PLATFORM_SITE_KEY, PLATFORM_SITE_ID, PLATFORM_SLUG, DEMO_MODE } from './config'
 
 function deepMerge<T>(base: T, override: unknown): T {
   if (override === null || override === undefined) return base
@@ -58,6 +58,9 @@ export const useSiteContentStore = defineStore('siteContent', () => {
   /** Add-ons enabled on this site (e.g. 'appointments'). Populated by hydrate(). */
   const addOns = ref<string[]>([])
   function hasAddOn(name: string): boolean {
+    // Demo templates showcase every premium add-on (against simulated data)
+    // so visitors experience what they'd be upgrading to.
+    if (DEMO_MODE) return true
     return addOns.value.includes(name)
   }
 

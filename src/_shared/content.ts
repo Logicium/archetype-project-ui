@@ -3,7 +3,8 @@
  * Used by the runtime overlay API (`/v1/sites/:slug/content`)
  * and the wizard payload posted to `/v1/orders`.
  */
-import type { ThemeName, SwatchName, SiteVariant, ArchetypeKey } from './tokens'
+import type { ThemeName, SwatchName, SiteVariant } from './themes/tokens'
+import type { ArchetypeKey } from './tokens'
 
 export interface PhotoSlot { src: string; alt?: string; caption?: string }
 export interface ContactInfo { address: string; phone: string; email: string; mapEmbedUrl?: string }

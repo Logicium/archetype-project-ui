@@ -112,13 +112,25 @@ export const contentClient = {
   listAdminReviews: (siteId: string) => request<Array<{ id: string; rating: number; author: string; text: string; source: string; fetchedAt: string }>>('GET', `/admin/sites/${siteId}/reviews`),
 
   getInstagramConnect: (siteId: string) => request<{ url: string }>('GET', `/admin/sites/${siteId}/instagram/connect`),
+  getInstagramStatus: (siteId: string) => request<{ connected: boolean; expiresAt: string | null }>('GET', `/admin/sites/${siteId}/instagram/status`),
   disconnectInstagram: (siteId: string) => request<{ ok: true }>('POST', `/admin/sites/${siteId}/instagram/disconnect`),
 
-  requestDomain: (siteId: string, domain: string) => request<{ domain: string; dns: { instructions: Array<{ type: string; name: string; value: string; note: string }> } }>('POST', `/admin/sites/${siteId}/domain`, { domain }),
-  verifyDomain: (siteId: string) => request<{ ok: boolean }>('POST', `/admin/sites/${siteId}/domain/verify`),
-  getDomain: (siteId: string) => request<{ domain?: string; token?: string }>('GET', `/admin/sites/${siteId}/domain`),
+  requestDomain: (siteId: string, domain: string) => request<{ domain: string; dns: DnsInstructionsDTO }>('POST', `/admin/sites/${siteId}/domain`, { domain }),
+  verifyDomain: (siteId: string) => request<{
+    ok: boolean
+    apex: { domain: string; configured: boolean }
+    www: { domain: string; configured: boolean }
+  }>('POST', `/admin/sites/${siteId}/domain/verify`),
+  getDomain: (siteId: string) => request<{ domain?: string; dns?: DnsInstructionsDTO }>('GET', `/admin/sites/${siteId}/domain`),
 
   getAnalytics: (siteId: string) => request<Array<{ date: string; visitors: number; pageviews: number; uptimeLatencyMs: number; uptimeError?: string }>>('GET', `/admin/sites/${siteId}/analytics`),
+
+  // --- Payments (owner-scoped: Stripe Connect + Plaid) ---
+  getPaymentsStatus: () => request<PaymentsStatusDTO>('GET', '/admin/payments/status'),
+  connectPayments: (returnTo?: string) => request<{ url: string }>('POST', '/admin/payments/connect', { returnTo }),
+  createPlaidLinkToken: () => request<{ linkToken: string }>('POST', '/admin/payments/plaid/link-token'),
+  exchangePlaidToken: (publicToken: string, accountId: string) =>
+    request<{ ok: true; bank: { name: string; mask: string | null } }>('POST', '/admin/payments/plaid/exchange', { publicToken, accountId }),
 
   generateCopy: (siteId: string, field: string, prompt: string, context?: Record<string, unknown>) =>
     request<{ options: string[] }>('POST', `/admin/sites/${siteId}/ai/copy`, { field, prompt, context }),
@@ -333,6 +345,18 @@ export const contentClient = {
     shippingAddress?: ShippingAddressDTO
     items: Array<{ productId: string; quantity: number }>
   }) => request<ShopOrderDTO>('POST', '/shop/orders', payload),
+  /** Create a pending order + Stripe Checkout session (destination charge to the owner). */
+  shopCheckout: (payload: {
+    siteSlug: string
+    name: string
+    email: string
+    phone?: string
+    notes?: string
+    fulfillment: 'pickup' | 'shipping'
+    shippingAddress?: ShippingAddressDTO
+    items: Array<{ productId: string; quantity: number }>
+  }) => request<{ orderId: string; checkoutUrl: string | null; order: ShopOrderDTO }>('POST', '/shop/checkout', payload),
+  shopConfirmOrder: (id: string) => request<ShopOrderDTO>('POST', `/shop/orders/${id}/confirm`),
   shopGetOrder: (id: string) => request<ShopOrderDTO>('GET', `/shop/orders/${id}`),
   shopListSiteProducts: (siteId: string) =>
     request<ShopProductDTO[]>('GET', `/admin/sites/${siteId}/products`),
@@ -433,6 +457,20 @@ export const contentClient = {
     request<TicketDTO>('DELETE', `/admin/sites/${siteId}/tickets/${ticketId}`),
   ticketingCheckIn: (siteId: string, ticketId: string) =>
     request<TicketDTO>('PATCH', `/admin/sites/${siteId}/tickets/${ticketId}/check-in`),
+}
+
+export interface DnsInstructionsDTO {
+  instructions: Array<{ type: string; name: string; value: string; note: string }>
+}
+
+export interface PaymentsStatusDTO {
+  stripeConfigured: boolean
+  plaidConfigured: boolean
+  connected: boolean
+  chargesEnabled: boolean
+  payoutsEnabled: boolean
+  detailsSubmitted: boolean
+  bank: { name: string; mask: string | null } | null
 }
 
 export interface BookingServiceDTO {
