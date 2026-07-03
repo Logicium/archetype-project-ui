@@ -45,6 +45,7 @@ const navLinks = [
     cta-to="/wizard"
     :secondary-label="loginLabel"
     :secondary-to="loginTo"
+    :secondary-icon="!!auth.owner"
   />
   <main><RouterView /></main>
   <AppFooter
