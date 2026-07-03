@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { contentClient } from '../../platform/contentClient'
+import { contentClient, type InstagramMediaDTO } from '../../platform/contentClient'
 import { useActiveSiteStore } from '../../platform/activeSiteStore'
 
 const activeSites = useActiveSiteStore()
@@ -31,12 +31,32 @@ function consumeOAuthQuery() {
   }
 }
 
+/* Connected-feed preview. */
+const media = ref<InstagramMediaDTO[]>([])
+const mediaLoading = ref(false)
+const mediaLoaded = ref(false)
+
+async function loadMedia() {
+  if (!siteId.value) return
+  mediaLoading.value = true
+  try {
+    media.value = (await contentClient.fetchInstagramFor(siteId.value)).media
+  } catch {
+    media.value = []
+  } finally {
+    mediaLoading.value = false
+    mediaLoaded.value = true
+  }
+}
+
 async function loadConnect() {
   if (!siteId.value) return
   loading.value = true
   error.value = null
   notConfigured.value = false
   connectUrl.value = null
+  media.value = []
+  mediaLoaded.value = false
   try {
     const [conn, status] = await Promise.all([
       contentClient.getInstagramConnect(siteId.value),
@@ -45,6 +65,7 @@ async function loadConnect() {
     connectUrl.value = conn.url
     connected.value = status.connected
     expiresAt.value = status.expiresAt
+    if (status.connected) void loadMedia()
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     // Detect "Instagram not configured" — service returns 400 when the
@@ -160,12 +181,89 @@ watch(siteId, loadConnect)
         </div>
         <p v-if="error" class="adm-msg-err">{{ error }}</p>
       </div>
+
+      <!-- Connected-feed preview — what visitors see in the site gallery. -->
+      <div v-if="connected" class="adm-card">
+        <div class="ig-preview-head">
+          <div>
+            <h3 class="adm-card__title">Feed preview</h3>
+            <p class="adm-card__sub">
+              These posts now power your site's gallery — newest first, refreshed automatically.
+            </p>
+          </div>
+          <button type="button" class="adm-btn" :disabled="mediaLoading" @click="loadMedia">
+            {{ mediaLoading ? 'Refreshing…' : 'Refresh' }}
+          </button>
+        </div>
+
+        <p v-if="mediaLoading && !media.length" class="adm-muted">Loading your latest posts…</p>
+        <p v-else-if="mediaLoaded && !media.length" class="adm-muted">
+          No posts found yet — if you just connected, Instagram can take a minute. Make sure the account has public image posts.
+        </p>
+        <div v-else class="ig-grid">
+          <a
+            v-for="m in media"
+            :key="m.id"
+            :href="m.permalink"
+            target="_blank"
+            rel="noopener"
+            class="ig-grid__item"
+            :title="m.caption || 'View on Instagram'"
+          >
+            <img :src="m.media_url" :alt="m.caption || 'Instagram post'" loading="lazy" />
+            <span v-if="m.caption" class="ig-grid__caption">{{ m.caption }}</span>
+          </a>
+        </div>
+      </div>
     </template>
   </section>
 </template>
 
 <style scoped>
 .ig-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+
+/* ── Connected-feed preview grid ── */
+.ig-preview-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;
+}
+.ig-preview-head .adm-btn { flex-shrink: 0; }
+.ig-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.6rem;
+}
+.ig-grid__item {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--adm-text) 8%, transparent);
+  border: 1px solid var(--adm-border);
+  isolation: isolate;
+}
+.ig-grid__item img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 320ms ease;
+}
+.ig-grid__item:hover img { transform: scale(1.04); }
+.ig-grid__caption {
+  position: absolute; inset: auto 0 0 0;
+  padding: 1.4rem 0.6rem 0.5rem;
+  font-size: 0.72rem; line-height: 1.35;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0,0,0,0.72), transparent);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.ig-grid__item:hover .ig-grid__caption { opacity: 1; }
 
 .ig-soon {
   background: var(--adm-surface);

@@ -51,10 +51,17 @@ export const contentClient = {
       `/sites/${encodeURIComponent(PLATFORM_SITE_KEY)}/reviews`,
     ).catch(() => [] as Array<{ rating: number; author: string; text: string; source: string }>),
   fetchInstagram: () =>
-    request<{ media: Array<{ id: string; media_url: string; permalink: string; caption?: string }> }>(
+    request<{ media: InstagramMediaDTO[] }>(
       'GET',
       `/sites/${encodeURIComponent(PLATFORM_SITE_KEY)}/instagram`,
     ).catch(() => ({ media: [] })),
+  /** Same feed, for an explicit site id/slug (admin preview). Cache-busted so
+      a just-connected account shows immediately despite the 15-min public cache. */
+  fetchInstagramFor: (key: string) =>
+    request<{ media: InstagramMediaDTO[] }>(
+      'GET',
+      `/sites/${encodeURIComponent(key)}/instagram?ts=${Date.now()}`,
+    ),
   submitForm: (type: 'contact' | 'newsletter', fields: Record<string, string>, captcha?: string) =>
     request<{ ok: true }>('POST', `/sites/${encodeURIComponent(PLATFORM_SITE_KEY)}/submissions`, {
       type,
@@ -461,6 +468,13 @@ export const contentClient = {
 
 export interface DnsInstructionsDTO {
   instructions: Array<{ type: string; name: string; value: string; note: string }>
+}
+
+export interface InstagramMediaDTO {
+  id: string
+  media_url: string
+  permalink: string
+  caption?: string
 }
 
 export interface PaymentsStatusDTO {
