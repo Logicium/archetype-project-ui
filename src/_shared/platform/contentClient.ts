@@ -97,7 +97,7 @@ export const contentClient = {
   },
 
   // --- Admin ---
-  listSites: (opts: { includeDeactivated?: boolean } = {}) => request<Array<{ id: string; slug: string; displayName: string | null; archetype: string; status: string; productionUrl?: string; customDomain?: string; deactivatedAt?: string | null; screenshotUrl?: string | null; screenshotCapturedAt?: string | null; addOns?: string[] }>>('GET', `/admin/sites${opts.includeDeactivated ? '?includeDeactivated=1' : ''}`),
+  listSites: (opts: { includeDeactivated?: boolean } = {}) => request<Array<{ id: string; slug: string; displayName: string | null; archetype: string; status: string; productionUrl?: string; customDomain?: string; deactivatedAt?: string | null; screenshotUrl?: string | null; screenshotCapturedAt?: string | null; addOns?: string[]; templateCommitSha?: string | null; lastDeployedAt?: string | null }>>('GET', `/admin/sites${opts.includeDeactivated ? '?includeDeactivated=1' : ''}`),
   renameSite: (siteId: string, displayName: string) => request<{ id: string; displayName: string | null }>('PUT', `/admin/sites/${siteId}`, { displayName }),
   deactivateSite: (siteId: string) => request<{ id: string; deactivatedAt: string }>('POST', `/admin/sites/${siteId}/deactivate`),
   activateSite: (siteId: string) => request<{ id: string; deactivatedAt: string | null }>('POST', `/admin/sites/${siteId}/activate`),

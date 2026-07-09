@@ -7,7 +7,22 @@ import { tabsForArchetype, type TabId } from '../contentSchemas'
 import AiCopyButton from '../components/AiCopyButton.vue'
 import MapSearchPicker from '../components/MapSearchPicker.vue'
 import TextAreaField from '../../components/forms/TextAreaField.vue'
+import SelectInput from '../components/inputs/SelectInput.vue'
+import SegmentedInput from '../components/inputs/SegmentedInput.vue'
+import ImageInput from '../components/inputs/ImageInput.vue'
+import ChipsInput from '../components/inputs/ChipsInput.vue'
+import IconInput from '../components/inputs/IconInput.vue'
+import { THEME_LIST } from '../../themes'
+import { SWATCH_LIST } from '../../themes/swatches'
 import { useToast } from '../composables/useToast'
+
+const THEME_OPTIONS = THEME_LIST.map(t => ({ value: t.name, label: t.label }))
+const SWATCH_OPTIONS = SWATCH_LIST.map(s => ({ value: s.name, label: s.label, hint: s.group }))
+const VARIANT_OPTIONS = [
+  { value: 'essentials', label: 'Essentials', hint: '6–8 photos' },
+  { value: 'portfolio', label: 'Portfolio', hint: '12–16 photos' },
+  { value: 'extended', label: 'Extended', hint: '20–28 photos' },
+]
 
 interface PhotoSlot { src: string; alt?: string; caption?: string }
 interface MenuItem { name: string; description?: string; price: string; tags?: string[] }
@@ -348,10 +363,6 @@ async function uploadImage(slot: PhotoSlot, key: string, file: File) {
   finally { uploading.value[key] = false }
 }
 
-function onPhotoFile(slot: PhotoSlot, key: string, evt: Event) {
-  const file = (evt.target as HTMLInputElement).files?.[0]
-  if (file) uploadImage(slot, key, file)
-}
 
 /** Upload many gallery photos at once. Each file becomes a new gallery slot. */
 async function onBulkGalleryFiles(evt: Event) {
@@ -405,8 +416,6 @@ function addCategory()                { c.menu.categories.push({ name: '', descr
 function removeCategory(i: number)    { c.menu.categories.splice(i, 1) }
 function addMenuItem(cat: MenuCategory)              { cat.items.push({ name: '', description: '', price: '', tags: [] }) }
 function removeMenuItem(cat: MenuCategory, i: number){ cat.items.splice(i, 1) }
-function tagsStr(item: MenuItem)                     { return (item.tags ?? []).join(', ') }
-function setTags(item: MenuItem, v: string)          { item.tags = v.split(',').map(t => t.trim()).filter(Boolean) }
 
 // Archetype-specific helpers
 function addRoom()    { c.rooms.push({ name: '', blurb: '', rateFrom: '', image: '', features: [] }) }
@@ -426,23 +435,6 @@ function removeEvent(i: number) { c.events.splice(i, 1) }
 function addPillar()  { c.mission.pillars.push({ title: '', body: '' }) }
 function removePillar(i: number)  { c.mission.pillars.splice(i, 1) }
 
-/** Room features are string[] in the payload; the editor shows a comma list. */
-function featuresStr(r: RoomItem)          { return (r.features ?? []).join(', ') }
-function setFeatures(r: RoomItem, v: string) { r.features = v.split(',').map(t => t.trim()).filter(Boolean) }
-
-async function uploadInline(target: object, key: string, file: File, prop = 'src') {
-  uploading.value[key] = true
-  try {
-    const { base64, contentType, filename } = await prepareImage(file)
-    const r = await contentClient.uploadMedia(siteId.value, filename, contentType, base64)
-    ;(target as Record<string, unknown>)[prop] = r.url
-  } catch (e) { toast.error(e instanceof Error ? e.message : String(e)) }
-  finally { uploading.value[key] = false }
-}
-function onInlineFile(target: object, key: string, evt: Event, prop = 'src') {
-  const file = (evt.target as HTMLInputElement).files?.[0]
-  if (file) uploadInline(target, key, file, prop)
-}
 
 /** Upload a PDF (or any non-image) to blob storage and store the URL on `c.menu.fullMenuUrl`. */
 async function onMenuPdfFile(evt: Event) {
@@ -599,21 +591,9 @@ watch(siteId, loadDraft)
           </div>
         </label>
         <div class="row-3">
-          <label>Theme
-            <select v-model="c.theme">
-              <option>studio</option><option>ironwood</option><option>heritage</option><option>vibrant</option>
-            </select>
-          </label>
-          <label>Swatch
-            <select v-model="c.swatch">
-              <option>sand</option><option>charcoal</option><option>clay</option><option>sage</option><option>slate</option>
-            </select>
-          </label>
-          <label>Variant
-            <select v-model="c.variant">
-              <option>essentials</option><option>portfolio</option><option>extended</option>
-            </select>
-          </label>
+          <SelectInput v-model="c.theme" label="Theme" :options="THEME_OPTIONS" />
+          <SelectInput v-model="c.swatch" label="Swatch" :options="SWATCH_OPTIONS" />
+          <SelectInput v-model="c.variant" label="Variant" :options="VARIANT_OPTIONS" />
         </div>
       </fieldset>
 
@@ -651,22 +631,12 @@ watch(siteId, loadDraft)
 
         <div class="photo-row">
           <div class="photo-slot">
-            <p class="photo-slot__label">Hero image <span class="hint">16:9 · 2400px wide</span></p>
-            <img v-if="c.photos.hero.src" :src="c.photos.hero.src" class="photo-thumb" />
-            <label class="file-btn">{{ uploading['hero'] ? 'Uploading…' : 'Upload hero' }}
-              <input type="file" accept="image/*" :disabled="!!uploading['hero']" @change="onPhotoFile(c.photos.hero, 'hero', $event)" />
-            </label>
-            <input v-model="c.photos.hero.src" placeholder="or paste URL" />
+            <ImageInput v-model="c.photos.hero.src" :site-id="siteId" label="Hero image" hint="16:9 · 2400px wide" />
             <input v-model="c.photos.hero.alt" placeholder="Alt text" />
             <input v-model="c.photos.hero.caption" placeholder="Caption (optional)" />
           </div>
           <div class="photo-slot">
-            <p class="photo-slot__label">About image <span class="hint">Portrait or 4:5</span></p>
-            <img v-if="c.photos.about.src" :src="c.photos.about.src" class="photo-thumb" />
-            <label class="file-btn">{{ uploading['about'] ? 'Uploading…' : 'Upload about' }}
-              <input type="file" accept="image/*" :disabled="!!uploading['about']" @change="onPhotoFile(c.photos.about, 'about', $event)" />
-            </label>
-            <input v-model="c.photos.about.src" placeholder="or paste URL" />
+            <ImageInput v-model="c.photos.about.src" :site-id="siteId" label="About image" hint="Portrait or 4:5" aspect="4 / 5" />
             <input v-model="c.photos.about.alt" placeholder="Alt text" />
             <input v-model="c.photos.about.caption" placeholder="Caption (optional)" />
           </div>
@@ -675,11 +645,7 @@ watch(siteId, loadDraft)
         <p class="section-sub">Gallery <span class="hint">6–8 for essentials · 12–16 for portfolio · 20–28 for extended</span></p>
         <div class="gallery-grid">
           <div v-for="(g, i) in c.photos.gallery" :key="i" class="photo-slot photo-slot--sm">
-            <img v-if="g.src" :src="g.src" class="photo-thumb" />
-            <label class="file-btn">{{ uploading[`g${i}`] ? 'Uploading…' : 'Upload' }}
-              <input type="file" accept="image/*" :disabled="!!uploading[`g${i}`]" @change="onPhotoFile(g, `g${i}`, $event)" />
-            </label>
-            <input v-model="g.src" placeholder="or paste URL" />
+            <ImageInput v-model="g.src" :site-id="siteId" aspect="1 / 1" />
             <input v-model="g.alt" placeholder="Alt text" />
             <button type="button" class="btn-remove btn-remove--inline" @click="removeGallerySlot(i)">Remove</button>
           </div>
@@ -752,7 +718,9 @@ watch(siteId, loadDraft)
             <input v-model="item.name" placeholder="Dish name" class="flex-2" />
             <input v-model="item.description" placeholder="Description" class="flex-3" />
             <input v-model="item.price" placeholder="$0" style="max-width:80px" />
-            <input :value="tagsStr(item)" @input="setTags(item, ($event.target as HTMLInputElement).value)" placeholder="V, GF…" style="max-width:100px" />
+            <div style="min-width: 150px">
+              <ChipsInput :model-value="item.tags ?? []" placeholder="V, GF…" @update:model-value="(v: string[]) => item.tags = v" />
+            </div>
             <button type="button" class="btn-remove btn-remove--icon" @click="removeMenuItem(cat, ii)">×</button>
           </div>
           <button type="button" class="btn-add btn-add--indent" @click="addMenuItem(cat)">+ Add item</button>
@@ -768,25 +736,29 @@ watch(siteId, loadDraft)
             <input v-model="r.name" placeholder="Room name (e.g. Mountain Suite)" />
             <input v-model="r.rateFrom" placeholder="Rate from (e.g. $180)" />
           </div>
-          <input :value="featuresStr(r)" placeholder="Features, comma-separated (King bed, Sleeps 2, Soaking tub)" @input="setFeatures(r, ($event.target as HTMLInputElement).value)" />
+          <ChipsInput
+            :model-value="r.features ?? []"
+            placeholder="Add a feature (King bed, Sleeps 2…)"
+            @update:model-value="(v: string[]) => r.features = v"
+          />
           <div class="field-with-ai">
             <TextAreaField v-model="r.blurb" :rows="2" :maxlength="300" placeholder="Short description…" />
             <AiCopyButton :site-id="siteId" :field="`room: ${r.name || 'room'}`" prompt="A short, warm room description (~25 words)" :context="aiContext" @pick="(v) => r.blurb = v" />
           </div>
-          <div class="list-row">
-            <img v-if="r.image" :src="r.image" class="photo-thumb" style="max-width:160px" />
-            <label class="file-btn">{{ uploading[`room${i}`] ? 'Uploading…' : 'Upload photo' }}
-              <input type="file" accept="image/*" :disabled="!!uploading[`room${i}`]" @change="onInlineFile(r, `room${i}`, $event, 'image')" />
-            </label>
-            <input v-model="r.image" placeholder="or paste URL" class="flex-1" />
-          </div>
+          <ImageInput
+            :model-value="r.image ?? ''"
+            :site-id="siteId"
+            @update:model-value="(v: string) => r.image = v"
+          />
           <button type="button" class="btn-remove" @click="removeRoom(i)">Remove room</button>
         </div>
         <button type="button" class="btn-add" @click="addRoom">+ Add room</button>
 
         <p class="section-sub">Amenities <span class="hint">included with every stay</span></p>
         <div v-for="(a, i) in c.amenities" :key="i" class="list-row">
-          <input v-model="a.icon" placeholder="Icon (emoji)" style="max-width:90px" />
+          <div style="width: 140px; flex-shrink: 0">
+            <IconInput :model-value="a.icon ?? ''" @update:model-value="(v: string) => a.icon = v" />
+          </div>
           <input v-model="a.label" placeholder="Label (e.g. High-speed Wi-Fi)" />
           <input v-model="a.description" placeholder="Short description (optional)" class="flex-1" />
           <button type="button" class="btn-remove" @click="removeAmenity(i)">✕</button>
@@ -802,7 +774,9 @@ watch(siteId, loadDraft)
             <input v-model="s.name" placeholder="Service name" />
             <input v-model="s.price" placeholder="Price (e.g. From $120)" />
           </div>
-          <input v-model="s.icon" placeholder="Icon (emoji, e.g. 🔧)" style="max-width:160px" />
+          <div style="max-width: 160px">
+            <IconInput :model-value="s.icon ?? ''" @update:model-value="(v: string) => s.icon = v" />
+          </div>
           <div class="field-with-ai">
             <TextAreaField v-model="s.description" :rows="2" :maxlength="300" placeholder="Description…" />
             <AiCopyButton :site-id="siteId" :field="`service: ${s.name || 'service'}`" prompt="A short, concrete service description (~30 words)" :context="aiContext" @pick="(v) => s.description = v" />
@@ -833,13 +807,12 @@ watch(siteId, loadDraft)
             <TextAreaField v-model="p.blurb" :rows="2" :maxlength="300" placeholder="Short description…" />
             <AiCopyButton :site-id="siteId" :field="`product: ${p.name || 'product'}`" prompt="A short, tactile product description (~20 words)" :context="aiContext" @pick="(v) => p.blurb = v" />
           </div>
-          <div class="list-row">
-            <img v-if="p.image" :src="p.image" class="photo-thumb" style="max-width:160px" />
-            <label class="file-btn">{{ uploading[`prod${i}`] ? 'Uploading…' : 'Upload photo' }}
-              <input type="file" accept="image/*" :disabled="!!uploading[`prod${i}`]" @change="onInlineFile(p, `prod${i}`, $event, 'image')" />
-            </label>
-            <input v-model="p.image" placeholder="or paste URL" class="flex-1" />
-          </div>
+          <ImageInput
+            :model-value="p.image ?? ''"
+            :site-id="siteId"
+            aspect="1 / 1"
+            @update:model-value="(v: string) => p.image = v"
+          />
           <button type="button" class="btn-remove" @click="removeProduct(i)">Remove product</button>
         </div>
         <button type="button" class="btn-add" @click="addProduct">+ Add product</button>
@@ -871,13 +844,11 @@ watch(siteId, loadDraft)
             <TextAreaField v-model="e.blurb" :rows="2" :maxlength="300" placeholder="One line that sells the night…" />
             <AiCopyButton :site-id="siteId" :field="`event: ${e.title || 'event'}`" prompt="A punchy one-line event description (~20 words)" :context="aiContext" @pick="(v) => e.blurb = v" />
           </div>
-          <div class="list-row">
-            <img v-if="e.image" :src="e.image" class="photo-thumb" style="max-width:160px" />
-            <label class="file-btn">{{ uploading[`event${i}`] ? 'Uploading…' : 'Upload photo' }}
-              <input type="file" accept="image/*" :disabled="!!uploading[`event${i}`]" @change="onInlineFile(e, `event${i}`, $event, 'image')" />
-            </label>
-            <input v-model="e.image" placeholder="or paste URL" class="flex-1" />
-          </div>
+          <ImageInput
+            :model-value="e.image ?? ''"
+            :site-id="siteId"
+            @update:model-value="(v: string) => e.image = v"
+          />
           <button type="button" class="btn-remove" @click="removeEvent(i)">Remove event</button>
         </div>
         <button type="button" class="btn-add" @click="addEvent">+ Add event</button>
@@ -908,22 +879,15 @@ watch(siteId, loadDraft)
       <fieldset v-if="activeTab === 'testimonials'">
         <legend>Testimonials</legend>
         <div class="reviews-source">
-          <label class="reviews-source__label">Show on the public site</label>
-          <div class="reviews-source__choices">
-            <label class="reviews-source__choice">
-              <input type="radio" v-model="c.reviewsSource" value="manual" />
-              <span>Hand-written testimonials</span>
-            </label>
-            <label class="reviews-source__choice">
-              <input type="radio" v-model="c.reviewsSource" value="google" />
-              <span>Live Google reviews</span>
-            </label>
-          </div>
-          <p class="reviews-source__hint">
-            Live reviews pull from the business connected on the
-            <em>Google Reviews</em> page. If none are available, the public
-            site falls back to the hand-written list below.
-          </p>
+          <SegmentedInput
+            v-model="c.reviewsSource"
+            label="Show on the public site"
+            :options="[
+              { value: 'manual', label: 'Hand-written testimonials' },
+              { value: 'google', label: 'Live Google reviews' },
+            ]"
+            hint="Live reviews pull from the business connected on the Google Reviews page. If none are available, the public site falls back to the hand-written list below."
+          />
         </div>
         <div v-for="(t, i) in c.testimonials" :key="i" class="testimonial-row">
           <TextAreaField v-model="t.quote" :rows="2" :maxlength="400" placeholder="Quote…" />
