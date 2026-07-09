@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { contentClient, type BookingConfigDTO, type BookingServiceDTO } from '../../platform/contentClient'
 import { useActiveSiteStore } from '../../platform/activeSiteStore'
@@ -147,7 +147,7 @@ watch(siteId, load)
   <section class="adm-page">
     <header class="adm-page__head">
       <div>
-        <span class="adm-eyebrow">Premium add-on</span>
+        <span class="adm-eyebrow adm-eyebrow--premium">★ Premium add-on</span>
         <h1 class="adm-title">Appointments</h1>
         <p class="adm-subtitle">
           Let visitors self-book services on your contact page. Define your services, set your hours,
@@ -170,7 +170,7 @@ watch(siteId, load)
 
     <template v-else>
       <p v-if="error" class="adm-msg-err">{{ error }}</p>
-      <p v-if="loading" class="adm-muted">Loading…</p>
+      <p v-if="loading" class="adm-muted">Loadingâ€¦</p>
 
       <div v-if="!addOnEnabled" class="adm-card adm-card--soft addon-gate">
         <p>
@@ -194,7 +194,7 @@ watch(siteId, load)
               <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="removeService(i)">Remove</button>
             </li>
           </ul>
-          <p v-else class="adm-muted adm-mb">No services yet — add one to get started.</p>
+          <p v-else class="adm-muted adm-mb">No services yet â€” add one to get started.</p>
 
           <div class="svc-row svc-row--new">
             <input class="adm-input svc-row__id" v-model="newService.id" placeholder="id (kebab-case)" />
@@ -241,7 +241,7 @@ watch(siteId, load)
 
       <div class="save-bar">
         <button type="button" class="adm-btn adm-btn--primary" :disabled="saving" @click="saveConfig">
-          {{ saving ? 'Saving…' : 'Save settings' }}
+          {{ saving ? 'Savingâ€¦' : 'Save settings' }}
         </button>
         <span v-if="savedAt" class="adm-muted">Saved {{ new Date(savedAt).toLocaleTimeString() }}</span>
       </div>
@@ -261,7 +261,7 @@ watch(siteId, load)
               <td>{{ b.name }}</td>
               <td>
                 <a :href="`mailto:${b.email}`">{{ b.email }}</a>
-                <template v-if="b.phone"> · {{ b.phone }}</template>
+                <template v-if="b.phone"> Â· {{ b.phone }}</template>
               </td>
               <td>
                 <span class="adm-badge" :class="b.status === 'cancelled' ? 'adm-badge--warn' : 'adm-badge--info'">{{ b.status }}</span>

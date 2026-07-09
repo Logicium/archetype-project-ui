@@ -19,10 +19,15 @@ onMounted(async () => {
   init(siteConfig.theme, siteConfig.swatch, 'essentials', 'project')
   useApScrollbar()
   if (PLATFORM_ENABLED) void auth.refresh()
-  await preloadCritical([
-    siteConfig.hero.image,
-    ...siteConfig.showcase.map(s => s.image),
-  ])
+  try {
+    await preloadCritical([
+      siteConfig.hero.image,
+      ...siteConfig.showcase.map(s => s.image),
+    ])
+  } catch {
+    // Malformed hydrated content must never strand the splash screen.
+    await preloadCritical([])
+  }
 })
 
 const loginLabel = computed(() => (PLATFORM_ENABLED ? (auth.owner ? 'Dashboard' : 'Log in') : undefined))

@@ -16,10 +16,17 @@ interface HourRow { day: string; open: string }
 interface SocialLink { label: string; href: string }
 interface FactRow { label: string; value: string }
 interface Testimonial { quote: string; author: string; source?: string }
-// Archetype-specific item types
-interface RoomItem    { name: string; description?: string; rate?: string; capacity?: string; photo?: string }
-interface ServiceItem { name: string; description?: string; price?: string; duration?: string }
-interface ProductItem { name: string; description?: string; price?: string; photo?: string; href?: string }
+// Archetype-specific item types — these MIRROR the shapes the deployed
+// templates read from siteConfig. The editors must write exactly these
+// (a mismatched shape published here once clobbered template arrays and
+// stranded live sites on the splash screen).
+interface RoomItem    { name: string; blurb?: string; rateFrom?: string; image?: string; features?: string[] }
+interface AmenityItem { icon?: string; label: string; description?: string }
+interface ServiceItem { name: string; description?: string; price?: string; icon?: string }
+interface CapabilityItem { label: string; value: string }
+interface ProductItem { name: string; price?: string; blurb?: string; badge?: string; image?: string }
+interface CategoryItem { name: string; image?: string; count?: string }
+interface EventItem   { id?: string; title: string; date: string; startTime?: string; category?: string; priceLabel?: string; image?: string; blurb?: string }
 interface PillarItem  { title: string; body?: string }
 
 interface SiteContent {
@@ -31,11 +38,16 @@ interface SiteContent {
   // mesa
   menu: { intro?: string; categories: MenuCategory[]; fullMenuUrl?: string }
   // hearth
-  rooms: { intro?: string; items: RoomItem[] }
+  rooms: RoomItem[]
+  amenities: AmenityItem[]
   // keystone
-  services: { intro?: string; items: ServiceItem[] }
+  services: ServiceItem[]
+  capabilities: CapabilityItem[]
   // vault
-  products: { intro?: string; items: ProductItem[] }
+  featured: ProductItem[]
+  categories: CategoryItem[]
+  // marquee
+  events: EventItem[]
   // project
   mission: { statement: string; pillars: PillarItem[] }
   testimonials: Testimonial[]
@@ -51,9 +63,13 @@ function blankContent(): SiteContent {
     photos: { hero: { src: '', alt: '' }, about: { src: '', alt: '' }, gallery: [] },
     story: { title: '', paragraphs: [''], facts: [] },
     menu: { intro: '', categories: [], fullMenuUrl: '' },
-    rooms:    { intro: '', items: [] },
-    services: { intro: '', items: [] },
-    products: { intro: '', items: [] },
+    rooms: [],
+    amenities: [],
+    services: [],
+    capabilities: [],
+    featured: [],
+    categories: [],
+    events: [],
     mission:  { statement: '', pillars: [] },
     testimonials: [],
     reviewsSource: 'manual',
@@ -153,8 +169,68 @@ const aiContext = computed(() => ({
   archetype: archetype.value, theme: c.theme, swatch: c.swatch,
 }))
 
+function asRows<T>(v: unknown): T[] { return Array.isArray(v) ? (v as T[]) : [] }
+function replaceRows<T>(target: T[], rows: T[]) { target.length = 0; target.push(...rows) }
+
+/** Legacy admin drafts stored `{intro, items:[...]}` objects with different
+    field names. Migrate them into the template-shaped arrays so old drafts
+    load cleanly and the next publish writes the correct shape. */
+function migrateRooms(raw: unknown): RoomItem[] {
+  if (Array.isArray(raw)) {
+    return raw.map((r: Record<string, unknown>) => ({
+      name: String(r.name ?? ''),
+      blurb: String(r.blurb ?? r.description ?? ''),
+      rateFrom: String(r.rateFrom ?? r.rate ?? ''),
+      image: String(r.image ?? r.photo ?? ''),
+      features: Array.isArray(r.features) ? (r.features as string[]).map(String) : [],
+    }))
+  }
+  if (raw && typeof raw === 'object') {
+    return asRows<Record<string, unknown>>((raw as Record<string, unknown>).items).map(r => ({
+      name: String(r.name ?? ''),
+      blurb: String(r.description ?? ''),
+      rateFrom: String(r.rate ?? ''),
+      image: String(r.photo ?? ''),
+      features: r.capacity ? [String(r.capacity)] : [],
+    }))
+  }
+  return []
+}
+
+function migrateServices(raw: unknown): ServiceItem[] {
+  if (Array.isArray(raw)) {
+    return raw.map((s: Record<string, unknown>) => ({
+      name: String(s.name ?? ''),
+      description: String(s.description ?? ''),
+      price: String(s.price ?? ''),
+      icon: String(s.icon ?? ''),
+    }))
+  }
+  if (raw && typeof raw === 'object') {
+    return asRows<Record<string, unknown>>((raw as Record<string, unknown>).items).map(s => ({
+      name: String(s.name ?? ''),
+      description: String(s.description ?? ''),
+      price: String(s.price ?? ''),
+      icon: '',
+    }))
+  }
+  return []
+}
+
+/** Legacy vault drafts used `products: {intro, items:[{name,description,price,photo}]}`. */
+function migrateLegacyProducts(raw: unknown): ProductItem[] {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return []
+  return asRows<Record<string, unknown>>((raw as Record<string, unknown>).items).map(p => ({
+    name: String(p.name ?? ''),
+    price: String(p.price ?? ''),
+    blurb: String(p.description ?? ''),
+    badge: '',
+    image: String(p.photo ?? ''),
+  }))
+}
+
 function applyPayload(raw: Record<string, unknown>) {
-  const p = raw as Partial<SiteContent>
+  const p = raw as Partial<SiteContent> & { products?: unknown }
   if (p.brand    !== undefined) c.brand    = p.brand    as string
   if (p.tagline  !== undefined) c.tagline  = p.tagline  as string
   if (p.blurb    !== undefined) c.blurb    = p.blurb    as string
@@ -163,17 +239,22 @@ function applyPayload(raw: Record<string, unknown>) {
   if (p.swatch   !== undefined) c.swatch   = p.swatch   as string
   if (p.variant  !== undefined) c.variant  = p.variant  as string
   if (p.contact  !== undefined) Object.assign(c.contact, p.contact)
-  if (p.hours    !== undefined) { c.hours.length = 0; c.hours.push(...(p.hours as HourRow[])) }
+  if (p.hours    !== undefined) replaceRows(c.hours, asRows<HourRow>(p.hours))
   if (p.photos   !== undefined) Object.assign(c.photos,  p.photos)
   if (p.story    !== undefined) Object.assign(c.story,   p.story)
   if (p.menu     !== undefined) Object.assign(c.menu,    p.menu)
-  if (p.rooms    !== undefined) Object.assign(c.rooms,    p.rooms)
-  if (p.services !== undefined) Object.assign(c.services, p.services)
-  if (p.products !== undefined) Object.assign(c.products, p.products)
+  if (p.rooms    !== undefined) replaceRows(c.rooms, migrateRooms(p.rooms))
+  if (p.amenities !== undefined) replaceRows(c.amenities, asRows<AmenityItem>(p.amenities))
+  if (p.services !== undefined) replaceRows(c.services, migrateServices(p.services))
+  if (p.capabilities !== undefined) replaceRows(c.capabilities, asRows<CapabilityItem>(p.capabilities))
+  if (p.featured !== undefined) replaceRows(c.featured, asRows<ProductItem>(p.featured))
+  else if (p.products !== undefined) replaceRows(c.featured, migrateLegacyProducts(p.products))
+  if (p.categories !== undefined) replaceRows(c.categories, asRows<CategoryItem>(p.categories))
+  if (p.events   !== undefined) replaceRows(c.events, asRows<EventItem>(p.events))
   if (p.mission  !== undefined) Object.assign(c.mission,  p.mission)
-  if (p.testimonials !== undefined) { c.testimonials.length = 0; c.testimonials.push(...(p.testimonials as Testimonial[])) }
+  if (p.testimonials !== undefined) replaceRows(c.testimonials, asRows<Testimonial>(p.testimonials))
   if (p.reviewsSource !== undefined) c.reviewsSource = (p.reviewsSource === 'google' ? 'google' : 'manual')
-  if (p.social   !== undefined) { c.social.length = 0; c.social.push(...(p.social as SocialLink[])) }
+  if (p.social   !== undefined) replaceRows(c.social, asRows<SocialLink>(p.social))
 }
 
 async function loadDraft() {
@@ -181,13 +262,46 @@ async function loadDraft() {
   try {
     const d = await contentClient.getDraft(siteId.value)
     version.value = d.version; published.value = d.published
+    // Start from a clean slate: applyPayload only overwrites keys present in
+    // the new payload, so without this the previous site's content bleeds
+    // through when switching sites in the header.
+    Object.assign(c, blankContent())
     applyPayload(d.payload)
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)) }
 }
 
+/** Only publish the archetype-specific keys this site actually uses — writing
+    the other archetypes' (empty) keys would wipe template defaults on the
+    live site the next time it hydrates. */
+const ARCHETYPE_KEYS: Record<string, string[]> = {
+  mesa: ['menu'],
+  hearth: ['rooms', 'amenities'],
+  keystone: ['services', 'capabilities'],
+  vault: ['featured', 'categories'],
+  marquee: ['events'],
+  project: ['mission'],
+}
+const ALL_ARCHETYPE_KEYS = ['menu', 'rooms', 'amenities', 'services', 'capabilities', 'featured', 'categories', 'events', 'mission']
+
+function payloadForSave(): Record<string, unknown> {
+  const payload = JSON.parse(JSON.stringify(c)) as Record<string, unknown>
+  const keep = new Set(ARCHETYPE_KEYS[(archetype.value || '').toLowerCase()] ?? ALL_ARCHETYPE_KEYS)
+  for (const k of ALL_ARCHETYPE_KEYS) {
+    if (!keep.has(k)) delete payload[k]
+  }
+  // Templates key events by id — derive one from the title when absent.
+  if (Array.isArray(payload.events)) {
+    payload.events = (payload.events as EventItem[]).map(e => ({
+      ...e,
+      id: e.id || e.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
+    }))
+  }
+  return payload
+}
+
 async function save(publish = false) {
   try {
-    const payload = JSON.parse(JSON.stringify(c)) as Record<string, unknown>
+    const payload = payloadForSave()
     if (publish) {
       const r = await contentClient.publish(siteId.value, payload)
       version.value = r.version; published.value = true
@@ -295,25 +409,37 @@ function tagsStr(item: MenuItem)                     { return (item.tags ?? []).
 function setTags(item: MenuItem, v: string)          { item.tags = v.split(',').map(t => t.trim()).filter(Boolean) }
 
 // Archetype-specific helpers
-function addRoom()    { c.rooms.items.push({ name: '', description: '', rate: '', capacity: '', photo: '' }) }
-function removeRoom(i: number) { c.rooms.items.splice(i, 1) }
-function addService() { c.services.items.push({ name: '', description: '', price: '', duration: '' }) }
-function removeService(i: number) { c.services.items.splice(i, 1) }
-function addProduct() { c.products.items.push({ name: '', description: '', price: '', photo: '', href: '' }) }
-function removeProduct(i: number) { c.products.items.splice(i, 1) }
+function addRoom()    { c.rooms.push({ name: '', blurb: '', rateFrom: '', image: '', features: [] }) }
+function removeRoom(i: number) { c.rooms.splice(i, 1) }
+function addAmenity() { c.amenities.push({ icon: '', label: '', description: '' }) }
+function removeAmenity(i: number) { c.amenities.splice(i, 1) }
+function addService() { c.services.push({ name: '', description: '', price: '', icon: '' }) }
+function removeService(i: number) { c.services.splice(i, 1) }
+function addCapability() { c.capabilities.push({ label: '', value: '' }) }
+function removeCapability(i: number) { c.capabilities.splice(i, 1) }
+function addProduct() { c.featured.push({ name: '', price: '', blurb: '', badge: '', image: '' }) }
+function removeProduct(i: number) { c.featured.splice(i, 1) }
+function addShopCategory() { c.categories.push({ name: '', image: '', count: '' }) }
+function removeShopCategory(i: number) { c.categories.splice(i, 1) }
+function addEvent()   { c.events.push({ title: '', date: '', startTime: '', category: '', priceLabel: '', image: '', blurb: '' }) }
+function removeEvent(i: number) { c.events.splice(i, 1) }
 function addPillar()  { c.mission.pillars.push({ title: '', body: '' }) }
 function removePillar(i: number)  { c.mission.pillars.splice(i, 1) }
 
-async function uploadInline(target: { src?: string; photo?: string }, key: string, file: File, prop: 'src' | 'photo' = 'src') {
+/** Room features are string[] in the payload; the editor shows a comma list. */
+function featuresStr(r: RoomItem)          { return (r.features ?? []).join(', ') }
+function setFeatures(r: RoomItem, v: string) { r.features = v.split(',').map(t => t.trim()).filter(Boolean) }
+
+async function uploadInline(target: object, key: string, file: File, prop = 'src') {
   uploading.value[key] = true
   try {
     const { base64, contentType, filename } = await prepareImage(file)
     const r = await contentClient.uploadMedia(siteId.value, filename, contentType, base64)
-    target[prop] = r.url
+    ;(target as Record<string, unknown>)[prop] = r.url
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)) }
   finally { uploading.value[key] = false }
 }
-function onInlineFile(target: { src?: string; photo?: string }, key: string, evt: Event, prop: 'src' | 'photo' = 'src') {
+function onInlineFile(target: object, key: string, evt: Event, prop = 'src') {
   const file = (evt.target as HTMLInputElement).files?.[0]
   if (file) uploadInline(target, key, file, prop)
 }
@@ -637,36 +763,46 @@ watch(siteId, loadDraft)
       <!-- ── Rooms (hearth) ── -->
       <fieldset v-if="activeTab === 'rooms'">
         <legend>Rooms</legend>
-        <label>Intro line<input v-model="c.rooms.intro" placeholder="Stay in one of our…" /></label>
-        <div v-for="(r, i) in c.rooms.items" :key="i" class="testimonial-row">
+        <div v-for="(r, i) in c.rooms" :key="i" class="testimonial-row">
           <div class="row-2">
             <input v-model="r.name" placeholder="Room name (e.g. Mountain Suite)" />
-            <input v-model="r.rate" placeholder="Rate (e.g. $180 / night)" />
+            <input v-model="r.rateFrom" placeholder="Rate from (e.g. $180)" />
           </div>
-          <input v-model="r.capacity" placeholder="Capacity (e.g. Sleeps 2)" />
-          <TextAreaField v-model="r.description" :rows="2" :maxlength="300" placeholder="Short description…" />
+          <input :value="featuresStr(r)" placeholder="Features, comma-separated (King bed, Sleeps 2, Soaking tub)" @input="setFeatures(r, ($event.target as HTMLInputElement).value)" />
+          <div class="field-with-ai">
+            <TextAreaField v-model="r.blurb" :rows="2" :maxlength="300" placeholder="Short description…" />
+            <AiCopyButton :site-id="siteId" :field="`room: ${r.name || 'room'}`" prompt="A short, warm room description (~25 words)" :context="aiContext" @pick="(v) => r.blurb = v" />
+          </div>
           <div class="list-row">
-            <img v-if="r.photo" :src="r.photo" class="photo-thumb" style="max-width:160px" />
+            <img v-if="r.image" :src="r.image" class="photo-thumb" style="max-width:160px" />
             <label class="file-btn">{{ uploading[`room${i}`] ? 'Uploading…' : 'Upload photo' }}
-              <input type="file" accept="image/*" :disabled="!!uploading[`room${i}`]" @change="onInlineFile(r, `room${i}`, $event, 'photo')" />
+              <input type="file" accept="image/*" :disabled="!!uploading[`room${i}`]" @change="onInlineFile(r, `room${i}`, $event, 'image')" />
             </label>
-            <input v-model="r.photo" placeholder="or paste URL" class="flex-1" />
+            <input v-model="r.image" placeholder="or paste URL" class="flex-1" />
           </div>
           <button type="button" class="btn-remove" @click="removeRoom(i)">Remove room</button>
         </div>
         <button type="button" class="btn-add" @click="addRoom">+ Add room</button>
+
+        <p class="section-sub">Amenities <span class="hint">included with every stay</span></p>
+        <div v-for="(a, i) in c.amenities" :key="i" class="list-row">
+          <input v-model="a.icon" placeholder="Icon (emoji)" style="max-width:90px" />
+          <input v-model="a.label" placeholder="Label (e.g. High-speed Wi-Fi)" />
+          <input v-model="a.description" placeholder="Short description (optional)" class="flex-1" />
+          <button type="button" class="btn-remove" @click="removeAmenity(i)">✕</button>
+        </div>
+        <button type="button" class="btn-add" @click="addAmenity">+ Add amenity</button>
       </fieldset>
 
       <!-- ── Services (keystone) ── -->
       <fieldset v-if="activeTab === 'services'">
         <legend>Services</legend>
-        <label>Intro line<input v-model="c.services.intro" placeholder="What we offer…" /></label>
-        <div v-for="(s, i) in c.services.items" :key="i" class="testimonial-row">
+        <div v-for="(s, i) in c.services" :key="i" class="testimonial-row">
           <div class="row-2">
             <input v-model="s.name" placeholder="Service name" />
             <input v-model="s.price" placeholder="Price (e.g. From $120)" />
           </div>
-          <input v-model="s.duration" placeholder="Duration (e.g. 60 min)" />
+          <input v-model="s.icon" placeholder="Icon (emoji, e.g. 🔧)" style="max-width:160px" />
           <div class="field-with-ai">
             <TextAreaField v-model="s.description" :rows="2" :maxlength="300" placeholder="Description…" />
             <AiCopyButton :site-id="siteId" :field="`service: ${s.name || 'service'}`" prompt="A short, concrete service description (~30 words)" :context="aiContext" @pick="(v) => s.description = v" />
@@ -674,29 +810,77 @@ watch(siteId, loadDraft)
           <button type="button" class="btn-remove" @click="removeService(i)">Remove service</button>
         </div>
         <button type="button" class="btn-add" @click="addService">+ Add service</button>
+
+        <p class="section-sub">Capabilities <span class="hint">trust-bar stats (e.g. Years in business: 15+)</span></p>
+        <div v-for="(cap, i) in c.capabilities" :key="i" class="list-row">
+          <input v-model="cap.label" placeholder="Label (e.g. Years in business)" />
+          <input v-model="cap.value" placeholder="Value (e.g. 15+)" class="flex-1" />
+          <button type="button" class="btn-remove" @click="removeCapability(i)">✕</button>
+        </div>
+        <button type="button" class="btn-add" @click="addCapability">+ Add capability</button>
       </fieldset>
 
       <!-- ── Products (vault) ── -->
       <fieldset v-if="activeTab === 'products'">
-        <legend>Products</legend>
-        <label>Intro line<input v-model="c.products.intro" placeholder="Featured pieces…" /></label>
-        <div v-for="(p, i) in c.products.items" :key="i" class="testimonial-row">
+        <legend>Featured products</legend>
+        <div v-for="(p, i) in c.featured" :key="i" class="testimonial-row">
           <div class="row-2">
             <input v-model="p.name" placeholder="Product name" />
-            <input v-model="p.price" placeholder="Price" />
+            <input v-model="p.price" placeholder="Price (e.g. $28)" />
           </div>
-          <input v-model="p.href" placeholder="Link / Shopify URL (optional)" />
-          <TextAreaField v-model="p.description" :rows="2" :maxlength="300" placeholder="Description…" />
+          <input v-model="p.badge" placeholder="Badge (optional — New · Local · Sale)" />
+          <div class="field-with-ai">
+            <TextAreaField v-model="p.blurb" :rows="2" :maxlength="300" placeholder="Short description…" />
+            <AiCopyButton :site-id="siteId" :field="`product: ${p.name || 'product'}`" prompt="A short, tactile product description (~20 words)" :context="aiContext" @pick="(v) => p.blurb = v" />
+          </div>
           <div class="list-row">
-            <img v-if="p.photo" :src="p.photo" class="photo-thumb" style="max-width:160px" />
+            <img v-if="p.image" :src="p.image" class="photo-thumb" style="max-width:160px" />
             <label class="file-btn">{{ uploading[`prod${i}`] ? 'Uploading…' : 'Upload photo' }}
-              <input type="file" accept="image/*" :disabled="!!uploading[`prod${i}`]" @change="onInlineFile(p, `prod${i}`, $event, 'photo')" />
+              <input type="file" accept="image/*" :disabled="!!uploading[`prod${i}`]" @change="onInlineFile(p, `prod${i}`, $event, 'image')" />
             </label>
-            <input v-model="p.photo" placeholder="or paste URL" class="flex-1" />
+            <input v-model="p.image" placeholder="or paste URL" class="flex-1" />
           </div>
           <button type="button" class="btn-remove" @click="removeProduct(i)">Remove product</button>
         </div>
         <button type="button" class="btn-add" @click="addProduct">+ Add product</button>
+
+        <p class="section-sub">Shop categories</p>
+        <div v-for="(cat, i) in c.categories" :key="i" class="list-row">
+          <input v-model="cat.name" placeholder="Category name (e.g. Apparel)" />
+          <input v-model="cat.count" placeholder="Item count" style="max-width:110px" />
+          <input v-model="cat.image" placeholder="Image URL" class="flex-1" />
+          <button type="button" class="btn-remove" @click="removeShopCategory(i)">✕</button>
+        </div>
+        <button type="button" class="btn-add" @click="addShopCategory">+ Add category</button>
+      </fieldset>
+
+      <!-- ── Events (marquee) ── -->
+      <fieldset v-if="activeTab === 'events'">
+        <legend>Events</legend>
+        <div v-for="(e, i) in c.events" :key="i" class="testimonial-row">
+          <div class="row-2">
+            <input v-model="e.title" placeholder="Event title" />
+            <input v-model="e.date" type="date" />
+          </div>
+          <div class="row-2">
+            <input v-model="e.startTime" placeholder="Start time (e.g. 7:30 PM)" />
+            <input v-model="e.priceLabel" placeholder="Price label (e.g. $25 · Free)" />
+          </div>
+          <input v-model="e.category" placeholder="Category (Music · Comedy · Gallery)" />
+          <div class="field-with-ai">
+            <TextAreaField v-model="e.blurb" :rows="2" :maxlength="300" placeholder="One line that sells the night…" />
+            <AiCopyButton :site-id="siteId" :field="`event: ${e.title || 'event'}`" prompt="A punchy one-line event description (~20 words)" :context="aiContext" @pick="(v) => e.blurb = v" />
+          </div>
+          <div class="list-row">
+            <img v-if="e.image" :src="e.image" class="photo-thumb" style="max-width:160px" />
+            <label class="file-btn">{{ uploading[`event${i}`] ? 'Uploading…' : 'Upload photo' }}
+              <input type="file" accept="image/*" :disabled="!!uploading[`event${i}`]" @change="onInlineFile(e, `event${i}`, $event, 'image')" />
+            </label>
+            <input v-model="e.image" placeholder="or paste URL" class="flex-1" />
+          </div>
+          <button type="button" class="btn-remove" @click="removeEvent(i)">Remove event</button>
+        </div>
+        <button type="button" class="btn-add" @click="addEvent">+ Add event</button>
       </fieldset>
 
       <!-- ── Mission (project) ── -->

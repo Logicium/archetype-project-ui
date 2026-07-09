@@ -81,6 +81,17 @@
   color: var(--adm-accent);
 }
 .adm-eyebrow::before { content: '/ '; color: var(--adm-text-subtle); }
+/* Premium add-on chip — gold pill so premium features are unmistakable. */
+.adm-eyebrow--premium {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--adm-accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--adm-accent) 45%, transparent);
+  letter-spacing: 0.16em;
+}
+.adm-eyebrow--premium::before { content: none; }
 .adm-title {
   font-family: var(--adm-font-serif);
   font-size: clamp(1.7rem, 3vw, 2.4rem);

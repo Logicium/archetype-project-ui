@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { contentClient, type LodgingConfigDTO, type LodgingRoomDTO, type ReservationDTO } from '../../platform/contentClient'
 import { useActiveSiteStore } from '../../platform/activeSiteStore'
@@ -123,7 +123,7 @@ watch(siteId, load)
   <section class="adm-page">
     <header class="adm-page__head">
       <div>
-        <span class="adm-eyebrow">Premium add-on</span>
+        <span class="adm-eyebrow adm-eyebrow--premium">★ Premium add-on</span>
         <h1 class="adm-title">Lodging</h1>
         <p class="adm-subtitle">
           Accept reservations on your booking page. Define your rooms, set your stay rules,
@@ -146,7 +146,7 @@ watch(siteId, load)
 
     <template v-else>
       <p v-if="error" class="adm-msg-err">{{ error }}</p>
-      <p v-if="loading" class="adm-muted">Loading…</p>
+      <p v-if="loading" class="adm-muted">Loadingâ€¦</p>
 
       <div v-if="!addOnEnabled" class="adm-card adm-card--soft addon-gate">
         <p>
@@ -168,7 +168,7 @@ watch(siteId, load)
               <input class="adm-input rm-row__cap" type="number" min="1" max="20" v-model.number="r.capacity" title="Capacity" />
               <input class="adm-input rm-row__rate" type="number" min="0" step="100" v-model.number="r.nightlyRateCents" placeholder="cents/night" title="Nightly rate (cents)" />
               <input class="adm-input rm-row__img" v-model="r.imageUrl" placeholder="image url" />
-              <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="removeRoom(i)">×</button>
+              <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="removeRoom(i)">Ã—</button>
             </li>
           </ul>
           <p v-else class="adm-muted adm-mb">No rooms yet.</p>
@@ -224,7 +224,7 @@ watch(siteId, load)
 
       <div class="save-bar">
         <button type="button" class="adm-btn adm-btn--primary" :disabled="saving" @click="saveConfig">
-          {{ saving ? 'Saving…' : 'Save settings' }}
+          {{ saving ? 'Savingâ€¦' : 'Save settings' }}
         </button>
         <span v-if="savedAt" class="adm-muted">Saved {{ new Date(savedAt).toLocaleTimeString() }}</span>
       </div>
@@ -238,12 +238,12 @@ watch(siteId, load)
           </thead>
           <tbody>
             <tr v-for="r in reservations" :key="r.id">
-              <td>{{ r.checkIn }} → {{ r.checkOut }} <small class="adm-muted">({{ r.nights }}n)</small></td>
-              <td>{{ r.roomLabel }} <small class="adm-muted">· {{ r.partySize }} guest{{ r.partySize === 1 ? '' : 's' }}</small></td>
+              <td>{{ r.checkIn }} â†’ {{ r.checkOut }} <small class="adm-muted">({{ r.nights }}n)</small></td>
+              <td>{{ r.roomLabel }} <small class="adm-muted">Â· {{ r.partySize }} guest{{ r.partySize === 1 ? '' : 's' }}</small></td>
               <td>{{ r.name }}</td>
               <td>
                 <a :href="`mailto:${r.email}`">{{ r.email }}</a>
-                <template v-if="r.phone"> · {{ r.phone }}</template>
+                <template v-if="r.phone"> Â· {{ r.phone }}</template>
               </td>
               <td>{{ money(r.totalCents, r.currency) }}</td>
               <td>

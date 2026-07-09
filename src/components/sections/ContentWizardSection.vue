@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { UtensilsCrossed, BedDouble, ShoppingBag, Wrench, Sparkles, Rocket } from 'lucide-vue-next'
+import { UtensilsCrossed, BedDouble, ShoppingBag, Wrench, Theater, Sparkles, Rocket } from 'lucide-vue-next'
 import IconPickerInput from '../IconPickerInput.vue'
 import HeroSection from '@apotome/archetype-shared/components/sections/HeroSection.vue'
 import { SWATCHES, SWATCH_LIST } from '@apotome/archetype-shared/themes/swatches'
@@ -12,7 +12,7 @@ function swatchOf(name: string) {
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type WizardArchetype = 'mesa' | 'hearth' | 'vault' | 'keystone'
+type WizardArchetype = 'mesa' | 'hearth' | 'vault' | 'marquee' | 'keystone'
 
 interface Photo { src: string; alt: string; caption: string }
 interface HourRow { day: string; open: string }
@@ -27,6 +27,7 @@ interface Product { name: string; price: string; image: string; blurb: string; b
 interface ShopCat { name: string; image: string; url: string; count: string }
 interface Service { name: string; description: string; price: string; icon: string }
 interface Capability { label: string; value: string }
+interface WizEvent { title: string; date: string; startTime: string; category: string; priceLabel: string; blurb: string; image: string }
 
 interface WizardForm {
   archetype: WizardArchetype | ''
@@ -44,6 +45,10 @@ interface WizardForm {
   roomPhotos: Photo[]
   // Vault
   shopUrl: string; featured: Product[]; categories: ShopCat[]
+  // Marquee (venue / events)
+  ticketingUrl: string
+  venueCapacity: string; venueParking: string; venueAgeRestrictions: string
+  events: WizEvent[]
   // Keystone (utility / trades)
   serviceArea: string; dispatchPhone: string; emergencyAvailable: boolean
   services: Service[]; capabilities: Capability[]
@@ -138,6 +143,14 @@ const form = reactive<WizardForm>({
     { name: '', image: '/photos/cat-3.jpg', url: '#', count: '' },
     { name: '', image: '/photos/cat-4.jpg', url: '#', count: '' },
   ],
+  // Marquee
+  ticketingUrl: '',
+  venueCapacity: '', venueParking: '', venueAgeRestrictions: '',
+  events: [
+    { title: '', date: '', startTime: '', category: '', priceLabel: '', blurb: '', image: '/photos/event-1.jpg' },
+    { title: '', date: '', startTime: '', category: '', priceLabel: '', blurb: '', image: '/photos/event-2.jpg' },
+    { title: '', date: '', startTime: '', category: '', priceLabel: '', blurb: '', image: '/photos/event-3.jpg' },
+  ],
   // Keystone
   serviceArea: '', dispatchPhone: '', emergencyAvailable: false,
   services: [
@@ -172,8 +185,9 @@ watch([() => ({ ...form }), step], () => {
 const isMesa   = computed(() => form.archetype === 'mesa')
 const isHearth = computed(() => form.archetype === 'hearth')
 const isVault  = computed(() => form.archetype === 'vault')
+const isMarquee = computed(() => form.archetype === 'marquee')
 const isKeystone = computed(() => form.archetype === 'keystone')
-const hasHours = computed(() => isMesa.value || isVault.value || isKeystone.value)
+const hasHours = computed(() => isMesa.value || isVault.value || isKeystone.value || isMarquee.value)
 const progress = computed(() => Math.round((step.value / (STEPS.length - 1)) * 100))
 
 function next() { if (step.value < STEPS.length - 1) step.value++ }
@@ -399,6 +413,48 @@ ${socialBlock}
 }`
   }
 
+  // ── Marquee ───────────────────────────────────────────────────────────────
+  if (isMarquee.value) {
+    const hours = form.hours.map(h => `    { day: ${q(h.day)}, open: ${q(h.open)} },`).join('\n')
+
+    const events = form.events.filter(e => e.title).map(e => {
+      const id = e.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      return `    { id: ${q(id)}, title: ${q(e.title)}, date: ${q(e.date)}${e.startTime ? `, startTime: ${q(e.startTime)}` : ''}${e.category ? `, category: ${q(e.category)}` : ''}${e.priceLabel ? `, priceLabel: ${q(e.priceLabel)}` : ''}, image: ${q(e.image)}, blurb: ${q(e.blurb)} },`
+    }).join('\n')
+
+    return `import type { MarqueeSiteConfig } from './site.config'
+
+export const siteConfig: MarqueeSiteConfig = {
+  brand: ${q(form.brand)},
+  tagline: ${q(form.tagline)},
+  blurb: ${q(form.blurb)},
+  theme: '${form.theme}',
+  swatch: '${form.swatch}',
+  variant: '${form.variant}',
+${contactBlock}${form.ticketingUrl ? `\n  ticketingUrl: ${q(form.ticketingUrl)},` : ''}
+  hours: [
+${hours}
+  ],
+  photos: {
+    hero: ${photoSlot(form.heroPhoto)},
+    about: ${photoSlot(form.aboutPhoto)},
+    gallery: [
+${gallery}
+    ],
+  },
+${storyBlock}
+  venue: {${form.venueCapacity ? `\n    capacity: ${q(form.venueCapacity)},` : ''}${form.venueParking ? `\n    parking: ${q(form.venueParking)},` : ''}${form.venueAgeRestrictions ? `\n    ageRestrictions: ${q(form.venueAgeRestrictions)},` : ''}
+  },
+  events: [
+${events}
+  ],
+  series: [],
+  performers: [],
+${testimonialsBlock}
+${socialBlock}
+}`
+  }
+
   // ── Keystone ──────────────────────────────────────────────────────────────
   if (isKeystone.value) {
     const hours = form.hours.map(h => `    { day: ${q(h.day)}, open: ${q(h.open)} },`).join('\n')
@@ -491,7 +547,7 @@ async function buyAndDeploy() {
   try {
     const wizardPayload = JSON.parse(JSON.stringify(form))
     const res = await contentClient.createOrder({
-      archetype: form.archetype as 'mesa' | 'hearth' | 'vault' | 'keystone',
+      archetype: form.archetype as 'mesa' | 'hearth' | 'vault' | 'marquee' | 'keystone',
       plan: plan.value,
       addOns: addOns.value,
       wizardPayload,
@@ -657,6 +713,17 @@ const photoGuide = computed(() => {
               <strong>Vault</strong>
               <span>Shop — retail, boutique, market, maker</span>
               <span class="wiz__arch-sections">Products · Categories · Gallery · Story · Testimonials</span>
+            </button>
+            <button
+              type="button"
+              class="wiz__arch-card"
+              :class="{ 'is-active': form.archetype === 'marquee' }"
+              @click="form.archetype = 'marquee'"
+            >
+              <span class="wiz__arch-icon"><Theater :size="28" :stroke-width="1.5" /></span>
+              <strong>Marquee</strong>
+              <span>Venue — theater, gallery, music hall, event space</span>
+              <span class="wiz__arch-sections">Events · Tickets · Venue info · Story · Testimonials</span>
             </button>
             <button
               type="button"
@@ -881,6 +948,14 @@ const photoGuide = computed(() => {
               <input v-model="form.shopUrl" type="url" class="wiz__input" placeholder="https://your-shop.com" />
             </label>
           </template>
+          <template v-if="isMarquee">
+            <h3 class="wiz__sub">Ticketing</h3>
+            <label class="wiz__field wiz__field--full">
+              <span class="wiz__label">External ticketing URL <em>(optional)</em></span>
+              <input v-model="form.ticketingUrl" type="url" class="wiz__input" placeholder="https://your-ticketing-partner.com" />
+              <span class="wiz__hint">Leave empty to use the built-in ticketing system (premium add-on) — tickets sell directly on your site.</span>
+            </label>
+          </template>
         </div>
 
         <!-- STEP 4: Photos ──────────────────────────────────────────────── -->
@@ -1097,6 +1172,69 @@ const photoGuide = computed(() => {
             <button type="button" class="wiz__add" @click="form.categories.push({ name: '', image: `/photos/cat-${form.categories.length + 1}.jpg`, url: '#', count: '' })">
               + Add category
             </button>
+          </template>
+
+          <!-- MARQUEE: Events & Venue ────────────────────────────────── -->
+          <template v-if="isMarquee">
+            <h2 class="wiz__step-title">Events &amp; venue</h2>
+            <p class="wiz__step-desc">Your upcoming events — these fill the calendar and homepage. You can manage them any time from your site's admin.</p>
+
+            <div v-for="(e, i) in form.events" :key="i" class="wiz__card-block">
+              <h3 class="wiz__sub">Event {{ i + 1 }}</h3>
+              <div class="wiz__fields">
+                <label class="wiz__field">
+                  <span class="wiz__label">Title</span>
+                  <input v-model="e.title" type="text" class="wiz__input" placeholder="e.g. Friday Night Live" />
+                </label>
+                <label class="wiz__field">
+                  <span class="wiz__label">Date</span>
+                  <input v-model="e.date" type="date" class="wiz__input" />
+                </label>
+                <label class="wiz__field">
+                  <span class="wiz__label">Start time</span>
+                  <input v-model="e.startTime" type="text" class="wiz__input" placeholder="7:30 PM" />
+                </label>
+                <label class="wiz__field">
+                  <span class="wiz__label">Category <em>(optional)</em></span>
+                  <input v-model="e.category" type="text" class="wiz__input" placeholder="Music · Comedy · Gallery" />
+                </label>
+                <label class="wiz__field">
+                  <span class="wiz__label">Price label <em>(optional)</em></span>
+                  <input v-model="e.priceLabel" type="text" class="wiz__input" placeholder="$25 · Free · From $15" />
+                </label>
+                <label class="wiz__field">
+                  <span class="wiz__label">Image filename</span>
+                  <input v-model="e.image" type="text" class="wiz__input" :placeholder="`/photos/event-${i + 1}.jpg`" />
+                </label>
+                <label class="wiz__field wiz__field--full">
+                  <span class="wiz__label">Short description</span>
+                  <div class="wiz__input-ai">
+                    <input v-model="e.blurb" type="text" class="wiz__input" placeholder="One line that sells the night." />
+                    <button type="button" class="wiz__ai-btn" :class="{ 'is-loading': aiLoading[`event-blurb-${i}`] }" :disabled="!form.archetype || !form.brand || !e.title || aiLoading[`event-blurb-${i}`]" @click="aiSuggest('event.blurb', t => e.blurb = t, { event: e.title, category: e.category })" title="AI suggest"><Sparkles :size="13" /><span>Suggest</span></button>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <button type="button" class="wiz__add wiz__add--lg" @click="form.events.push({ title: '', date: '', startTime: '', category: '', priceLabel: '', blurb: '', image: `/photos/event-${form.events.length + 1}.jpg` })">
+              + Add event
+            </button>
+
+            <h3 class="wiz__sub" style="margin-top:2.5rem">Venue facts <em>(optional)</em></h3>
+            <p class="wiz__step-desc">Shown on the Visit page — capacity, parking, and door policy.</p>
+            <div class="wiz__fields">
+              <label class="wiz__field">
+                <span class="wiz__label">Capacity</span>
+                <input v-model="form.venueCapacity" type="text" class="wiz__input" placeholder="e.g. 180 standing · 120 seated" />
+              </label>
+              <label class="wiz__field">
+                <span class="wiz__label">Parking</span>
+                <input v-model="form.venueParking" type="text" class="wiz__input" placeholder="e.g. Free street parking after 6" />
+              </label>
+              <label class="wiz__field">
+                <span class="wiz__label">Age restrictions</span>
+                <input v-model="form.venueAgeRestrictions" type="text" class="wiz__input" placeholder="e.g. All ages until 9 PM" />
+              </label>
+            </div>
           </template>
 
           <!-- KEYSTONE: Services & Capabilities ──────────────────────── -->

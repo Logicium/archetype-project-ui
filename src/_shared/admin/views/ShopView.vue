@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { contentClient, type ShopConfigDTO, type ShopProductDTO, type ShopProductInput, type ShopOrderDTO } from '../../platform/contentClient'
 import { useActiveSiteStore } from '../../platform/activeSiteStore'
@@ -162,7 +162,7 @@ watch(siteId, load)
   <section class="adm-page">
     <header class="adm-page__head">
       <div>
-        <span class="adm-eyebrow">Premium add-on</span>
+        <span class="adm-eyebrow adm-eyebrow--premium">★ Premium add-on</span>
         <h1 class="adm-title">Shop</h1>
         <p class="adm-subtitle">
           Sell products from your site. Manage your catalog, fulfillment, and orders.
@@ -184,7 +184,7 @@ watch(siteId, load)
 
     <template v-else>
       <p v-if="error" class="adm-msg-err">{{ error }}</p>
-      <p v-if="loading" class="adm-muted">Loading…</p>
+      <p v-if="loading" class="adm-muted">Loadingâ€¦</p>
 
       <div v-if="!addOnEnabled" class="adm-card adm-card--soft addon-gate">
         <p>
@@ -209,7 +209,7 @@ watch(siteId, load)
               <input type="checkbox" v-model="p.active" /> live
             </label>
             <button type="button" class="adm-btn adm-btn--primary adm-btn--sm" @click="saveProduct(p)">Save</button>
-            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="deleteProduct(p)">×</button>
+            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="deleteProduct(p)">Ã—</button>
           </li>
         </ul>
         <p v-else class="adm-muted adm-mb">No products yet.</p>
@@ -261,7 +261,7 @@ watch(siteId, load)
             <textarea class="adm-input" rows="2" v-model="resolved.pickupInstructions" />
           </label>
           <label class="adm-field adm-field--full">
-            <span>Notification email (optional — defaults to your account email)</span>
+            <span>Notification email (optional â€” defaults to your account email)</span>
             <input class="adm-input" type="email" v-model="resolved.notifyEmail" />
           </label>
         </div>
@@ -269,7 +269,7 @@ watch(siteId, load)
 
       <div class="save-bar">
         <button type="button" class="adm-btn adm-btn--primary" :disabled="saving" @click="saveConfig">
-          {{ saving ? 'Saving…' : 'Save settings' }}
+          {{ saving ? 'Savingâ€¦' : 'Save settings' }}
         </button>
         <span v-if="savedAt" class="adm-muted">Saved {{ new Date(savedAt).toLocaleTimeString() }}</span>
       </div>
@@ -286,10 +286,10 @@ watch(siteId, load)
               <td>{{ new Date(o.createdAt).toLocaleString() }}</td>
               <td>
                 {{ o.name }}<br />
-                <small><a :href="`mailto:${o.email}`">{{ o.email }}</a><template v-if="o.phone"> · {{ o.phone }}</template></small>
+                <small><a :href="`mailto:${o.email}`">{{ o.email }}</a><template v-if="o.phone"> Â· {{ o.phone }}</template></small>
               </td>
               <td>
-                <div v-for="it in o.items" :key="it.productId">{{ it.name }} × {{ it.quantity }}</div>
+                <div v-for="it in o.items" :key="it.productId">{{ it.name }} Ã— {{ it.quantity }}</div>
               </td>
               <td>{{ o.fulfillment }}</td>
               <td>{{ money(o.totalCents, o.currency) }}</td>

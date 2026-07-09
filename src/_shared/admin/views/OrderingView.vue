@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { contentClient, type MenuItemDTO, type MenuItemInput, type MealOrderDTO, type OrderingConfigDTO } from '../../platform/contentClient'
 import { useActiveSiteStore } from '../../platform/activeSiteStore'
@@ -189,7 +189,7 @@ watch(siteId, load)
   <section class="adm-page">
     <header class="adm-page__head">
       <div>
-        <span class="adm-eyebrow">Premium add-on</span>
+        <span class="adm-eyebrow adm-eyebrow--premium">★ Premium add-on</span>
         <h1 class="adm-title">Ordering</h1>
         <p class="adm-subtitle">
           Accept pickup orders from your menu. Define your hours, kitchen capacity,
@@ -212,7 +212,7 @@ watch(siteId, load)
 
     <template v-else>
       <p v-if="error" class="adm-msg-err">{{ error }}</p>
-      <p v-if="loading" class="adm-muted">Loading…</p>
+      <p v-if="loading" class="adm-muted">Loadingâ€¦</p>
 
       <div v-if="!addOnEnabled" class="adm-card adm-card--soft addon-gate">
         <p>
@@ -237,7 +237,7 @@ watch(siteId, load)
               <input type="checkbox" v-model="p.active" /> live
             </label>
             <button type="button" class="adm-btn adm-btn--primary adm-btn--sm" @click="saveItem(p)">Save</button>
-            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="deleteItem(p)">×</button>
+            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="deleteItem(p)">Ã—</button>
           </li>
         </ul>
         <p v-else class="adm-muted adm-mb">No menu items yet.</p>
@@ -311,7 +311,7 @@ watch(siteId, load)
 
       <div class="save-bar">
         <button type="button" class="adm-btn adm-btn--primary" :disabled="saving" @click="saveConfig">
-          {{ saving ? 'Saving…' : 'Save settings' }}
+          {{ saving ? 'Savingâ€¦' : 'Save settings' }}
         </button>
         <span v-if="savedAt" class="adm-muted">Saved {{ new Date(savedAt).toLocaleTimeString() }}</span>
       </div>
@@ -328,11 +328,11 @@ watch(siteId, load)
               <td>{{ pickupLocal(o.pickupAt) }}</td>
               <td>
                 {{ o.name }}<br />
-                <small><a :href="`mailto:${o.email}`">{{ o.email }}</a><template v-if="o.phone"> · {{ o.phone }}</template></small>
+                <small><a :href="`mailto:${o.email}`">{{ o.email }}</a><template v-if="o.phone"> Â· {{ o.phone }}</template></small>
               </td>
               <td>
                 <div v-for="it in o.items" :key="it.menuItemId">
-                  {{ it.name }} × {{ it.quantity }}<template v-if="it.notes"> <em>({{ it.notes }})</em></template>
+                  {{ it.name }} Ã— {{ it.quantity }}<template v-if="it.notes"> <em>({{ it.notes }})</em></template>
                 </div>
               </td>
               <td>{{ money(o.totalCents, o.currency) }}</td>

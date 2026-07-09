@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import {
   contentClient,
@@ -212,9 +212,9 @@ watch(siteId, load)
   <section class="adm-page">
     <header class="adm-page__head">
       <div>
-        <span class="adm-eyebrow">Premium add-on</span>
+        <span class="adm-eyebrow adm-eyebrow--premium">★ Premium add-on</span>
         <h1 class="adm-title">Ticketing</h1>
-        <p class="adm-subtitle">Sell event tickets — set tiers, track capacity, and check guests in at the door.</p>
+        <p class="adm-subtitle">Sell event tickets â€” set tiers, track capacity, and check guests in at the door.</p>
       </div>
       <div class="head-actions">
         <button
@@ -232,7 +232,7 @@ watch(siteId, load)
 
     <template v-else>
       <p v-if="error" class="adm-msg-err">{{ error }}</p>
-      <p v-if="loading" class="adm-muted">Loading…</p>
+      <p v-if="loading" class="adm-muted">Loadingâ€¦</p>
 
       <div v-if="!addOnEnabled" class="adm-card adm-card--soft addon-gate">
         <p>The Ticketing add-on is currently <strong>off</strong>. Enable it above to start selling.</p>
@@ -262,7 +262,7 @@ watch(siteId, load)
             <input class="adm-input rm-row__price" type="number" min="0" v-model.number="t.priceCents" title="Price cents" />
             <input class="adm-input rm-row__inv" type="number" min="-1" v-model.number="t.capacity" title="Capacity (-1 = unlimited)" />
             <label class="rm-row__active"><input type="checkbox" v-model="t.active" /> live</label>
-            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="removeTier(newEvent.tiers, t.id)">×</button>
+            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="removeTier(newEvent.tiers, t.id)">Ã—</button>
           </li>
         </ul>
         <div class="adm-row-actions">
@@ -302,7 +302,7 @@ watch(siteId, load)
                   <input class="adm-input rm-row__inv" type="number" min="-1" v-model.number="t.capacity" />
                   <label class="rm-row__active"><input type="checkbox" v-model="t.active" /> live</label>
                   <span class="adm-muted rm-row__sold">{{ t.sold ?? 0 }} sold</span>
-                  <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="removeTier(e.tiers, t.id)">×</button>
+                  <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="removeTier(e.tiers, t.id)">Ã—</button>
                 </li>
               </ul>
               <div class="adm-row-actions">
