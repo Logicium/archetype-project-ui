@@ -130,7 +130,7 @@ export const contentClient = {
   }>('POST', `/admin/sites/${siteId}/domain/verify`),
   getDomain: (siteId: string) => request<{ domain?: string; dns?: DnsInstructionsDTO }>('GET', `/admin/sites/${siteId}/domain`),
 
-  getAnalytics: (siteId: string) => request<Array<{ date: string; visitors: number; pageviews: number; uptimeLatencyMs: number; uptimeError?: string }>>('GET', `/admin/sites/${siteId}/analytics`),
+  getAnalytics: (siteId: string, range: 7 | 30 | 90 = 30) => request<AnalyticsDTO>('GET', `/admin/sites/${siteId}/analytics?range=${range}`),
 
   // --- Payments (owner-scoped: Stripe Connect + Plaid) ---
   getPaymentsStatus: () => request<PaymentsStatusDTO>('GET', '/admin/payments/status'),
@@ -475,6 +475,18 @@ export interface InstagramMediaDTO {
   media_url: string
   permalink: string
   caption?: string
+}
+
+export interface AnalyticsDTO {
+  range: number
+  series: Array<{ date: string; visitors: number; pageviews: number; latencyMs: number; up: boolean | null }>
+  totals: { visitors: number; pageviews: number; prevVisitors: number; prevPageviews: number }
+  uptimePct: number | null
+  avgLatencyMs: number | null
+  topPages: Array<{ label: string; views: number }>
+  sources: Array<{ label: string; views: number }>
+  devices: Array<{ label: string; views: number }>
+  byHour: Array<{ hour: number; views: number }>
 }
 
 export interface PaymentsStatusDTO {

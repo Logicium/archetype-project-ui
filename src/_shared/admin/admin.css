@@ -43,6 +43,26 @@
   --adm-danger:  #f07a7a;
   --adm-info:    #7aa2f7;
 
+  /* Chart palette — validated (dataviz skill) categorical hues, CVD-safe.
+     Dark steps are the default (admin defaults dark); the light overrides
+     below swap in when a site swatch sets [data-mode="light"]. Charts
+     reference these by role so identity never depends on the site accent. */
+  --adm-chart-1: #3987e5;  /* blue  — visitors / primary sequential */
+  --adm-chart-2: #199e70;  /* aqua  — pageviews */
+  --adm-chart-3: #c98500;  /* yellow — 3rd category */
+  --adm-chart-good: #0ca30c;
+  --adm-chart-bad:  #d03b3b;
+  --adm-chart-grid: color-mix(in srgb, var(--adm-text) 12%, transparent);
+  --adm-chart-axis: color-mix(in srgb, var(--adm-text) 22%, transparent);
+}
+
+:root[data-mode='light'] {
+  --adm-chart-1: #2a78d6;
+  --adm-chart-2: #1baf7a;
+  --adm-chart-3: #eda100;
+  --adm-chart-good: #006300;
+  --adm-chart-bad:  #d03b3b;
+
   /* Shape — deliberately tighter than the public site: the admin is a
      tool, and tools have machined edges. */
   --adm-radius-sm: 3px;

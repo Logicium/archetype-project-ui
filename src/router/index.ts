@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { PLATFORM_ENABLED } from '@apotome/archetype-shared/platform/config'
 import { adminRoutes } from '@apotome/archetype-shared/admin/routes'
+import { installAnalytics } from '@apotome/archetype-shared/platform/track'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -16,5 +17,7 @@ const router = createRouter({
     return { top: 0 }
   },
 })
+
+installAnalytics(router)
 
 export default router
