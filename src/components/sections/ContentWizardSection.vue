@@ -531,6 +531,8 @@ const addOns = ref<string[]>([])
 const owner = reactive({ email: '', name: '' })
 const checkoutBusy = ref(false)
 const checkoutError = ref<string | null>(null)
+// Must accept the Terms + Privacy Policy before we take payment.
+const agreedToTerms = ref(false)
 
 const checkoutTotal = computed(() => {
   const b = CHECKOUT_BUNDLES.find(b => b.id === plan.value)
@@ -543,6 +545,7 @@ async function buyAndDeploy() {
   checkoutError.value = null
   if (!form.archetype) { checkoutError.value = 'Pick an archetype first.'; return }
   if (!owner.email) { checkoutError.value = 'Enter your email so we can deliver your site.'; return }
+  if (!agreedToTerms.value) { checkoutError.value = 'Please agree to the Terms of Service and Privacy Policy to continue.'; return }
   checkoutBusy.value = true
   try {
     const wizardPayload = JSON.parse(JSON.stringify(form))
@@ -1428,13 +1431,24 @@ const photoGuide = computed(() => {
                 </label>
               </div>
 
+              <!-- Terms + Privacy agreement (required before payment) -->
+              <label class="wiz__agree">
+                <input type="checkbox" v-model="agreedToTerms" class="wiz__agree-check" />
+                <span>
+                  I agree to the
+                  <RouterLink to="/terms" target="_blank" rel="noopener">Terms of Service</RouterLink>
+                  and
+                  <RouterLink to="/privacy" target="_blank" rel="noopener">Privacy Policy</RouterLink>.
+                </span>
+              </label>
+
               <!-- Launch bar -->
               <div class="wiz__launch-bar">
                 <div class="wiz__total">
                   <span class="wiz__total-label">Due today</span>
                   <strong>${{ checkoutTotal }}</strong>
                 </div>
-                <button type="button" class="ap-btn wiz__launch-btn" :disabled="checkoutBusy" @click="buyAndDeploy">
+                <button type="button" class="ap-btn wiz__launch-btn" :disabled="checkoutBusy || !agreedToTerms" @click="buyAndDeploy">
                   <Rocket :size="16" />
                   {{ checkoutBusy ? 'Redirecting…' : 'Launch my site' }}
                 </button>
@@ -1588,6 +1602,14 @@ const photoGuide = computed(() => {
   color: var(--ap-primary);
   flex-shrink: 0;
 }
+.wiz__agree {
+  display: flex; align-items: flex-start; gap: 0.6rem;
+  margin: 0 0 1rem;
+  font-size: 0.9rem; line-height: 1.5; color: var(--ap-ink);
+  cursor: pointer;
+}
+.wiz__agree-check { margin-top: 0.2rem; width: 1.05rem; height: 1.05rem; flex-shrink: 0; accent-color: var(--ap-primary); cursor: pointer; }
+.wiz__agree a { color: var(--ap-primary); text-decoration: underline; }
 .wiz__launch-bar {
   display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
   padding: 1rem 1.25rem;
@@ -1595,6 +1617,7 @@ const photoGuide = computed(() => {
   border-radius: var(--ap-radius-lg);
   color: var(--ap-surface);
 }
+.wiz__launch-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .wiz__total { display: flex; flex-direction: column; line-height: 1.15; }
 .wiz__total-label {
   font-size: 0.62rem; font-weight: 700;

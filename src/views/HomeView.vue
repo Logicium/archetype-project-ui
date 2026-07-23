@@ -2,6 +2,8 @@
 import { siteConfig } from '../config/site.config'
 import HeroSection from '@apotome/archetype-shared/components/sections/HeroSection.vue'
 import PillarsSection from '../components/sections/PillarsSection.vue'
+import BeyondWebsiteSection from '../components/sections/BeyondWebsiteSection.vue'
+import CampaignGallerySection from '../components/sections/CampaignGallerySection.vue'
 import ShowcaseSection from '../components/sections/ShowcaseSection.vue'
 import DesignSystemSection from '../components/sections/DesignSystemSection.vue'
 import PricingSection from '../components/sections/PricingSection.vue'
@@ -20,6 +22,8 @@ import FAQSection from '../components/sections/FAQSection.vue'
     layout="split"
   />
   <PillarsSection eyebrow="The plan" title="Built for Trinidad" :pillars="siteConfig.pillars" />
+  <BeyondWebsiteSection />
+  <CampaignGallerySection />
   <ShowcaseSection
     eyebrow="The work"
     title="Five templates, every business covered"

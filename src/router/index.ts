@@ -9,6 +9,10 @@ const router = createRouter({
     { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
     { path: '/contact', name: 'contact', component: () => import('../views/ContactView.vue') },
     { path: '/wizard', name: 'wizard', component: () => import('../views/WizardView.vue') },
+    { path: '/changelog', name: 'changelog', component: () => import('../views/ChangelogView.vue') },
+    { path: '/privacy', name: 'privacy', component: () => import('../views/legal/PrivacyView.vue') },
+    { path: '/terms', name: 'terms', component: () => import('../views/legal/TermsView.vue') },
+    { path: '/data-deletion', name: 'data-deletion', component: () => import('../views/legal/DataDeletionView.vue') },
     ...(PLATFORM_ENABLED ? adminRoutes : []),
   ],
   scrollBehavior(_to, _from, saved) {

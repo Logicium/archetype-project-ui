@@ -38,6 +38,16 @@ const navLinks = [
   { to: '/#pricing', label: 'Pricing' },
   { to: '/contact', label: 'Contact' },
 ]
+
+// Footer carries the nav links plus legal / policy pages (kept out of the
+// header to avoid clutter). Legal pages are required for Instagram production.
+const footerLinks = [
+  ...navLinks,
+  { to: '/changelog', label: "What's new" },
+  { to: '/privacy', label: 'Privacy' },
+  { to: '/terms', label: 'Terms' },
+  { to: '/data-deletion', label: 'Data deletion' },
+]
 </script>
 
 <template>
@@ -59,7 +69,7 @@ const navLinks = [
     :address="siteConfig.contact.address"
     :phone="siteConfig.contact.phone"
     :email="siteConfig.contact.email"
-    :links="navLinks"
+    :links="footerLinks"
     :social="siteConfig.social"
   />
   <ThemeSwitcher />
