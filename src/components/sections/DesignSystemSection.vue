@@ -25,33 +25,33 @@ const activeFeel = computed(() => swatch.value?.feel ?? '')
 const PREMIUM = [
   {
     icon: LayoutDashboard,
-    name: 'Owner studio',
-    desc: 'A private dashboard for every site — edit copy, photos, hours, and menus yourself. No code, no tickets, live in seconds.',
+    name: 'Your own studio',
+    desc: 'Edit copy, photos, hours, and menus yourself — live in seconds, no code.',
   },
   {
     icon: Sparkles,
     name: 'AI copywriter',
-    desc: 'Stuck on a tagline or a dish description? One click drafts it in your brand voice, right inside the editor.',
+    desc: 'One click drafts taglines and descriptions in your brand voice.',
   },
   {
     icon: Instagram,
-    name: 'Living content embeds',
-    desc: 'Your latest Instagram posts and live Google star ratings render on-site automatically — fresh content with zero upkeep.',
+    name: 'Always-fresh content',
+    desc: 'Instagram posts and live Google ratings on-site — zero upkeep.',
   },
   {
     icon: CalendarClock,
-    name: 'Commerce modules',
-    desc: 'Booking for stays, ordering for kitchens, ticketing for venues, dispatch for trades — each archetype ships with its own machinery.',
+    name: 'Built to sell',
+    desc: 'Booking, ordering, ticketing, or dispatch — built into your site.',
   },
   {
     icon: Globe,
-    name: 'Domain & hosting, handled',
-    desc: 'First-year .com included. Deployed on a global edge network with sub-3-second loads and SSL out of the box.',
+    name: 'Domain & hosting',
+    desc: 'Your .com, global edge hosting, and SSL — all handled for you.',
   },
   {
     icon: LineChart,
-    name: 'Analytics & inbox',
-    desc: 'See your visitors, read your reviews, and answer inquiries from one place — proof the site is working for you.',
+    name: 'Proof it works',
+    desc: 'Visitors, reviews, and inquiries — together in one dashboard.',
   },
 ]
 </script>
@@ -105,18 +105,12 @@ const PREMIUM = [
         <span class="ap-eyebrow">The color system</span>
         <h3 class="ap-dsys__color-title">Color, with a thesis.</h3>
         <p>
-          Every palette belongs to a color theory — a researched harmony model
-          with a documented psychological register. Warm palettes stoke appetite,
-          serene blues signal competence, dark grounds read as luxury.
-          You're not picking a color; you're picking a feeling.
+          23 palettes, grouped by the feeling they create — warm stokes appetite,
+          serene reads as trust, dark reads as luxury. Tap any to retint the page.
         </p>
         <p class="ap-dsys__color-current">
           <span class="ap-dsys__color-chip" :style="{ background: swatch.primary }" aria-hidden="true" />
           Now wearing <strong>{{ swatch.label }}</strong><template v-if="activeFeel"> — {{ activeFeel.toLowerCase() }}</template>
-        </p>
-        <p class="ap-dsys__color-hint">
-          Clients can also build and save their own palettes in the Color Lab —
-          pick a hue and a harmony, we derive the rest.
         </p>
       </div>
 
@@ -126,7 +120,6 @@ const PREMIUM = [
             <h4>{{ t.label }}</h4>
             <span>{{ t.harmony }}</span>
           </div>
-          <p class="ap-dsys__theory-psy">{{ t.psychology }}</p>
           <div class="ap-dsys__tiles">
             <button
               v-for="s in t.items"
@@ -153,15 +146,13 @@ const PREMIUM = [
     <div class="ap-dsys__premium">
       <div class="ap-container">
         <div class="ap-dsys__premium-head">
-          <span class="ap-eyebrow ap-dsys__premium-eyebrow">Premium, standard</span>
-          <h3>The machinery behind the pretty face.</h3>
-          <p>
-            A website that just sits there is a brochure. These ship with the
-            platform — the parts that keep working after launch day.
-          </p>
+          <span class="ap-eyebrow ap-dsys__premium-eyebrow">Included, not upsold</span>
+          <h3>Not just a page. A platform that works for you.</h3>
+          <p>Six things a brochure site will never do — all standard.</p>
         </div>
         <div class="ap-dsys__premium-grid">
-          <article v-for="f in PREMIUM" :key="f.name" class="ap-dsys__feature">
+          <article v-for="(f, i) in PREMIUM" :key="f.name" class="ap-dsys__feature">
+            <span class="ap-dsys__feature-num" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
             <span class="ap-dsys__feature-icon">
               <component :is="f.icon" :size="20" :stroke-width="1.6" />
             </span>
@@ -342,12 +333,18 @@ const PREMIUM = [
   overflow: hidden;
 }
 .ap-dsys__feature {
+  position: relative;
   background: var(--ap-ink);
   padding: clamp(1.5rem, 3vw, 2rem);
-  display: flex; flex-direction: column; gap: 0.6rem;
+  display: flex; flex-direction: column; gap: 0.55rem;
   transition: background 300ms ease;
 }
 .ap-dsys__feature:hover { background: color-mix(in srgb, var(--ap-surface) 6%, var(--ap-ink)); }
+.ap-dsys__feature-num {
+  position: absolute; top: clamp(1.5rem, 3vw, 2rem); right: clamp(1.4rem, 3vw, 1.9rem);
+  font-family: var(--ap-font-mono); font-size: 0.72rem; letter-spacing: 0.12em;
+  color: color-mix(in srgb, var(--ap-accent) 65%, transparent);
+}
 .ap-dsys__feature-icon {
   width: 42px; height: 42px;
   display: grid; place-items: center;
@@ -359,12 +356,12 @@ const PREMIUM = [
 .ap-dsys__feature h4 {
   margin: 0;
   color: var(--ap-surface);
-  font-size: 1.02rem;
+  font-size: 1.2rem;
 }
 .ap-dsys__feature p {
   margin: 0;
-  color: color-mix(in srgb, var(--ap-surface) 62%, transparent);
-  font-size: 0.88rem; line-height: 1.6;
+  color: color-mix(in srgb, var(--ap-surface) 68%, transparent);
+  font-size: 0.9rem; line-height: 1.55;
 }
 
 @media (max-width: 900px) {

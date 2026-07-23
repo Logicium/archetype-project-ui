@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { siteConfig } from '../config/site.config'
 import HeroSection from '@apotome/archetype-shared/components/sections/HeroSection.vue'
-import PillarsSection from '../components/sections/PillarsSection.vue'
 import BeyondWebsiteSection from '../components/sections/BeyondWebsiteSection.vue'
 import CampaignGallerySection from '../components/sections/CampaignGallerySection.vue'
 import ShowcaseSection from '../components/sections/ShowcaseSection.vue'
@@ -21,13 +20,12 @@ import FAQSection from '../components/sections/FAQSection.vue'
     :cta-secondary="{ label: 'Get in touch', to: '/contact' }"
     layout="split"
   />
-  <PillarsSection eyebrow="The plan" title="Built for Trinidad" :pillars="siteConfig.pillars" />
   <BeyondWebsiteSection />
   <CampaignGallerySection />
   <ShowcaseSection
-    eyebrow="The work"
-    title="Five templates, every business covered"
-    intro="Each archetype is a complete site, live right now — same engine, different body. Every one restyles across four themes and the full palette library."
+    eyebrow="The templates"
+    title="One engine. Five kinds of business."
+    intro="Restaurants, stays, shops, trades, venues — each template is purpose-built for how that business actually works. Pick one to preview it live."
     :sites="siteConfig.showcase"
   />
   <DesignSystemSection />

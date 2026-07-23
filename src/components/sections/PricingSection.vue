@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Smartphone, TrendingUp, Globe, Zap, MapPin, Mail, Palette, Wrench, ArrowRight, Check } from 'lucide-vue-next'
+import { Smartphone, TrendingUp, Globe, Zap, MapPin, Mail, Palette, Wrench, Instagram, Star, ArrowRight, Check } from 'lucide-vue-next'
 import { PRICING, BUNDLES } from '../../config/pricing'
 
 defineProps<{
@@ -17,9 +17,11 @@ const addonItems = computed(() => PRICING.filter(p => p.category === 'addons'))
 const WYG = [
   { icon: Smartphone, label: 'Every screen' },
   { icon: TrendingUp, label: 'SEO built in' },
+  { icon: MapPin, label: 'Google Maps built in' },
+  { icon: Instagram, label: 'Instagram feed' },
+  { icon: Star, label: 'Live Google reviews' },
   { icon: Globe, label: 'First-year .com domain' },
   { icon: Zap, label: 'Global CDN hosting' },
-  { icon: MapPin, label: 'Google Maps embedded' },
   { icon: Mail, label: 'Contact form wired' },
   { icon: Palette, label: '4 themes · 23 palettes' },
   { icon: Wrench, label: 'Tune-ups on call' },
@@ -147,13 +149,13 @@ const WYG = [
 /* ── Tier tickets ────────────────────────────────────── */
 .ap-pricing__tiers {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: clamp(1rem, 2vw, 1.5rem);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: clamp(0.85rem, 1.5vw, 1.2rem);
 }
 .ap-pricing__tier {
   position: relative;
-  display: flex; flex-direction: column; gap: 0.75rem;
-  padding: clamp(1.5rem, 3vw, 2.25rem);
+  display: flex; flex-direction: column; gap: 0.55rem;
+  padding: clamp(1.25rem, 2vw, 1.65rem);
   background: var(--ap-surface-alt);
   border: 1px solid var(--ap-line);
   border-radius: var(--ap-radius-lg);
@@ -189,18 +191,18 @@ const WYG = [
 }
 .ap-pricing__tier-name {
   margin: 0;
-  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+  font-size: clamp(1.35rem, 2vw, 1.7rem);
 }
-.ap-pricing__tier-blurb { margin: 0; color: var(--ap-ink-muted); font-size: 0.92rem; max-width: 42ch; }
+.ap-pricing__tier-blurb { margin: 0; color: var(--ap-ink-muted); font-size: 0.9rem; max-width: 42ch; }
 .ap-pricing__tier-price {
-  margin: 0.4rem 0 0.2rem;
+  margin: 0.3rem 0 0.15rem;
   font-family: var(--ap-font-heading);
-  font-size: clamp(3.2rem, 6vw, 4.5rem);
+  font-size: clamp(2.3rem, 3.8vw, 3.1rem);
   font-weight: 700;
   line-height: 0.9;
   letter-spacing: -0.03em;
   color: var(--ap-ink);
-  display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+  display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;
 }
 .ap-pricing__tier-price sup {
   font-size: 0.4em;
@@ -214,13 +216,13 @@ const WYG = [
   color: var(--ap-ink-muted);
 }
 .ap-pricing__tier-list {
-  list-style: none; margin: 0.4rem 0 0.75rem; padding: 0.85rem 0 0;
+  list-style: none; margin: 0.3rem 0 0.6rem; padding: 0.7rem 0 0;
   border-top: 1px solid var(--ap-line);
-  display: grid; gap: 0.5rem;
+  display: grid; gap: 0.4rem;
 }
 .ap-pricing__tier-list li {
   display: flex; gap: 0.55rem; align-items: flex-start;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 .ap-pricing__tier-list svg { color: var(--ap-primary); flex-shrink: 0; margin-top: 0.22em; }
 .ap-pricing__tier-cta {

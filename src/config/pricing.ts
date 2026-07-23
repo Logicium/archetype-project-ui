@@ -81,18 +81,8 @@ export const PRICING: PriceItem[] = [
     category: 'addons',
     includes: ['Property setup', 'Sitemap submission', 'A 1-page guide for reading your stats'],
   },
-  {
-    id: 'instagram-gmaps',
-    name: 'Instagram + Google Reviews',
-    price: 50,
-    blurb: 'Embed your latest Instagram posts and live Google star ratings directly on your site — keeps content fresh automatically.',
-    category: 'addons',
-    includes: [
-      'Instagram feed widget (latest posts, auto-updated)',
-      'Google Maps star rating + review carousel',
-      'No manual updates needed',
-    ],
-  },
+  // Instagram feed + live Google reviews are now included with every site
+  // (see the "Included with every site" strip) — no longer a paid add-on.
 ]
 
 export const BUNDLES = [

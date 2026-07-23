@@ -43,7 +43,7 @@ export const siteConfig: ProjectSiteConfig = reactive(({
     eyebrow: 'The Trinidad campaign',
     title: 'A website for every business in town.',
     subtitle:
-      'Five templates — Mesa for restaurants, Hearth for stays, Vault for shops, Keystone for trades, and Marquee for venues — each with four design themes and a research-backed color system. $200 to launch.',
+      'Professionally designed, genuinely fast, and yours to keep — with the map, search, and photos that actually bring customers in. From $200 to launch.',
     image: '/showcase/hero.jpg',
   },
   pillars: [

@@ -1,11 +1,15 @@
 <script setup lang="ts">
 /**
- * The photo campaign, front and center — a masonry wall of real Trinidad shots
- * from the Apotome photo campaign. Framed as an essential part of what you get,
- * not an optional add-on. Click any photo for a full-screen lightbox.
+ * The photo campaign — real Trinidad shots from an Apotome shoot. It's an
+ * optional add-on (from $100), pitched as the thing that makes the whole site
+ * feel alive. Click any photo for a full-screen lightbox.
  */
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { CAMPAIGN_PHOTOS } from '../../config/campaign-photos'
+
+// Show a tight, curated set on the page; the lightbox holds the full campaign.
+const preview = CAMPAIGN_PHOTOS.slice(0, 7)
+const rest = CAMPAIGN_PHOTOS.length - preview.length
 
 const lightbox = ref<number | null>(null)
 function open(i: number) { lightbox.value = i; document.documentElement.style.overflow = 'hidden' }
@@ -27,32 +31,33 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', onKey); document.d
   <section class="camp ap-section ap-section--alt">
     <div class="ap-container">
       <div class="ap-section-head camp__head">
-        <p class="ap-eyebrow">The photo campaign · included</p>
+        <p class="ap-eyebrow">The photo campaign · add-on · from $100</p>
         <h2>A brand refresh, shot in Trinidad</h2>
         <p class="camp__intro">
-          Every Apotome site comes with a real photo campaign — we show up, shoot your
-          space, your food, your people, your town, and hand you a gallery that makes the
-          whole site feel alive. Not an add-on. Part of the magic. Every photo below is
-          the real thing.
+          Add a real photo campaign to any site — we shoot your space, your food, and your
+          people, then hand you a gallery that makes the whole thing feel alive.
         </p>
       </div>
 
       <div class="camp__grid">
         <button
-          v-for="(p, i) in CAMPAIGN_PHOTOS"
+          v-for="(p, i) in preview"
           :key="p.src"
           type="button"
           class="camp__item"
-          :class="`camp__item--${p.orientation}`"
-          :style="{ aspectRatio: `${p.w} / ${p.h}` }"
           @click="open(i)"
         >
           <img :src="p.src" :alt="`Trinidad, Colorado — Apotome photo campaign ${i + 1}`" loading="lazy" decoding="async" />
           <span class="camp__zoom" aria-hidden="true">⤢</span>
         </button>
+        <button type="button" class="camp__item camp__item--all" @click="open(preview.length)">
+          <img :src="CAMPAIGN_PHOTOS[preview.length]!.src" alt="" loading="lazy" decoding="async" />
+          <span class="camp__all">
+            <strong>+{{ rest }}</strong>
+            <span>See all {{ CAMPAIGN_PHOTOS.length }}</span>
+          </span>
+        </button>
       </div>
-
-      <p class="camp__foot">Shot on location in Trinidad, Colorado.</p>
     </div>
 
     <!-- Lightbox -->
@@ -72,44 +77,47 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', onKey); document.d
 .camp__head { max-width: 760px; }
 .camp__intro { color: var(--ap-ink-muted); line-height: 1.7; }
 
-/* Masonry via CSS columns — handles mixed portrait/landscape cleanly. */
+/* Compact 2-row grid — uniform tiles keep the section short; the lightbox
+   carries the full campaign. */
 .camp__grid {
-  column-count: 4;
-  column-gap: 0.85rem;
-  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+  margin-top: clamp(1.25rem, 3vw, 2rem);
 }
-@media (max-width: 1100px) { .camp__grid { column-count: 3; } }
-@media (max-width: 760px)  { .camp__grid { column-count: 2; } }
-@media (max-width: 460px)  { .camp__grid { column-count: 1; } }
+@media (max-width: 900px) { .camp__grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 520px) { .camp__grid { grid-template-columns: repeat(2, 1fr); } }
 
 .camp__item {
-  display: block; width: 100%; margin: 0 0 0.85rem;
-  padding: 0; border: 0; cursor: zoom-in;
   position: relative; overflow: hidden;
+  padding: 0; border: 0; cursor: zoom-in;
+  aspect-ratio: 4 / 3;
   border-radius: var(--ap-radius, 8px);
   background: var(--ap-line);
-  break-inside: avoid;
   box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-  transition: transform 240ms ease, box-shadow 240ms ease;
 }
-.camp__item img { display: block; width: 100%; height: auto; transition: transform 500ms ease; }
-.camp__item:hover { box-shadow: 0 12px 30px -12px rgba(0,0,0,0.4); transform: translateY(-2px); }
-.camp__item:hover img { transform: scale(1.05); }
+.camp__item img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 500ms ease; }
+.camp__item:hover img { transform: scale(1.06); }
 .camp__zoom {
   position: absolute; top: 0.5rem; right: 0.5rem;
-  width: 28px; height: 28px; border-radius: 50%;
+  width: 26px; height: 26px; border-radius: 50%;
   display: grid; place-items: center;
-  background: rgba(0,0,0,0.55); color: #fff; font-size: 0.9rem;
+  background: rgba(0,0,0,0.55); color: #fff; font-size: 0.85rem;
   opacity: 0; transition: opacity 200ms ease;
   backdrop-filter: blur(4px);
 }
 .camp__item:hover .camp__zoom { opacity: 1; }
 
-.camp__foot {
-  margin: 1.5rem 0 0; text-align: center;
-  font-size: 0.85rem; color: var(--ap-ink-muted);
-  letter-spacing: 0.02em;
+/* "See all" tile */
+.camp__item--all { cursor: pointer; }
+.camp__item--all img { filter: brightness(0.4); }
+.camp__all {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem;
+  color: #fff; text-align: center;
 }
+.camp__all strong { font-family: var(--ap-font-heading); font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1; }
+.camp__all span { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; }
 
 /* Lightbox */
 .camp-lb {
