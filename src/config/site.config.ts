@@ -96,6 +96,17 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       liveUrl: 'https://archetype-vault-ui.vercel.app',
     },
     {
+      id: 'marquee',
+      name: 'Marquee',
+      archetype: 'Venue',
+      blurb: 'For venues, galleries, theaters, and festivals. Events calendar, ticketing, performers, and recurring series.',
+      image: '/showcase/marquee.jpg',
+      themes: ['heritage', 'vibrant', 'studio'],
+      swatches: ['ember', 'midnight', 'sunset'],
+      liveUrl: 'https://apotome-archetypes-archetype-marque-orpin.vercel.app',
+    },
+    // Keystone is last: it's the one non-tourism trade archetype (auto/welding/build).
+    {
       id: 'keystone',
       name: 'Keystone',
       archetype: 'Utility',
@@ -104,16 +115,6 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       themes: ['ironwood', 'studio', 'heritage'],
       swatches: ['stone', 'midnight', 'forest'],
       liveUrl: 'https://archetype-keystone-ui.vercel.app',
-    },
-    {
-      id: 'marquee',
-      name: 'Marquee',
-      archetype: 'Venue',
-      blurb: 'For venues, galleries, theaters, and festivals. Events calendar, ticketing, performers, and recurring series.',
-      image: '/showcase/marquee.jpg',
-      themes: ['heritage', 'vibrant', 'studio'],
-      swatches: ['ember', 'midnight', 'sunset'],
-      liveUrl: 'https://archetype-marquee-ui.vercel.app',
     },
   ],
   faq: [

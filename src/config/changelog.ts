@@ -18,6 +18,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: 'July 24, 2026',
+    title: 'A calmer, stickier editor window',
+    summary: 'Small refinements that make the pop-out editor feel right.',
+    items: [
+      { tag: 'Improved', text: 'Minimizing the floating editor now shrinks it to its own little bar right where it was, instead of jumping back to the corner.' },
+      { tag: 'Improved', text: 'The window now glides smoothly and calmly between docked, floating, and full screen, with no more jumpy resizing.' },
+      { tag: 'New', text: 'The editor remembers its state. Reopen your site and it is right where you left it, same size, same spot, same tab.' },
+    ],
+  },
+  {
+    date: 'July 23, 2026',
+    title: 'A sharper editor, and a new partner',
+    summary: 'The live editor gets more powerful and more reliable, and we welcome a hometown partner.',
+    items: [
+      { tag: 'Fixed', text: 'Publishing from the live editor now saves every time. It could previously say "Published" without keeping your change, and that is resolved.' },
+      { tag: 'New', text: 'Pop the editor out into a floating window you can drag and resize, send it full screen, or dock it back to the corner. The window glides smoothly between each.' },
+      { tag: 'Improved', text: 'Every heading on your site is now editable, not just the body text, so you have full control over every word on the page.' },
+      { tag: 'Improved', text: 'Replacing a photo is now a clear "Replace photo" button when you hover an image, and empty image slots show an upload prompt instead of a blank space.' },
+      { tag: 'Improved', text: 'Long paragraphs get a taller editing box with a live word count, so it is easy to keep your copy tight.' },
+      { tag: 'New', text: 'Apotome Labs is partnering with Emergent Campus, the nonprofit business campus igniting innovation across rural Colorado. You will see the collaboration on our homepage.' },
+    ],
+  },
+  {
     date: 'July 21, 2026',
     title: 'Edit your site right on the page',
     summary: 'Your site now updates itself, a new live editor, a homepage that shows off everything you get, and the legal pieces to connect Instagram.',

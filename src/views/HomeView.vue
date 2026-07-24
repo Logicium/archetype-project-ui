@@ -7,6 +7,7 @@ import ShowcaseSection from '../components/sections/ShowcaseSection.vue'
 import DesignSystemSection from '../components/sections/DesignSystemSection.vue'
 import PricingSection from '../components/sections/PricingSection.vue'
 import SupportSection from '../components/sections/SupportSection.vue'
+import PartnershipSection from '../components/sections/PartnershipSection.vue'
 import FAQSection from '../components/sections/FAQSection.vue'
 </script>
 
@@ -41,5 +42,6 @@ import FAQSection from '../components/sections/FAQSection.vue'
     :email="siteConfig.contact.email"
     :address="siteConfig.contact.address"
   />
+  <PartnershipSection />
   <FAQSection eyebrow="FAQ" :items="siteConfig.faq" />
 </template>

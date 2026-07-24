@@ -80,7 +80,6 @@ const STEPS = [
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const step = ref(0)
-const copied = ref(false)
 
 function blankPhoto(src = ''): Photo { return { src, alt: '', caption: '' } }
 function blankMenuItem(): MenuItem { return { name: '', description: '', price: '', tags: '' } }
@@ -230,287 +229,6 @@ function removeMenuItem(catIdx: number, itemIdx: number) { form.menuCategories[c
 function addMenuCategory() { form.menuCategories.push({ name: '', items: [blankMenuItem()] }) }
 
 // ─── Config export ────────────────────────────────────────────────────────────
-function q(s: string) { return `'${s.replace(/'/g, "\\'")}'` }
-function qArr(arr: string[]) { return arr.map(s => `'${s.replace(/'/g, "\\'")}'`).join(', ') }
-function indent(s: string, n: number) { return s.split('\n').map(l => ' '.repeat(n) + l).join('\n') }
-
-const configOutput = computed((): string => {
-  if (!form.archetype) return '// Choose an archetype to generate your config'
-
-  const photoSlot = (p: Photo) =>
-    `{ src: ${q(p.src)}, alt: ${q(p.alt)}${p.caption ? `, caption: ${q(p.caption)}` : ''} }`
-
-  const gallery = form.gallery
-    .filter(p => p.src)
-    .map(p => `      ${photoSlot(p)},`)
-    .join('\n')
-
-  const testimonials = form.testimonials
-    .filter(t => t.quote)
-    .map(t => `    { quote: ${q(t.quote)}, author: ${q(t.author)}${t.source ? `, source: ${q(t.source)}` : ''} },`)
-    .join('\n')
-
-  const social = form.social
-    .filter(s => s.href)
-    .map(s => `    { label: ${q(s.label)}, href: ${q(s.href)} },`)
-    .join('\n')
-
-  const facts = form.storyFacts
-    .filter(f => f.label && f.value)
-    .map(f => `      { label: ${q(f.label)}, value: ${q(f.value)} },`)
-    .join('\n')
-
-  const contactBlock = `  contact: {
-    address: ${q(form.address)},
-    phone: ${q(form.phone)},
-    email: ${q(form.email)},${form.mapEmbedUrl ? `\n    mapEmbedUrl: ${q(form.mapEmbedUrl)},` : ''}
-  },`
-
-  const storyBlock = `  story: {
-    title: ${q(form.storyTitle)},
-    paragraphs: [
-${form.storyParagraphs.filter(Boolean).map(p => `      ${q(p)},`).join('\n')}
-    ],${facts ? `\n    facts: [\n${facts}\n    ],` : ''}
-  },`
-
-  const testimonialsBlock = `  testimonials: [\n${testimonials}\n  ],`
-  const socialBlock = `  social: [\n${social}\n  ],`
-
-  // ── Mesa ──────────────────────────────────────────────────────────────────
-  if (isMesa.value) {
-    const hours = form.hours.map(h => `    { day: ${q(h.day)}, open: ${q(h.open)} },`).join('\n')
-    const menu = form.menuCategories.map(cat => {
-      const items = cat.items.filter(i => i.name).map(i =>
-        `          { name: ${q(i.name)}, description: ${q(i.description)}, price: ${q(i.price)}${i.tags ? `, tags: [${qArr(i.tags.split(',').map(t => t.trim()).filter(Boolean))}]` : ''} },`
-      ).join('\n')
-      return `      {\n        name: ${q(cat.name)},\n        items: [\n${items}\n        ],\n      },`
-    }).join('\n')
-
-    return `import type { MesaSiteConfig } from './site.config'
-
-export const siteConfig: MesaSiteConfig = {
-  brand: ${q(form.brand)},
-  tagline: ${q(form.tagline)},
-  blurb: ${q(form.blurb)},
-  theme: '${form.theme}',
-  swatch: '${form.swatch}',
-  variant: '${form.variant}',
-${contactBlock}
-  hours: [
-${hours}
-  ],
-  photos: {
-    hero: ${photoSlot(form.heroPhoto)},
-    about: ${photoSlot(form.aboutPhoto)},
-    gallery: [
-${gallery}
-    ],
-  },
-${storyBlock}
-  menu: {${form.menuIntro ? `\n    intro: ${q(form.menuIntro)},` : ''}
-    categories: [
-${menu}
-    ],${form.menuFullMenuUrl ? `\n    fullMenuUrl: ${q(form.menuFullMenuUrl)},` : ''}
-  },
-${testimonialsBlock}
-${socialBlock}
-}`
-  }
-
-  // ── Hearth ────────────────────────────────────────────────────────────────
-  if (isHearth.value) {
-    const rooms = form.rooms.map((r, i) => {
-      const feats = r.features.split(',').map(f => f.trim()).filter(Boolean)
-      const roomPhoto = form.roomPhotos[i]
-      return `    {
-      name: ${q(r.name)},
-      blurb: ${q(r.blurb)},
-      image: ${q(roomPhoto?.src || r.image)},
-      features: [${qArr(feats).split(', ').map(f => f).join(', ')}],${r.rateFrom ? `\n      rateFrom: ${q(r.rateFrom)},` : ''}${r.bookUrl ? `\n      bookUrl: ${q(r.bookUrl)},` : ''}
-    },`
-    }).join('\n')
-
-    const amenities = form.amenities.filter(a => a.label).map(a =>
-      `    { label: ${q(a.label)}, description: ${q(a.description)}, icon: ${q(a.icon)} },`
-    ).join('\n')
-
-    return `import type { HearthSiteConfig } from './site.config'
-
-export const siteConfig: HearthSiteConfig = {
-  brand: ${q(form.brand)},
-  tagline: ${q(form.tagline)},
-  blurb: ${q(form.blurb)},
-  theme: '${form.theme}',
-  swatch: '${form.swatch}',
-  variant: '${form.variant}',
-${contactBlock}
-  bookingUrl: ${q(form.bookingUrl)},
-  photos: {
-    hero: ${photoSlot(form.heroPhoto)},
-    about: ${photoSlot(form.aboutPhoto)},
-    rooms: [
-${form.roomPhotos.filter(p => p.src).map(p => `      ${photoSlot(p)},`).join('\n')}
-    ],
-    gallery: [
-${gallery}
-    ],
-  },
-${storyBlock}
-  rooms: [
-${rooms}
-  ],
-  amenities: [
-${amenities}
-  ],
-${testimonialsBlock}
-${socialBlock}
-}`
-  }
-
-  // ── Vault ─────────────────────────────────────────────────────────────────
-  if (isVault.value) {
-    const hours = form.hours.map(h => `    { day: ${q(h.day)}, open: ${q(h.open)} },`).join('\n')
-
-    const products = form.featured.filter(p => p.name).map(p =>
-      `    { name: ${q(p.name)}, price: ${q(p.price)}, image: ${q(p.image)}, blurb: ${q(p.blurb)}${p.badge ? `, badge: ${q(p.badge)}` : ''}${p.url ? `, url: ${q(p.url)}` : ''} },`
-    ).join('\n')
-
-    const cats = form.categories.filter(c => c.name).map(c =>
-      `    { name: ${q(c.name)}, image: ${q(c.image)}${c.count ? `, count: ${Number(c.count)}` : ''}, url: ${q(c.url)} },`
-    ).join('\n')
-
-    return `import type { VaultSiteConfig } from './site.config'
-
-export const siteConfig: VaultSiteConfig = {
-  brand: ${q(form.brand)},
-  tagline: ${q(form.tagline)},
-  blurb: ${q(form.blurb)},
-  theme: '${form.theme}',
-  swatch: '${form.swatch}',
-  variant: '${form.variant}',
-${contactBlock}
-  shopUrl: ${q(form.shopUrl)},
-  hours: [
-${hours}
-  ],
-  photos: {
-    hero: ${photoSlot(form.heroPhoto)},
-    about: ${photoSlot(form.aboutPhoto)},
-    storefront: ${photoSlot(form.storefrontPhoto)},
-    gallery: [
-${gallery}
-    ],
-  },
-${storyBlock}
-  featured: [
-${products}
-  ],
-  categories: [
-${cats}
-  ],
-${testimonialsBlock}
-${socialBlock}
-}`
-  }
-
-  // ── Marquee ───────────────────────────────────────────────────────────────
-  if (isMarquee.value) {
-    const hours = form.hours.map(h => `    { day: ${q(h.day)}, open: ${q(h.open)} },`).join('\n')
-
-    const events = form.events.filter(e => e.title).map(e => {
-      const id = e.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-      return `    { id: ${q(id)}, title: ${q(e.title)}, date: ${q(e.date)}${e.startTime ? `, startTime: ${q(e.startTime)}` : ''}${e.category ? `, category: ${q(e.category)}` : ''}${e.priceLabel ? `, priceLabel: ${q(e.priceLabel)}` : ''}, image: ${q(e.image)}, blurb: ${q(e.blurb)} },`
-    }).join('\n')
-
-    return `import type { MarqueeSiteConfig } from './site.config'
-
-export const siteConfig: MarqueeSiteConfig = {
-  brand: ${q(form.brand)},
-  tagline: ${q(form.tagline)},
-  blurb: ${q(form.blurb)},
-  theme: '${form.theme}',
-  swatch: '${form.swatch}',
-  variant: '${form.variant}',
-${contactBlock}${form.ticketingUrl ? `\n  ticketingUrl: ${q(form.ticketingUrl)},` : ''}
-  hours: [
-${hours}
-  ],
-  photos: {
-    hero: ${photoSlot(form.heroPhoto)},
-    about: ${photoSlot(form.aboutPhoto)},
-    gallery: [
-${gallery}
-    ],
-  },
-${storyBlock}
-  venue: {${form.venueCapacity ? `\n    capacity: ${q(form.venueCapacity)},` : ''}${form.venueParking ? `\n    parking: ${q(form.venueParking)},` : ''}${form.venueAgeRestrictions ? `\n    ageRestrictions: ${q(form.venueAgeRestrictions)},` : ''}
-  },
-  events: [
-${events}
-  ],
-  series: [],
-  performers: [],
-${testimonialsBlock}
-${socialBlock}
-}`
-  }
-
-  // ── Keystone ──────────────────────────────────────────────────────────────
-  if (isKeystone.value) {
-    const hours = form.hours.map(h => `    { day: ${q(h.day)}, open: ${q(h.open)} },`).join('\n')
-
-    const services = form.services.filter(s => s.name).map(s =>
-      `    { name: ${q(s.name)}, description: ${q(s.description)}${s.price ? `, price: ${q(s.price)}` : ''}${s.icon ? `, icon: ${q(s.icon)}` : ''} },`
-    ).join('\n')
-
-    const capabilities = form.capabilities.filter(c => c.label && c.value).map(c =>
-      `    { label: ${q(c.label)}, value: ${q(c.value)} },`
-    ).join('\n')
-
-    return `import type { KeystoneSiteConfig } from './site.config'
-
-export const siteConfig: KeystoneSiteConfig = {
-  brand: ${q(form.brand)},
-  tagline: ${q(form.tagline)},
-  blurb: ${q(form.blurb)},
-  theme: '${form.theme}',
-  swatch: '${form.swatch}',
-  variant: '${form.variant}',
-${contactBlock}
-  serviceArea: ${q(form.serviceArea)},
-  dispatchPhone: ${q(form.dispatchPhone)},
-  emergencyAvailable: ${form.emergencyAvailable ? 'true' : 'false'},
-  hours: [
-${hours}
-  ],
-  photos: {
-    hero: ${photoSlot(form.heroPhoto)},
-    about: ${photoSlot(form.aboutPhoto)},
-    storefront: ${photoSlot(form.storefrontPhoto)},
-    gallery: [
-${gallery}
-    ],
-  },
-${storyBlock}
-  services: [
-${services}
-  ],
-  capabilities: [
-${capabilities}
-  ],
-${testimonialsBlock}
-${socialBlock}
-}`
-  }
-
-  return '// Select an archetype to generate config'
-})
-
-async function copyConfig() {
-  await navigator.clipboard.writeText(configOutput.value)
-  copied.value = true
-  setTimeout(() => { copied.value = false }, 2200)
-}
 
 // ─── Buy & deploy (PLATFORM_ENABLED) ──────────────────────────────────────────
 import { PLATFORM_ENABLED } from '@apotome/archetype-shared/platform/config'
@@ -534,10 +252,28 @@ const checkoutError = ref<string | null>(null)
 // Must accept the Terms + Privacy Policy before we take payment.
 const agreedToTerms = ref(false)
 
+// When a bundle is the selected plan, the services it already contains must not
+// be offered (or charged for) again. Map the bundle's item labels back to PRICING ids.
+const bundleIncludedIds = computed<string[]>(() => {
+  const b = CHECKOUT_BUNDLES.find(b => b.id === plan.value)
+  if (!b) return []
+  const names = new Set(b.items.map(i => i.toLowerCase()))
+  return PRICING.filter(p => names.has(p.name.toLowerCase())).map(p => p.id)
+})
+function isInBundle(id: string): boolean { return bundleIncludedIds.value.includes(id) }
+
+// Keep add-on selections clean: drop anything the chosen bundle already covers.
+watch(bundleIncludedIds, ids => {
+  if (ids.length && addOns.value.some(id => ids.includes(id))) {
+    addOns.value = addOns.value.filter(id => !ids.includes(id))
+  }
+}, { immediate: true })
+
 const checkoutTotal = computed(() => {
   const b = CHECKOUT_BUNDLES.find(b => b.id === plan.value)
   const basePrice = b?.price ?? PRICING.find(p => p.id === plan.value)?.price ?? 0
-  const addOnTotal = addOns.value.reduce((sum, id) => sum + (PRICING.find(p => p.id === id)?.price ?? 0), 0)
+  // Included-in-bundle items never add to the total, even if somehow still selected.
+  const addOnTotal = addOns.value.reduce((sum, id) => sum + (isInBundle(id) ? 0 : (PRICING.find(p => p.id === id)?.price ?? 0)), 0)
   return basePrice + addOnTotal
 })
 
@@ -1389,12 +1125,13 @@ const photoGuide = computed(() => {
                     v-for="a in CHECKOUT_MARKETING"
                     :key="a.id"
                     class="wiz__addon"
-                    :class="{ 'wiz__addon--checked': addOns.includes(a.id) }"
+                    :class="{ 'wiz__addon--checked': addOns.includes(a.id) && !isInBundle(a.id), 'wiz__addon--included': isInBundle(a.id) }"
                   >
-                    <input type="checkbox" :value="a.id" v-model="addOns" />
+                    <input type="checkbox" :value="a.id" v-model="addOns" :disabled="isInBundle(a.id)" />
                     <div class="wiz__addon-body">
                       <span class="wiz__addon-name">{{ a.name }}</span>
-                      <span class="wiz__addon-price">+${{ a.price }}</span>
+                      <span v-if="isInBundle(a.id)" class="wiz__addon-included">In bundle</span>
+                      <span v-else class="wiz__addon-price">+${{ a.price }}</span>
                     </div>
                   </label>
                 </div>
@@ -1408,12 +1145,13 @@ const photoGuide = computed(() => {
                     v-for="a in CHECKOUT_ADDONS"
                     :key="a.id"
                     class="wiz__addon"
-                    :class="{ 'wiz__addon--checked': addOns.includes(a.id) }"
+                    :class="{ 'wiz__addon--checked': addOns.includes(a.id) && !isInBundle(a.id), 'wiz__addon--included': isInBundle(a.id) }"
                   >
-                    <input type="checkbox" :value="a.id" v-model="addOns" />
+                    <input type="checkbox" :value="a.id" v-model="addOns" :disabled="isInBundle(a.id)" />
                     <div class="wiz__addon-body">
                       <span class="wiz__addon-name">{{ a.name }}</span>
-                      <span class="wiz__addon-price">+${{ a.price }}</span>
+                      <span v-if="isInBundle(a.id)" class="wiz__addon-included">In bundle</span>
+                      <span v-else class="wiz__addon-price">+${{ a.price }}</span>
                     </div>
                   </label>
                 </div>
@@ -1456,33 +1194,6 @@ const photoGuide = computed(() => {
               </div>
               <p v-if="checkoutError" class="wiz__err">{{ checkoutError }}</p>
             </div><!-- /wiz__buy -->
-
-          <details class="wiz__selfhost" :open="!PLATFORM_ENABLED">
-            <summary>Prefer to self-host? Get the config file</summary>
-            <p class="wiz__step-desc">
-              Copy the code below into <code class="wiz__code">src/config/site.config.ts</code> in your archetype project.
-              Replace the default export with your new config — the site will instantly reflect your content.
-            </p>
-
-            <div class="wiz__export-actions">
-              <button type="button" class="ap-btn" @click="copyConfig">
-                {{ copied ? '✓ Copied!' : 'Copy to clipboard' }}
-              </button>
-            </div>
-
-            <pre class="wiz__code-block"><code>{{ configOutput }}</code></pre>
-
-            <div class="wiz__checklist">
-              <h3 class="wiz__sub">What to do next</h3>
-              <ol class="wiz__ol">
-                <li>Replace the contents of <code class="wiz__code">src/config/site.config.ts</code> with the code above.</li>
-                <li>Place your photos in <code class="wiz__code">public/photos/</code> using the filenames from step 4.</li>
-                <li>Run <code class="wiz__code">npm run dev</code> to preview the site with your content.</li>
-                <li>Use the theme switcher (bottom-right corner) to try different themes, swatches, and hero styles.</li>
-                <li>When happy, run <code class="wiz__code">npm run build</code> and deploy the <code class="wiz__code">dist/</code> folder.</li>
-              </ol>
-            </div>
-          </details>
         </div>
 
       </div><!-- /wiz__body -->
@@ -1497,9 +1208,6 @@ const photoGuide = computed(() => {
           :disabled="step === 0 && !form.archetype"
           @click="next"
         >Next →</button>
-        <button v-else type="button" class="ap-btn" @click="copyConfig">
-          {{ copied ? '✓ Copied!' : 'Copy config' }}
-        </button>
       </div>
 
     </div>
@@ -1737,6 +1445,24 @@ const photoGuide = computed(() => {
 .wiz__addon-body { display: flex; align-items: center; gap: 0.5rem; }
 .wiz__addon-name { font-weight: 500; color: var(--ap-ink); }
 .wiz__addon-price { font-size: 0.8rem; color: var(--ap-ink-muted); }
+/* Already covered by the selected bundle — grayed, not chargeable, not clickable. */
+.wiz__addon--included {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--ap-surface-alt);
+  border-style: dashed;
+}
+.wiz__addon--included:hover { border-color: var(--ap-line); }
+.wiz__addon--included input { cursor: not-allowed; }
+.wiz__addon-included {
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ap-primary);
+  padding: 0.12rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--ap-primary) 40%, transparent);
+  border-radius: 999px;
+  white-space: nowrap;
+}
 
 /* Owner fields — reuse existing wiz__fields grid */
 .wiz__buy-fields { margin-bottom: 1.5rem; }

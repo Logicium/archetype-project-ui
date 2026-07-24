@@ -350,6 +350,9 @@ const WYG = [
 }
 .ap-pricing__bundle-price {
   margin: 0;
+  /* Explicit: the global `p { color: var(--ap-ink) }` would otherwise match
+     this <p> directly and paint it the same color as the ink-ground card. */
+  color: var(--ap-surface);
   font-family: var(--ap-font-heading);
   font-size: clamp(2.4rem, 4vw, 3.2rem);
   font-weight: 700;
