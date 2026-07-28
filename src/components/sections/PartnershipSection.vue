@@ -6,15 +6,15 @@
  *                      "APOTOME LABS" in JetBrains Mono + the tricolor slashes.
  *   · Emergent Campus — their real green serif wordmark (emergentcampus.org),
  *                      downloaded to /partners so it isn't a fragile hotlink.
- * Grounded in fact: Apotome Labs works out of Emergent Campus, the award-winning
- * nonprofit business campus in rural Colorado.
+ * A creative partnership between Apotome Labs and Emergent Campus, the award-winning
+ * nonprofit business campus in rural Colorado, both working to get local businesses online.
  */
 </script>
 
 <template>
   <section class="collab">
     <div class="collab__inner">
-      <p class="collab__eyebrow"><span class="collab__sq" aria-hidden="true" /> In partnership</p>
+      <p class="collab__eyebrow"><span class="collab__sq" aria-hidden="true" /> A creative partnership</p>
 
       <div class="collab__lockup">
         <span class="collab__apotome">
@@ -42,10 +42,11 @@
       </div>
 
       <p class="collab__body">
-        Apotome Labs works out of Emergent Campus, the award-winning nonprofit campus
-        igniting innovation across rural Colorado. A local studio inside a local incubator,
-        both set on getting Trinidad's businesses online and growing. Home-grown tech for a
-        home-grown economy.
+        Apotome Labs and Emergent Campus are building something together. The award-winning
+        nonprofit campus is igniting innovation across rural Colorado, and we share its
+        mission: getting Trinidad's businesses online and growing. They bring the community
+        and the momentum, we bring the studio and the craft. Home-grown tech for a home-grown
+        economy.
       </p>
 
       <div class="collab__rule" aria-hidden="true" />

@@ -1,4 +1,5 @@
 /* Archetype base styles. Theme-neutral; consumes CSS variables set by applyTheme. */
+@use './core' as *;
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -38,15 +39,16 @@ html.ap-editing [data-edit-path] {
   border-radius: 2px;
   cursor: text;
   transition: outline-color 140ms ease, background-color 140ms ease;
-}
-html.ap-editing [data-edit-path]:hover {
-  outline-color: var(--ap-primary, #8a6d3b);
-  background: color-mix(in srgb, var(--ap-primary, #8a6d3b) 7%, transparent);
-}
-html.ap-editing [data-edit-path]:focus {
-  outline: 2px solid var(--ap-primary, #8a6d3b);
-  outline-offset: 3px;
-  background: color-mix(in srgb, var(--ap-primary, #8a6d3b) 6%, transparent);
+
+  &:hover {
+    outline-color: var(--ap-primary, #8a6d3b);
+    background: color-mix(in srgb, var(--ap-primary, #8a6d3b) 7%, transparent);
+  }
+  &:focus {
+    outline: 2px solid var(--ap-primary, #8a6d3b);
+    outline-offset: 3px;
+    background: color-mix(in srgb, var(--ap-primary, #8a6d3b) 6%, transparent);
+  }
 }
 /* Editable images: dashed frame + a camera/replace hint on hover. */
 html.ap-editing img.ap-editable-img {
@@ -54,10 +56,11 @@ html.ap-editing img.ap-editable-img {
   outline-offset: 2px;
   cursor: pointer;
   transition: outline-color 140ms ease, filter 140ms ease;
-}
-html.ap-editing img.ap-editable-img:hover {
-  outline-color: var(--ap-primary, #8a6d3b);
-  filter: brightness(0.82);
+
+  &:hover {
+    outline-color: var(--ap-primary, #8a6d3b);
+    filter: brightness(0.82);
+  }
 }
 @keyframes ap-edit-flash {
   0%, 100% { background: transparent; box-shadow: none; }
@@ -102,13 +105,26 @@ body { min-height: 100vh; background: var(--ap-surface); }
 
 img, video { max-width: 100%; height: auto; display: block; }
 
+/* Text selection belongs to the palette. */
+::selection {
+  background: var(--ap-primary);
+  color: var(--ap-on-primary, var(--ap-surface));
+}
+
+/* Keyboard focus: one consistent, visible ring everywhere. */
+:focus-visible {
+  outline: 2px solid var(--ap-primary);
+  outline-offset: 2px;
+}
+
 a {
   color: var(--ap-primary);
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: border-color 160ms ease, color 160ms ease;
+
+  &:hover { border-bottom-color: currentColor; }
 }
-a:hover { border-bottom-color: currentColor; }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--ap-font-heading);
@@ -116,11 +132,12 @@ h1, h2, h3, h4, h5, h6 {
   text-transform: var(--ap-heading-transform);
   color: var(--ap-ink);
   margin: 0 0 0.5em;
-  line-height: 1.1;
-  font-weight: 600;
+  line-height: 1.08;
+  font-weight: var(--ap-heading-weight, 600);
+  text-wrap: balance;
 }
-h1 { font-size: clamp(2.4rem, 5.5vw, 4.5rem); }
-h2 { font-size: clamp(1.9rem, 3.6vw, 2.8rem); }
+h1 { font-size: clamp(2.6rem, 6vw, 5rem); }
+h2 { font-size: clamp(2rem, 4vw, 3.1rem); }
 h3 { font-size: clamp(1.3rem, 2.4vw, 1.7rem); }
 p { margin: 0 0 1em; color: var(--ap-ink); }
 small, .ap-eyebrow {
@@ -165,7 +182,7 @@ footer.ap-footer .ap-container { padding-inline: clamp(1rem, 4vw, 2.5rem) !impor
   border-radius: var(--ap-radius);
   border: 1px solid var(--ap-primary);
   background: var(--ap-primary);
-  color: var(--ap-surface-alt);
+  color: var(--ap-on-primary, var(--ap-surface-alt));
   font-family: var(--ap-font-heading);
   letter-spacing: var(--ap-tracking-heading);
   text-transform: var(--ap-heading-transform);
@@ -174,8 +191,9 @@ footer.ap-footer .ap-container { padding-inline: clamp(1rem, 4vw, 2.5rem) !impor
   text-decoration: none;
   box-shadow: var(--ap-shadow);
   transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+
+  &:hover { transform: translateY(-1px); box-shadow: var(--ap-shadow-lg); border-bottom-color: var(--ap-primary); }
 }
-.ap-btn:hover { transform: translateY(-1px); box-shadow: var(--ap-shadow-lg); border-bottom-color: var(--ap-primary); }
 .ap-btn--ghost {
   background: transparent;
   color: var(--ap-ink);
@@ -201,6 +219,23 @@ footer.ap-footer .ap-container { padding-inline: clamp(1rem, 4vw, 2.5rem) !impor
   max-width: 720px;
 }
 .ap-section-head--center { margin-left: auto; margin-right: auto; text-align: center; align-items: center; }
+
+/* ── Bold energy ──
+   Swatches in the Bold category set data-swatch-energy='bold' on <html>.
+   Color is allowed to drive surfaces: heroes take a primary wash, alt
+   bands take an accent tint, eyebrows speak in primary. Bold surfaces
+   already carry heavy pigment; these rules push the page structure to
+   participate instead of staying neutral. */
+html[data-swatch-energy='bold'] {
+  .ap-hero, .ap-subhero {
+    background: color-mix(in srgb, var(--ap-primary) 9%, var(--ap-surface));
+  }
+  .ap-section--alt {
+    background: color-mix(in srgb, var(--ap-accent) 12%, var(--ap-surface));
+  }
+  .ap-eyebrow { color: var(--ap-primary); }
+  ::selection { background: var(--ap-accent); color: var(--ap-ink); }
+}
 
 /* ── Global alignment ──
    Driven by the `data-align` attribute on <html>. When set to "center",

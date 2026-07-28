@@ -18,6 +18,27 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: 'July 26, 2026',
+    title: 'A new flagship look, richer color, and a smarter dashboard',
+    summary: 'The biggest design release yet: a fifth theme, a rebuilt color system, and a dashboard that works the way you do.',
+    items: [
+      { tag: 'New', text: 'Meet The Atlas, our new flagship theme: oversized editorial type, hairline grids, and numbered sections. It leads the theme picker.' },
+      { tag: 'New', text: 'The color system was rebuilt: 18 iconic palettes across six moods, and every one now comes in a light and a dark version.' },
+      { tag: 'New', text: 'New layout options everywhere: hero styles for The Atlas, four About-section layouts, and four navbar styles, all live-switchable.' },
+      { tag: 'New', text: 'Your dashboard now opens as a fullscreen overlay over your site, with a close button to drop straight back to the page.' },
+      { tag: 'New', text: 'A grouped sidebar replaces the long tab row: site tools on top, workspace below, collapsible to a slim icon rail.' },
+      { tag: 'New', text: 'Photos got their own page: every upload slot now says exactly where it appears on your site, and empty slots show a clean placeholder.' },
+      { tag: 'New', text: 'Add-ons page: turn on any premium tool for your site, free while in beta. Beta users keep them when pricing begins.' },
+      { tag: 'New', text: 'Upgrade to Portfolio right from the dashboard: hero photo carousel, photo-forward layouts, and a 16-photo gallery. Photo campaigns can be booked and paid the same way.' },
+      { tag: 'New', text: 'Reviews now defaults to live Google reviews with a one-click switch to hand-written testimonials, plus a guided path for setting up or sharing your Google Business Profile.' },
+      { tag: 'Improved', text: 'Online ordering links to your Menu: import every dish with one click instead of retyping.' },
+      { tag: 'Improved', text: 'The Ironwood theme got a full redesign: engineered plates and clean rules instead of the old hazard stripes.' },
+      { tag: 'Improved', text: 'The editor window now opens with one fluid motion and keeps itself fully on screen when expanded near an edge.' },
+      { tag: 'Fixed', text: 'Site cards now show when each site last deployed, dropdown menus are no longer cut off, and every icon sits perfectly centered.' },
+      { tag: 'Fixed', text: 'Cleaned up stray garbled characters that could appear in dashboard text.' },
+    ],
+  },
+  {
     date: 'July 24, 2026',
     title: 'A calmer, stickier editor window',
     summary: 'Small refinements that make the pop-out editor feel right.',

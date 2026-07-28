@@ -1,3 +1,5 @@
+@use '../../../archetype-shared/src/styles/core' as *;
+
 /* =========================================================================
    themes.css — heavy per-theme + per-variant layout overrides.
    Loaded after base.css. Targets data-theme/data-variant on <html>.

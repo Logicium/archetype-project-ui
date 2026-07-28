@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { LayoutDashboard, Sparkles, Instagram, CalendarClock, Globe, LineChart, Check } from 'lucide-vue-next'
 import { useSiteTheme } from '@apotome/archetype-shared/composables/useSiteTheme'
 import { THEME_LIST } from '@apotome/archetype-shared/themes/index'
-import { SWATCH_LIST } from '@apotome/archetype-shared/themes/swatches'
+import { SWATCH_FAMILIES } from '@apotome/archetype-shared/themes/swatches'
 import { SWATCH_THEORIES } from '@apotome/archetype-shared/themes/tokens'
 
 const { themeName, swatchName, setTheme, setSwatch, swatch } = useSiteTheme()
@@ -11,14 +11,16 @@ const { themeName, swatchName, setTheme, setSwatch, swatch } = useSiteTheme()
 // Typographic personality per theme for the specimen cards. Fonts are
 // loaded once via the @import below (same set the wizard preview uses).
 const SPECIMEN: Record<string, { heading: string; body: string; note: string }> = {
+  atlas:    { heading: '"Archivo", sans-serif', body: '"Archivo", sans-serif', note: 'Index numerals · hairline grids' },
   studio:   { heading: '"Inter Tight", "Inter", sans-serif', body: '"Inter", sans-serif', note: 'Hairline rules · mono details' },
   heritage: { heading: '"Fraunces", Georgia, serif', body: '"Lora", Georgia, serif', note: 'Editorial serifs · generous air' },
   vibrant:  { heading: '"Bricolage Grotesque", sans-serif', body: '"Space Grotesk", sans-serif', note: 'Chunky borders · sticker energy' },
-  ironwood: { heading: '"Oswald", sans-serif', body: '"Roboto", sans-serif', note: 'Condensed caps · spec-sheet grit' },
+  ironwood: { heading: '"Big Shoulders Display", "Oswald", sans-serif', body: '"Barlow", "Roboto", sans-serif', note: 'Condensed caps · spec-sheet grit' },
 }
 
+// Family cards preview their light side; every family also has a dark twin.
 const theories = computed(() =>
-  SWATCH_THEORIES.map(t => ({ ...t, items: SWATCH_LIST.filter(s => s.group === t.id) })))
+  SWATCH_THEORIES.map(t => ({ ...t, items: SWATCH_FAMILIES.filter(f => f.group === t.id) })))
 
 const activeFeel = computed(() => swatch.value?.feel ?? '')
 
@@ -105,12 +107,13 @@ const PREMIUM = [
         <span class="ap-eyebrow">The color system</span>
         <h3 class="ap-dsys__color-title">Color, with a thesis.</h3>
         <p>
-          23 palettes, grouped by the feeling they create — warm stokes appetite,
-          serene reads as trust, dark reads as luxury. Tap any to retint the page.
+          Eighteen palettes, each in a light and a dark version, grouped by the
+          feeling they create. Solar stokes appetite, Coast reads as trust,
+          Noir reads as luxury. Tap any to retint the page.
         </p>
         <p class="ap-dsys__color-current">
           <span class="ap-dsys__color-chip" :style="{ background: swatch.primary }" aria-hidden="true" />
-          Now wearing <strong>{{ swatch.label }}</strong><template v-if="activeFeel"> — {{ activeFeel.toLowerCase() }}</template>
+          Now wearing <strong>{{ swatch.label }}</strong><template v-if="activeFeel">. {{ activeFeel }}</template>
         </p>
       </div>
 
@@ -118,24 +121,24 @@ const PREMIUM = [
         <div v-for="t in theories" :key="t.id" class="ap-dsys__theory">
           <div class="ap-dsys__theory-head">
             <h4>{{ t.label }}</h4>
-            <span>{{ t.harmony }}</span>
+            <span>{{ t.subtext }}</span>
           </div>
           <div class="ap-dsys__tiles">
             <button
-              v-for="s in t.items"
-              :key="s.name"
+              v-for="f in t.items"
+              :key="f.family"
               type="button"
               class="ap-dsys__tile"
-              :class="{ 'is-active': swatchName === s.name }"
-              :style="{ background: s.surface, borderColor: swatchName === s.name ? s.primary : s.line }"
-              :title="s.feel ? `${s.label} — ${s.feel}` : s.label"
-              @click="setSwatch(s.name)"
+              :class="{ 'is-active': swatchName === f.light.name || swatchName === f.dark.name }"
+              :style="{ background: f.light.surface, borderColor: swatchName === f.light.name || swatchName === f.dark.name ? f.light.primary : f.light.line }"
+              :title="f.light.feel ? `${f.label}. ${f.light.feel}` : f.label"
+              @click="setSwatch(f.light.name)"
             >
               <span class="ap-dsys__tile-dots" aria-hidden="true">
-                <i :style="{ background: s.primary }" />
-                <i :style="{ background: s.accent }" />
+                <i :style="{ background: f.light.primary }" />
+                <i :style="{ background: f.light.accent }" />
               </span>
-              <span class="ap-dsys__tile-name" :style="{ color: s.ink }">{{ s.label }}</span>
+              <span class="ap-dsys__tile-name" :style="{ color: f.light.ink }">{{ f.label }}</span>
             </button>
           </div>
         </div>
@@ -166,7 +169,7 @@ const PREMIUM = [
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Lora:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Space+Grotesk:wght@400;600&family=Oswald:wght@500;700&family=Roboto:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Lora:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Space+Grotesk:wght@400;600&family=Archivo:wght@500;700&family=Big+Shoulders+Display:wght@600;700&family=Barlow:wght@400;500&display=swap');
 
 .ap-dsys { padding-top: var(--ap-section-py); }
 .ap-dsys__lead { color: var(--ap-ink-muted); margin: 0; max-width: 52ch; }

@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { ArrowUpRight } from 'lucide-vue-next'
 import type { ShowcaseSite } from '../../config/site.config'
 import { THEMES } from '@apotome/archetype-shared/themes/index'
-import { SWATCHES } from '@apotome/archetype-shared/themes/swatches'
+import { SWATCHES, resolvePresetSwatch } from '@apotome/archetype-shared/themes/swatches'
 import OptimizedImage from '@apotome/archetype-shared/components/OptimizedImage.vue'
 
 const props = defineProps<{
@@ -14,7 +14,7 @@ const props = defineProps<{
 }>()
 
 function swatchOf(name: string) {
-  return SWATCHES[name as keyof typeof SWATCHES] ?? SWATCHES.sand
+  return resolvePresetSwatch(name) ?? SWATCHES['onyx-light']
 }
 
 // One stage, five archetypes — pick one and the preview restyles to show

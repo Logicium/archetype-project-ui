@@ -32,8 +32,8 @@ export const siteConfig: ProjectSiteConfig = reactive(({
   tagline: 'A website for every Trinidad business',
   mission:
     'Get 90% of Trinidad businesses online with a professional, fast, beautiful website at a price that makes sense.',
-  theme: 'studio',
-  swatch: 'midnight',
+  theme: 'atlas',
+  swatch: 'onyx-dark',
   contact: {
     email: 'hello@apotomelabs.com',
     phone: '(719) 555-0100',
@@ -52,12 +52,12 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       body: 'Mesa (Dine), Hearth (Stay), Vault (Shop), Keystone (Utility), and Marquee (Venue). Each archetype is purpose-built for the way that kind of business works — menus, rooms, products, dispatch, or an events calendar.',
     },
     {
-      title: 'Four design themes',
-      body: 'The Studio (modern minimal), The Heritage (classic editorial), The Vibrant (bold and local), and The Ironwood (industrial utility). Switch instantly to match your brand.',
+      title: 'Five design themes',
+      body: 'The Atlas (editorial index), The Studio (precision modern), The Heritage (editorial serif), The Vibrant (bold and local), and The Ironwood (industrial utility). Switch instantly to match your brand.',
     },
     {
       title: 'A color system, not a color list',
-      body: 'Twenty-three palettes organized by color theory — earthen, serene, warm, bold, dark, and neon — each tuned for a documented psychological effect. Or build and save your own in the Color Lab.',
+      body: 'Eighteen palette families organized by feeling: Terra, Coast, Solar, Bold, Noir, and Neon. Every family comes in a light and a dark version, and you can build and save your own in the Color Studio.',
     },
     {
       title: 'Two sizes',
@@ -71,8 +71,8 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       archetype: 'Dine',
       blurb: 'For restaurants, cafés, and bars. Menu, hours, story, gallery, reservations.',
       image: '/showcase/mesa.jpg',
-      themes: ['studio', 'heritage', 'vibrant'],
-      swatches: ['sand', 'sunset', 'forest'],
+      themes: ['atlas', 'heritage', 'vibrant'],
+      swatches: ['adobe-light', 'vermilion-light', 'pine-light'],
       liveUrl: 'https://archetype-mesa-ui.vercel.app',
     },
     {
@@ -81,8 +81,8 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       archetype: 'Stay',
       blurb: 'For inns, B&Bs, and small hotels. Rooms, amenities, gallery, booking.',
       image: '/showcase/hearth.jpg',
-      themes: ['studio', 'heritage', 'vibrant'],
-      swatches: ['forest', 'sage', 'stone'],
+      themes: ['heritage', 'atlas', 'studio'],
+      swatches: ['pine-light', 'matcha-light', 'ultramarine-light'],
       liveUrl: 'https://archetype-hearth-ui.vercel.app',
     },
     {
@@ -91,8 +91,8 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       archetype: 'Shop',
       blurb: 'For retail, boutiques, and galleries. Categories, featured products, lookbook.',
       image: '/showcase/vault.jpg',
-      themes: ['studio', 'heritage', 'vibrant'],
-      swatches: ['fiesta', 'rose', 'midnight'],
+      themes: ['vibrant', 'atlas', 'studio'],
+      swatches: ['riot-light', 'rosewood-light', 'midnight-dark'],
       liveUrl: 'https://archetype-vault-ui.vercel.app',
     },
     {
@@ -101,8 +101,8 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       archetype: 'Venue',
       blurb: 'For venues, galleries, theaters, and festivals. Events calendar, ticketing, performers, and recurring series.',
       image: '/showcase/marquee.jpg',
-      themes: ['heritage', 'vibrant', 'studio'],
-      swatches: ['ember', 'midnight', 'sunset'],
+      themes: ['atlas', 'heritage', 'vibrant'],
+      swatches: ['signal-dark', 'midnight-dark', 'vermilion-dark'],
       liveUrl: 'https://apotome-archetypes-archetype-marque-orpin.vercel.app',
     },
     // Keystone is last: it's the one non-tourism trade archetype (auto/welding/build).
@@ -112,8 +112,8 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       archetype: 'Utility',
       blurb: 'For auto shops, contractors, welders, and mills. Services, capabilities, dispatch line, work gallery.',
       image: '/showcase/keystone.jpg',
-      themes: ['ironwood', 'studio', 'heritage'],
-      swatches: ['stone', 'midnight', 'forest'],
+      themes: ['ironwood', 'atlas', 'studio'],
+      swatches: ['ultramarine-light', 'onyx-dark', 'pine-light'],
       liveUrl: 'https://archetype-keystone-ui.vercel.app',
     },
   ],

@@ -2,13 +2,14 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { UtensilsCrossed, BedDouble, ShoppingBag, Wrench, Theater, Sparkles, Rocket } from 'lucide-vue-next'
 import IconPickerInput from '../IconPickerInput.vue'
+import TextAreaField from '@apotome/archetype-shared/components/forms/TextAreaField.vue'
 import HeroSection from '@apotome/archetype-shared/components/sections/HeroSection.vue'
-import { SWATCHES, SWATCH_LIST } from '@apotome/archetype-shared/themes/swatches'
+import { SWATCHES, SWATCH_FAMILIES, resolvePresetSwatch } from '@apotome/archetype-shared/themes/swatches'
 import { SWATCH_THEORIES } from '@apotome/archetype-shared/themes/tokens'
 
 // ─── Color preview helpers ────────────────────────────────────────────────────
 function swatchOf(name: string) {
-  return SWATCHES[name as keyof typeof SWATCHES] ?? SWATCHES.sand
+  return resolvePresetSwatch(name) ?? SWATCHES['onyx-light']
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -56,15 +57,16 @@ interface WizardForm {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'ap-site-wizard-v1'
-const THEME_OPTS = ['studio', 'heritage', 'vibrant', 'ironwood'] as const
-// Swatch groups mirror the shared color theories — one source of truth for
-// grouping, psychology copy, and membership across the switcher + wizard.
+const THEME_OPTS = ['atlas', 'studio', 'heritage', 'vibrant', 'ironwood'] as const
+// Swatch groups mirror the shared color categories: one source of truth for
+// grouping, subtext, and membership across the switcher + wizard. Families
+// are picked as cards; the mode toggle below decides light or dark.
 const SWATCH_GROUPS = SWATCH_THEORIES.map(t => ({
   label: t.label,
-  psychology: t.psychology,
-  swatches: SWATCH_LIST.filter(s => s.group === t.id).map(s => s.name),
+  subtext: t.subtext,
+  families: SWATCH_FAMILIES.filter(f => f.group === t.id),
 }))
-const VARIANT_OPTS = ['essentials', 'portfolio', 'extended'] as const
+const VARIANT_OPTS = ['essentials', 'portfolio'] as const
 const STEPS = [
   { id: 'archetype',    label: 'Archetype' },
   { id: 'brand',        label: 'Brand' },
@@ -87,7 +89,7 @@ function blankMenuItem(): MenuItem { return { name: '', description: '', price: 
 const form = reactive<WizardForm>({
   archetype: '',
   brand: '', tagline: '', blurb: '',
-  theme: 'studio', swatch: 'sand', variant: 'essentials',
+  theme: 'atlas', swatch: 'onyx-light', variant: 'essentials',
   address: '', phone: '', email: '', mapEmbedUrl: '',
   hours: [
     { day: 'Monday', open: 'Closed' },
@@ -165,6 +167,26 @@ const form = reactive<WizardForm>({
   ],
 })
 
+// ─── Design step: family cards + light/dark mode ─────────────────────────────
+const swatchMode = ref<'light' | 'dark'>('light')
+function pickWizFamily(f: (typeof SWATCH_FAMILIES)[number]) {
+  form.swatch = (swatchMode.value === 'dark' ? f.dark : f.light).name
+}
+function wizFamilySwatch(f: (typeof SWATCH_FAMILIES)[number]) {
+  return swatchMode.value === 'dark' ? f.dark : f.light
+}
+const activeFamily = computed(() => resolvePresetSwatch(form.swatch)?.family ?? null)
+watch(swatchMode, (m) => {
+  // Keep the current family, flip its side.
+  const fam = SWATCH_FAMILIES.find(f => f.family === activeFamily.value)
+  if (fam) form.swatch = (m === 'dark' ? fam.dark : fam.light).name
+})
+// Sync the toggle if a saved draft restores a dark swatch.
+watch(() => form.swatch, (s) => {
+  const m = resolvePresetSwatch(s)?.mode
+  if (m) swatchMode.value = m
+}, { immediate: true })
+
 // ─── Persistence ──────────────────────────────────────────────────────────────
 onMounted(() => {
   const raw = localStorage.getItem(STORAGE_KEY)
@@ -241,7 +263,7 @@ const CHECKOUT_MARKETING = PRICING.filter(p => p.category === 'marketing')
 const CHECKOUT_ADDONS = PRICING.filter(p => p.category === 'addons')
 
 function planForVariant(v: string): string {
-  return v === 'extended' ? 'premium' : v === 'portfolio' ? 'pro' : 'starter'
+  return v === 'portfolio' ? 'pro' : 'starter'
 }
 const plan = ref<string>(planForVariant(form.variant))
 watch(() => form.variant, v => { plan.value = planForVariant(v) })
@@ -498,7 +520,7 @@ const photoGuide = computed(() => {
             <label class="wiz__field wiz__field--full">
               <span class="wiz__label">One-sentence description</span>
               <div class="wiz__input-ai wiz__input-ai--textarea">
-                <textarea v-model="form.blurb" class="wiz__input wiz__textarea" rows="2" placeholder="e.g. A neighborhood kitchen serving Southern Colorado classics with a wood-fired heart." />
+                <TextAreaField v-model="form.blurb" :rows="4" :maxlength="160" placeholder="e.g. A neighborhood kitchen serving Southern Colorado classics with a wood-fired heart." />
                 <button type="button" class="wiz__ai-btn" :class="{ 'is-loading': aiLoading['blurb'] }" :disabled="!form.archetype || !form.brand || aiLoading['blurb']" @click="aiSuggest('blurb', t => form.blurb = t)" title="AI suggest"><Sparkles :size="13" /><span>Suggest</span></button>
               </div>
               <span class="wiz__hint">Used in the site footer and meta description. Keep it under 160 characters.</span>
@@ -521,7 +543,8 @@ const photoGuide = computed(() => {
                   @click="form.theme = t"
                 >
                   <strong>{{ t }}</strong>
-                  <span v-if="t === 'studio'">Minimal · Mono type · Hairline rules</span>
+                  <span v-if="t === 'atlas'">Editorial index · Oversized display · Hairline grids</span>
+                  <span v-if="t === 'studio'">Precision · Mono type · Hairline rules</span>
                   <span v-if="t === 'heritage'">Editorial · Serif · Generous whitespace</span>
                   <span v-if="t === 'vibrant'">Bold · Graphic · Chunky borders</span>
                   <span v-if="t === 'ironwood'">Industrial · Condensed · Spec-sheet contrast</span>
@@ -529,21 +552,28 @@ const photoGuide = computed(() => {
               </div>
             </div>
             <div class="wiz__field wiz__field--full">
-              <p class="wiz__label">Color swatch</p>
+              <div class="wiz__swatch-modes">
+                <p class="wiz__label">Color palette</p>
+                <div class="wiz__mode-toggle" role="group" aria-label="Light or dark palette">
+                  <button type="button" class="wiz__mode-btn" :class="{ 'is-active': swatchMode === 'light' }" @click="swatchMode = 'light'">Light</button>
+                  <button type="button" class="wiz__mode-btn" :class="{ 'is-active': swatchMode === 'dark' }" @click="swatchMode = 'dark'">Dark</button>
+                </div>
+              </div>
+              <p class="wiz__hint">Every palette comes in a light and a dark version.</p>
               <div class="wiz__swatch-groups">
                 <div v-for="group in SWATCH_GROUPS" :key="group.label" class="wiz__swatch-group">
                   <p class="wiz__swatch-group-label">{{ group.label }}</p>
-                  <p class="wiz__swatch-group-psy">{{ group.psychology }}</p>
+                  <p class="wiz__swatch-group-psy">{{ group.subtext }}</p>
                   <div class="wiz__swatch-row">
                     <button
-                      v-for="s in group.swatches" :key="s"
+                      v-for="f in group.families" :key="f.family"
                       type="button" class="wiz__swatch"
-                      :class="{ 'is-active': form.swatch === s }"
-                      @click="form.swatch = s"
-                      :title="swatchOf(s).label + ' · ' + swatchOf(s).mode"
+                      :class="{ 'is-active': activeFamily === f.family }"
+                      @click="pickWizFamily(f)"
+                      :title="f.label + ' · ' + swatchMode"
                     >
-                      <span class="wiz__swatch-dot" :style="{ background: swatchOf(s).primary }" aria-hidden="true" />
-                      <span class="wiz__swatch-label">{{ s }}</span>
+                      <span class="wiz__swatch-dot" :style="{ background: wizFamilySwatch(f).primary }" aria-hidden="true" />
+                      <span class="wiz__swatch-label">{{ f.label }}</span>
                     </button>
                   </div>
                 </div>
@@ -628,9 +658,8 @@ const photoGuide = computed(() => {
                   @click="form.variant = v"
                 >
                   <strong>{{ v }}</strong>
-                  <span v-if="v === 'essentials'">6-8 gallery photos · Standard sections</span>
-                  <span v-if="v === 'portfolio'">12-16 gallery photos · Full content depth</span>
-                  <span v-if="v === 'extended'">20-28 gallery photos · Maximum content depth</span>
+                  <span v-if="v === 'essentials'">Up to 8 gallery photos · Standard sections</span>
+                  <span v-if="v === 'portfolio'">Up to 16 photos · Hero carousel · Photo-forward layouts</span>
                 </button>
               </div>
             </div>
@@ -725,7 +754,7 @@ const photoGuide = computed(() => {
 
           <!-- Gallery alt texts -->
           <h3 class="wiz__sub">Gallery photos</h3>
-          <p class="wiz__step-desc">You'll need {{ form.variant === 'extended' ? '20–28' : form.variant === 'portfolio' ? '12–16' : '6–8' }} gallery photos. Fill in alt text for each.</p>
+          <p class="wiz__step-desc">You'll need {{ form.variant === 'portfolio' ? 'up to 16' : 'up to 8' }} gallery photos. Fill in alt text for each.</p>
           <div v-for="(p, i) in form.gallery" :key="i" class="wiz__row-pair">
             <code class="wiz__code wiz__code--inline">gallery-{{ String(i + 1).padStart(2, '0') }}.jpg</code>
             <input v-model="p.alt" type="text" class="wiz__input" :placeholder="`Alt text for photo ${i + 1}`" />
@@ -765,7 +794,7 @@ const photoGuide = computed(() => {
             <div v-for="(_, i) in form.storyParagraphs" :key="i" class="wiz__field wiz__field--full">
               <span class="wiz__label">Paragraph {{ i + 1 }}</span>
               <div class="wiz__input-ai wiz__input-ai--textarea">
-                <textarea v-model="form.storyParagraphs[i]" class="wiz__input wiz__textarea" rows="3" placeholder="2–4 sentences. Write naturally, like you're telling a friend." />
+                <TextAreaField v-model="form.storyParagraphs[i]" :rows="6" :maxlength="480" placeholder="2–4 sentences. Write naturally, like you're telling a friend." />
                 <button type="button" class="wiz__ai-btn" :class="{ 'is-loading': aiLoading[`storyParagraph-${i}`] }" :disabled="!form.archetype || !form.brand || aiLoading[`storyParagraph-${i}`]" @click="aiSuggest('storyParagraph', t => form.storyParagraphs[i] = t, { existing: form.storyParagraphs.slice(0, i).join(' | ') })" title="AI suggest"><Sparkles :size="13" /><span>Suggest</span></button>
               </div>
             </div>
@@ -1028,7 +1057,7 @@ const photoGuide = computed(() => {
             <div class="wiz__fields">
               <label class="wiz__field wiz__field--full">
                 <span class="wiz__label">Quote</span>
-                <textarea v-model="t.quote" class="wiz__input wiz__textarea" rows="2" placeholder="&ldquo;The best meal we've had in Southern Colorado.&rdquo;" />
+                <TextAreaField v-model="t.quote" :rows="4" :maxlength="240" placeholder="&ldquo;The best meal we've had in Southern Colorado.&rdquo;" />
               </label>
               <label class="wiz__field">
                 <span class="wiz__label">Author name</span>
@@ -1218,7 +1247,7 @@ const photoGuide = computed(() => {
 
 <style scoped>
 /* ── Google Fonts for preview ────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Lora:wght@400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Oswald:wght@500;600;700&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Lora:wght@400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Archivo:wdth,wght@62..125,400..800&family=Big+Shoulders+Display:wght@600;700;800&family=Barlow:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 .wiz { padding: 0 0 clamp(3rem, 8vw, 7rem); }
@@ -1630,6 +1659,29 @@ const photoGuide = computed(() => {
   color: var(--ap-ink);
 }
 
+/* ── Light / dark palette toggle ──────────────────────────────────────────── */
+.wiz__swatch-modes {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem;
+}
+.wiz__mode-toggle {
+  display: inline-flex; gap: 0;
+  border: 1px solid var(--ap-line);
+  border-radius: 999px;
+  padding: 2px;
+  background: color-mix(in srgb, var(--ap-ink) 4%, transparent);
+}
+.wiz__mode-btn {
+  border: 0; background: transparent; cursor: pointer;
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  font: inherit; font-size: 0.74rem; font-weight: 600;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--ap-ink-muted);
+  transition: background 140ms ease, color 140ms ease;
+}
+.wiz__mode-btn.is-active { background: var(--ap-ink); color: var(--ap-surface); }
+
 /* ── Grouped swatches ─────────────────────────────────────────────────────── */
 .wiz__swatch-groups { display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem; }
 .wiz__swatch-group-label {
@@ -1752,13 +1804,57 @@ const photoGuide = computed(() => {
   box-shadow: 4px 4px 0 var(--pv-ink);
 }
 
+/* ── atlas ───────────────────────────────────────────────────────────────── */
+.wiz__preview[data-theme='atlas'] {
+  font-family: "Archivo", "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+.wiz__preview[data-theme='atlas'] .wiz__preview-title {
+  font-family: "Archivo", "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: -0.03em;
+  font-size: 1.7rem;
+}
+.wiz__preview[data-theme='atlas'] .wiz__preview-eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pv-ink-muted);
+  background: none;
+  border-radius: 0;
+  padding: 0;
+}
+.wiz__preview[data-theme='atlas'] .wiz__preview-eyebrow::before {
+  content: '01 / ';
+  color: var(--pv-ink);
+}
+.wiz__preview[data-theme='atlas'] .wiz__preview-card,
+.wiz__preview[data-theme='atlas'] .wiz__preview-frame { border-radius: 0; }
+.wiz__preview[data-theme='atlas'] .wiz__preview-cta {
+  border-radius: 0;
+  border-color: var(--pv-ink);
+  background: var(--pv-ink);
+  color: var(--pv-surface);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.wiz__preview[data-theme='atlas'] .wiz__preview-cta--ghost {
+  background: transparent;
+  color: var(--pv-ink);
+  border-color: var(--pv-line);
+}
+
 /* ── ironwood ────────────────────────────────────────────────────────────── */
 .wiz__preview[data-theme='ironwood'] {
-  font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Barlow", "Roboto", "Helvetica Neue", Arial, sans-serif;
   letter-spacing: 0.005em;
 }
 .wiz__preview[data-theme='ironwood'] .wiz__preview-title {
-  font-family: "Oswald", "Roboto Condensed", "Impact", Arial, sans-serif;
+  font-family: "Big Shoulders Display", "Oswald", "Impact", Arial, sans-serif;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
