@@ -18,6 +18,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: 'July 28, 2026',
+    title: 'The color instrument, an editorial theme index, and a $50 Portfolio upgrade',
+    summary: 'Color theory you can spin, themes typeset in their own faces, and honest upgrade pricing.',
+    items: [
+      { tag: 'New', text: 'Color, with a thesis: an interactive 3D color wheel on the home page. Spin it, trace real harmony geometry, and apply any palette to the whole site live.' },
+      { tag: 'New', text: 'Every palette now shows its full anatomy: primary, accent, surface, ink and hairline colors, labeled by where each is used, with a light/dark switch built into the wheel.' },
+      { tag: 'New', text: 'The theme picker on the home page is now an editorial index: each personality set huge in its own typefaces, description alongside, one tap to wear it.' },
+      { tag: 'New', text: 'Two more harmony models on the wheel: Square and Monochrome, and every model now explores from your palette’s actual primary color.' },
+      { tag: 'New', text: 'Delivery and Reservations are coming soon to Add-ons: local delivery zones on top of ordering, and table reservations with seating windows.' },
+      { tag: 'Improved', text: 'Upgrading an existing site to Portfolio now costs the difference, $50, not the full new-site price.' },
+      { tag: 'Improved', text: 'Signal and Cadmium palettes lightened up: tinted paper instead of a full-color page, with the loud color kept for buttons and accents.' },
+      { tag: 'Improved', text: 'Oxblood is now Garnet, and the reviews map now zooms to your listing instead of showing the whole world.' },
+      { tag: 'Fixed', text: 'Dashboard pages now scroll with the sidebar staying put and a proper scrollbar at the window edge; closing the dashboard no longer breaks the page behind it.' },
+      { tag: 'Fixed', text: 'Sites build and publish reliably again after our styling engine update.' },
+      { tag: 'Fixed', text: 'The settings gear no longer tilts the divider beside it while you hover the site settings pill.' },
+    ],
+  },
+  {
     date: 'July 26, 2026',
     title: 'A new flagship look, richer color, and a smarter dashboard',
     summary: 'The biggest design release yet: a fifth theme, a rebuilt color system, and a dashboard that works the way you do.',

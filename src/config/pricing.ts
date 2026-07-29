@@ -7,6 +7,8 @@ export interface PriceItem {
   blurb: string
   /** Recommended bundle item is highlighted. */
   featured?: boolean
+  /** Sold only as an upgrade to an existing site — hidden from new-build pricing. */
+  upgradeOnly?: boolean
   category: 'website' | 'marketing' | 'addons'
   includes?: string[]
 }

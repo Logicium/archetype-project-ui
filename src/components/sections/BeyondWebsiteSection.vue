@@ -52,16 +52,21 @@ function toGallery() {
             <p>We put your business on Google — pin, hours, photos, and reviews — right where locals are searching.</p>
           </header>
           <div class="bw-map" aria-hidden="true">
-            <svg class="bw-map__bg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
-              <rect width="400" height="300" fill="#e8ece6" />
-              <g stroke="#d3dad0" stroke-width="6" fill="none">
-                <path d="M-10 70 H410" /><path d="M-10 160 H410" /><path d="M-10 240 H410" />
-                <path d="M90 -10 V310" /><path d="M230 -10 V310" /><path d="M320 -10 V310" />
-              </g>
-              <path d="M-10 300 L200 90 L410 250" stroke="#c7d0c3" stroke-width="14" fill="none" />
-              <path d="M-10 20 L120 140 L260 60 L410 180" stroke="#cfe3f0" stroke-width="10" fill="none" opacity="0.8" />
-              <g fill="#dfe6db"><rect x="30" y="90" width="45" height="55" rx="3"/><rect x="250" y="30" width="55" height="30" rx="3"/><rect x="330" y="185" width="50" height="45" rx="3"/></g>
-            </svg>
+            <!-- Real map (keyless embed). Decorative: pointer-events off, the
+                 entrance scales it up so it reads as the map zooming to the pin. -->
+            <div class="bw-map__zoom">
+              <iframe
+                class="bw-map__frame"
+                src="https://www.google.com/maps?ll=37.1695,-104.5005&z=14&output=embed"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                tabindex="-1"
+                title="Trinidad, Colorado on Google Maps"
+              />
+            </div>
+            <!-- Location chip — doubles as a mask over the embed's built-in
+                 "Open in Maps" chrome in the top-left corner. -->
+            <span class="bw-map__loc"><MapPin :size="12" /> Trinidad, Colorado</span>
             <span class="bw-map__ring" />
             <span class="bw-map__pin"><MapPin :size="20" :stroke-width="2.5" /></span>
             <div class="bw-map__card">
@@ -156,9 +161,44 @@ function toGallery() {
 
 /* Map tile */
 .bw-map { position: relative; flex: 1; min-height: 220px; margin-top: 0.4rem; border-radius: 12px; overflow: hidden; border: 1px solid var(--ap-line); }
-.bw-map__bg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.bw-map__pin { position: absolute; left: 46%; top: 44%; transform: translate(-50%, -100%); color: var(--ap-primary); filter: drop-shadow(0 3px 3px rgba(0,0,0,0.3)); opacity: 0; }
-.bw-map__ring { position: absolute; left: 46%; top: 44%; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%; background: color-mix(in srgb, var(--ap-primary) 40%, transparent); opacity: 0; }
+/* The zoom stage: starts pulled back, eases in toward the pin on reveal. */
+.bw-map__zoom {
+  position: absolute; inset: 0;
+  transform: scale(1.08);
+  /* Zoom about the pin's anchor point — keeps the pin planted and pushes
+     the embed's top-left chrome out of frame as it scales. */
+  transform-origin: 46% 44%;
+  transition: transform 1600ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.bw__cell--map.is-in .bw-map__zoom { transform: scale(1.32); }
+.bw-map__frame {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  border: 0; display: block;
+  pointer-events: none;               /* decorative — no scroll traps */
+  filter: saturate(0.92) contrast(1.02);
+}
+.bw-map__loc {
+  position: absolute; left: 0; top: 0; z-index: 3;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  /* Oversized on purpose: it sits on the embed's "Open in Maps" chrome. */
+  min-width: 190px; min-height: 46px;
+  padding: 0 1rem;
+  border-radius: 0 0 12px 0;
+  background: color-mix(in srgb, var(--ap-surface-alt) 88%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-right: 1px solid var(--ap-line);
+  border-bottom: 1px solid var(--ap-line);
+  font-family: var(--ap-font-mono);
+  font-size: 0.68rem; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ap-ink);
+}
+.bw-map__loc svg { color: var(--ap-primary); }
+.bw-map__pin { position: absolute; left: 46%; top: 44%; transform: translate(-50%, -100%); color: var(--ap-primary); filter: drop-shadow(0 3px 3px rgba(0,0,0,0.3)); opacity: 0; z-index: 2; }
+.bw-map__ring { position: absolute; left: 46%; top: 44%; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%; background: color-mix(in srgb, var(--ap-primary) 40%, transparent); opacity: 0; z-index: 2; }
 .bw-map__card {
   position: absolute; left: 50%; bottom: 0.85rem; transform: translateX(-50%) translateY(140%);
   width: min(90%, 330px); display: flex; align-items: center; gap: 0.65rem;
@@ -172,9 +212,10 @@ function toGallery() {
 .bw-map__muted { color: var(--ap-ink-muted); font-weight: 400; }
 .bw-map__open { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.74rem; color: #1a9d5a; }
 .bw-map__dir { margin-left: auto; flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--ap-primary) 14%, transparent); color: var(--ap-primary); }
-.bw__cell--map.is-in .bw-map__ring { animation: bw-ring 2.4s ease-out 0.6s infinite; }
-.bw__cell--map.is-in .bw-map__pin { animation: bw-pin-drop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) 0.2s forwards; }
-.bw__cell--map.is-in .bw-map__card { animation: bw-card-up 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) 0.7s forwards; }
+/* Sequence: map zooms (0–1.6s) → pin drops (0.55s) → business card slides up (1.15s). */
+.bw__cell--map.is-in .bw-map__ring { animation: bw-ring 2.4s ease-out 1.1s infinite; }
+.bw__cell--map.is-in .bw-map__pin { animation: bw-pin-drop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) 0.55s forwards; }
+.bw__cell--map.is-in .bw-map__card { animation: bw-card-up 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) 1.15s forwards; }
 @keyframes bw-pin-drop { 0% { opacity: 0; transform: translate(-50%, -220%); } 100% { opacity: 1; transform: translate(-50%, -100%); } }
 @keyframes bw-ring { 0% { opacity: 0.7; width: 18px; height: 18px; } 100% { opacity: 0; width: 90px; height: 90px; } }
 @keyframes bw-card-up { to { opacity: 1; transform: translateX(-50%) translateY(0); } }

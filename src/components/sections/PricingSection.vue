@@ -9,21 +9,28 @@ defineProps<{
   intro?: string
 }>()
 
-const websiteTiers = computed(() => PRICING.filter(p => p.category === 'website' && p.id !== 'tuneup'))
+const websiteTiers = computed(() => PRICING.filter(p => p.category === 'website' && p.id !== 'tuneup' && !p.upgradeOnly))
 const tuneup = computed(() => PRICING.find(p => p.id === 'tuneup'))
 const marketingItems = computed(() => PRICING.filter(p => p.category === 'marketing'))
 const addonItems = computed(() => PRICING.filter(p => p.category === 'addons'))
 
+/* Three-word differences beat five-line checklists — the full breakdown
+   lives in the wizard where the decision actually happens. */
+const TIER_POINTS: Record<string, string[]> = {
+  'website': ['Up to 8 photos', 'Every theme + palette', 'Live in days'],
+  'website-extended': ['Everything in Essentials', 'Hero carousel', '16-photo gallery page'],
+}
+
 const WYG = [
   { icon: Smartphone, label: 'Every screen' },
   { icon: TrendingUp, label: 'SEO built in' },
-  { icon: MapPin, label: 'Google Maps built in' },
+  { icon: MapPin, label: 'Google Maps' },
   { icon: Instagram, label: 'Instagram feed' },
   { icon: Star, label: 'Live Google reviews' },
-  { icon: Globe, label: 'First-year .com domain' },
-  { icon: Zap, label: 'Global CDN hosting' },
-  { icon: Mail, label: 'Contact form wired' },
-  { icon: Palette, label: '4 themes · 23 palettes' },
+  { icon: Globe, label: 'First-year .com' },
+  { icon: Zap, label: 'CDN hosting' },
+  { icon: Mail, label: 'Contact form' },
+  { icon: Palette, label: '5 themes · 24 palettes' },
   { icon: Wrench, label: 'Tune-ups on call' },
 ]
 </script>
@@ -56,13 +63,12 @@ const WYG = [
             <span v-if="p.featured" class="ap-pricing__tier-flag">Most chosen</span>
           </header>
           <h3 class="ap-pricing__tier-name">{{ p.name.replace(/^Website\s*/i, '').replace(/[()]/g, '') }}</h3>
-          <p class="ap-pricing__tier-blurb">{{ p.blurb }}</p>
           <p class="ap-pricing__tier-price">
             <sup>$</sup>{{ p.price }}
             <span class="ap-pricing__tier-once">once · you own it</span>
           </p>
-          <ul v-if="p.includes?.length" class="ap-pricing__tier-list">
-            <li v-for="line in p.includes" :key="line">
+          <ul class="ap-pricing__tier-list">
+            <li v-for="line in TIER_POINTS[p.id] ?? []" :key="line">
               <Check :size="14" :stroke-width="2.5" />
               <span>{{ line }}</span>
             </li>
@@ -88,7 +94,7 @@ const WYG = [
       <div class="ap-pricing__ledger">
         <div class="ap-pricing__ledger-col">
           <h3 class="ap-pricing__ledger-title">Photography &amp; marketing</h3>
-          <div v-for="p in marketingItems" :key="p.id" class="ap-pricing__row">
+          <div v-for="p in marketingItems" :key="p.id" class="ap-pricing__row" :title="p.blurb">
             <div class="ap-pricing__row-main">
               <span class="ap-pricing__row-name">{{ p.name }}</span>
               <span class="ap-pricing__row-leader" aria-hidden="true" />
@@ -96,7 +102,7 @@ const WYG = [
             </div>
             <p class="ap-pricing__row-blurb">{{ p.blurb }}</p>
           </div>
-          <div v-if="tuneup" class="ap-pricing__row">
+          <div v-if="tuneup" class="ap-pricing__row" :title="tuneup.blurb">
             <div class="ap-pricing__row-main">
               <span class="ap-pricing__row-name">{{ tuneup.name }}</span>
               <span class="ap-pricing__row-leader" aria-hidden="true" />
@@ -108,7 +114,7 @@ const WYG = [
 
         <div class="ap-pricing__ledger-col">
           <h3 class="ap-pricing__ledger-title">Technical add-ons</h3>
-          <div v-for="p in addonItems" :key="p.id" class="ap-pricing__row">
+          <div v-for="p in addonItems" :key="p.id" class="ap-pricing__row" :title="p.blurb">
             <div class="ap-pricing__row-main">
               <span class="ap-pricing__row-name">{{ p.name }}</span>
               <span class="ap-pricing__row-leader" aria-hidden="true" />
@@ -125,10 +131,7 @@ const WYG = [
           <div class="ap-pricing__bundle-text">
             <span class="ap-pricing__bundle-kicker">Bundle</span>
             <h3>{{ b.name }}</h3>
-            <p>{{ b.blurb }}</p>
-            <ul>
-              <li v-for="item in b.items" :key="item">{{ item }}</li>
-            </ul>
+            <p class="ap-pricing__bundle-items">{{ b.items.join(' · ') }}</p>
           </div>
           <div class="ap-pricing__bundle-side">
             <p class="ap-pricing__bundle-price"><sup>$</sup>{{ b.price }}</p>
@@ -193,7 +196,6 @@ const WYG = [
   margin: 0;
   font-size: clamp(1.35rem, 2vw, 1.7rem);
 }
-.ap-pricing__tier-blurb { margin: 0; color: var(--ap-ink-muted); font-size: 0.9rem; max-width: 42ch; }
 .ap-pricing__tier-price {
   margin: 0.3rem 0 0.15rem;
   font-family: var(--ap-font-heading);
@@ -260,8 +262,8 @@ const WYG = [
 .ap-pricing__ledger {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: clamp(2rem, 5vw, 4.5rem);
-  margin-top: clamp(2.5rem, 5vw, 4rem);
+  gap: clamp(1.5rem, 3vw, 3rem);
+  margin-top: clamp(1.75rem, 3.5vw, 2.75rem);
 }
 .ap-pricing__ledger-title {
   margin: 0 0 0.35rem;
@@ -271,9 +273,24 @@ const WYG = [
   padding-bottom: 0.7rem;
   border-bottom: 2px solid var(--ap-ink);
 }
-.ap-pricing__row { padding: 0.9rem 0; border-bottom: 1px solid var(--ap-line); }
+.ap-pricing__row { padding: 0.75rem 0; border-bottom: 1px solid var(--ap-line); }
 .ap-pricing__row-main {
   display: flex; align-items: baseline; gap: 0.6rem;
+}
+/* Blurbs stay out of the reading flow — they unfold on hover/focus,
+   and the row's title attribute covers touch. */
+.ap-pricing__row .ap-pricing__row-blurb {
+  max-height: 0;
+  overflow: hidden;
+  margin: 0;
+  opacity: 0;
+  transition: max-height 280ms cubic-bezier(0.2, 0.7, 0.3, 1), opacity 220ms ease, margin 280ms ease;
+}
+.ap-pricing__row:hover .ap-pricing__row-blurb,
+.ap-pricing__row:focus-within .ap-pricing__row-blurb {
+  max-height: 4.5em;
+  opacity: 1;
+  margin-top: 0.3rem;
 }
 .ap-pricing__row-name {
   font-family: var(--ap-font-heading);
@@ -304,7 +321,7 @@ const WYG = [
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: clamp(1rem, 2vw, 1.5rem);
-  margin-top: clamp(2.5rem, 5vw, 4rem);
+  margin-top: clamp(1.75rem, 3.5vw, 2.75rem);
 }
 .ap-pricing__bundle {
   display: flex; gap: 1.5rem; justify-content: space-between;
@@ -325,24 +342,12 @@ const WYG = [
   color: var(--ap-surface);
   font-size: 1.35rem;
 }
-.ap-pricing__bundle-text p {
-  margin: 0 0 0.6rem;
-  color: color-mix(in srgb, var(--ap-surface) 62%, transparent);
-  font-size: 0.86rem;
-}
-.ap-pricing__bundle-text ul {
-  list-style: none; margin: 0; padding: 0;
-  display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem;
-}
-.ap-pricing__bundle-text li {
-  font-size: 0.78rem;
-  color: color-mix(in srgb, var(--ap-surface) 80%, transparent);
-  display: inline-flex; align-items: center; gap: 0.35rem;
-}
-.ap-pricing__bundle-text li::before {
-  content: '';
-  width: 4px; height: 4px; border-radius: 50%;
-  background: var(--ap-accent);
+.ap-pricing__bundle-items {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--ap-surface) 72%, transparent);
+  max-width: 40ch;
 }
 .ap-pricing__bundle-side {
   display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between;

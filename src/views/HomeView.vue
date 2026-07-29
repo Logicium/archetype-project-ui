@@ -5,6 +5,8 @@ import BeyondWebsiteSection from '../components/sections/BeyondWebsiteSection.vu
 import CampaignGallerySection from '../components/sections/CampaignGallerySection.vue'
 import ShowcaseSection from '../components/sections/ShowcaseSection.vue'
 import DesignSystemSection from '../components/sections/DesignSystemSection.vue'
+import ColorTheorySection from '../components/sections/ColorTheorySection.vue'
+import PlatformSection from '../components/sections/PlatformSection.vue'
 import PricingSection from '../components/sections/PricingSection.vue'
 import SupportSection from '../components/sections/SupportSection.vue'
 import PartnershipSection from '../components/sections/PartnershipSection.vue'
@@ -29,7 +31,10 @@ import FAQSection from '../components/sections/FAQSection.vue'
     intro="Restaurants, stays, shops, trades, venues — each template is purpose-built for how that business actually works. Pick one to preview it live."
     :sites="siteConfig.showcase"
   />
+  <!-- Themes → color thesis directly beneath → the platform band. -->
   <DesignSystemSection />
+  <ColorTheorySection />
+  <PlatformSection />
   <div id="pricing">
     <PricingSection
       eyebrow="Transparent pricing"
