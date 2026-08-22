@@ -18,6 +18,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: 'August 2, 2026',
+    title: 'Every word on your site is now yours to edit',
+    summary: 'Section headings across all five templates became editable, long menus got a proper layout, and pickup times fit on one screen.',
+    items: [
+      { tag: 'New', text: 'Every heading, intro line and button label on your site is now editable from Content. Copy that used to be baked into the template \u2014 things like your visit note, your hours line, or a room count \u2014 shows up as a normal field you can change.' },
+      { tag: 'New', text: 'Long menus have their own layout: courses collapse, each shows its item count, a course rail jumps you straight to one, and dishes flow into columns instead of a single endless list.' },
+      { tag: 'New', text: 'Choosing a pickup time no longer means scrolling a wall of buttons. Take the next available slot in one tap, or pick a day and a time of day \u2014 a full week of openings now fits on one screen.' },
+      { tag: 'Improved', text: 'Your Products page feeds the Shop add-on automatically, the same way your Menu feeds online ordering. No retyping your catalog to start selling.' },
+      { tag: 'Fixed', text: 'Room searches on booking-enabled sites returned "no rooms" even with rooms listed. Availability now reads your Rooms page directly, so booking works as soon as the add-on is on.' },
+      { tag: 'Fixed', text: 'Updating a site no longer flashes a false "build failed" a second after you click. The dashboard waits for your actual new build instead of reporting the previous one.' },
+      { tag: 'Fixed', text: 'New sites provision reliably again after a credential and template-name mix-up, and site builds no longer fail on their styling step.' },
+    ],
+  },
+  {
     date: 'July 28, 2026',
     title: 'The color instrument, an editorial theme index, and a $50 Portfolio upgrade',
     summary: 'Color theory you can spin, themes typeset in their own faces, and honest upgrade pricing.',
