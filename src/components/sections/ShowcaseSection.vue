@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ArrowUpRight } from 'lucide-vue-next'
 import type { ShowcaseSite } from '../../config/site.config'
 import { THEMES } from '@apotome/archetype-shared/themes/index'
@@ -18,16 +18,26 @@ function swatchOf(name: string) {
 }
 
 // One stage, five archetypes — pick one and the preview restyles to show
-// "same engine, different body".
+// "same engine, different body". Each archetype also carries a look per
+// theme it ships with, so the stage can flip through them.
 const active = ref(0)
+const look = ref(0)
 const current = computed(() => props.sites[active.value]!)
-function pick(i: number) { active.value = i }
+const looks = computed(() => {
+  const s = current.value
+  const list = s.looks?.length ? s.looks : [{ theme: s.themes[0]!, image: s.image }]
+  return list
+})
+const shot = computed(() => looks.value[look.value] ?? looks.value[0]!)
+function pick(i: number) { active.value = i; look.value = 0 }
+watch(active, () => { look.value = 0 })
 </script>
 
 <!--
   Template switcher: a single framed stage plus a rail of five archetype tabs.
   Same engine, restyled per business type — shown by swapping one preview
-  rather than repeating five near-identical rows.
+  rather than repeating five near-identical rows. Under the stage a second
+  rail flips the same archetype through its themes.
 -->
 <template>
   <section class="tsw ap-section">
@@ -59,17 +69,35 @@ function pick(i: number) { active.value = i }
       <div class="tsw__stage">
         <Transition name="tsw-fade" mode="out-in">
           <div class="tsw__panel" :key="current.id">
-            <a
-              class="tsw__frame"
-              :href="current.liveUrl" target="_blank" rel="noopener"
-              :aria-label="`Open the live ${current.name} demo`"
-            >
-              <span class="tsw__frame-bar" aria-hidden="true">
-                <i /><i /><i />
-                <span class="tsw__frame-url">{{ current.id }}.apotomelabs.com</span>
-              </span>
-              <OptimizedImage :src="current.image" :alt="`${current.name} homepage`" />
-            </a>
+            <div class="tsw__frame-wrap">
+              <a
+                class="tsw__frame"
+                :href="current.liveUrl" target="_blank" rel="noopener"
+                :aria-label="`Open the live ${current.name} demo`"
+              >
+                <span class="tsw__frame-bar" aria-hidden="true">
+                  <i /><i /><i />
+                  <span class="tsw__frame-url">{{ current.id }}.apotomelabs.com</span>
+                </span>
+                <Transition name="tsw-shot" mode="out-in">
+                  <OptimizedImage :key="shot.image" :src="shot.image" :alt="`${current.name} homepage, ${THEMES[shot.theme].label}`" />
+                </Transition>
+              </a>
+              <div v-if="looks.length > 1" class="tsw__looks" role="tablist" aria-label="Themes">
+                <button
+                  v-for="(l, i) in looks"
+                  :key="l.theme"
+                  type="button" role="tab"
+                  class="tsw__look"
+                  :class="{ 'is-active': i === look }"
+                  :aria-selected="i === look"
+                  @click="look = i"
+                >
+                  <span class="tsw__look-num">{{ String(i + 1).padStart(2, '0') }}</span>
+                  {{ THEMES[l.theme].label }}
+                </button>
+              </div>
+            </div>
 
             <div class="tsw__info">
               <p class="tsw__arch">{{ current.archetype }}</p>
@@ -141,6 +169,7 @@ function pick(i: number) { active.value = i }
   gap: clamp(1.5rem, 4vw, 3.5rem);
   align-items: center;
 }
+.tsw__frame-wrap { min-width: 0; }
 .tsw__frame {
   display: block; border-radius: var(--ap-radius-lg);
   overflow: hidden; border: 1px solid var(--ap-line);
@@ -157,6 +186,20 @@ function pick(i: number) { active.value = i }
   border: 1px solid var(--ap-line); border-radius: 999px;
 }
 .tsw__frame :deep(img) { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; display: block; }
+
+/* theme rail under the stage */
+.tsw__looks { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.8rem; }
+.tsw__look {
+  display: inline-flex; align-items: baseline; gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: transparent; border: 1px solid var(--ap-line); border-radius: 999px;
+  font-family: var(--ap-font-heading); font-size: 0.8rem; font-weight: 600;
+  color: var(--ap-ink-muted); cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+.tsw__look:hover { border-color: var(--ap-primary); color: var(--ap-ink); }
+.tsw__look.is-active { background: var(--ap-ink); border-color: var(--ap-ink); color: var(--ap-surface); }
+.tsw__look-num { font-family: var(--ap-font-mono); font-size: 0.62rem; letter-spacing: 0.14em; opacity: 0.7; }
 
 .tsw__info { min-width: 0; }
 .tsw__arch { margin: 0 0 0.35rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ap-primary); }
@@ -177,10 +220,12 @@ function pick(i: number) { active.value = i }
 }
 .tsw__cta:hover { gap: 0.7rem; color: var(--ap-primary); }
 
-/* Transition */
+/* Transitions */
 .tsw-fade-enter-active, .tsw-fade-leave-active { transition: opacity 320ms ease, transform 320ms cubic-bezier(0.2, 0.6, 0.2, 1); }
 .tsw-fade-enter-from { opacity: 0; transform: translateY(12px); }
 .tsw-fade-leave-to { opacity: 0; transform: translateY(-12px); }
+.tsw-shot-enter-active, .tsw-shot-leave-active { transition: opacity 240ms ease; }
+.tsw-shot-enter-from, .tsw-shot-leave-to { opacity: 0; }
 
 @media (max-width: 860px) {
   .tsw__panel { grid-template-columns: 1fr; }

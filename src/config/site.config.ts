@@ -9,6 +9,8 @@ export interface ShowcaseSite {
   themes: ThemeName[]
   swatches: SwatchName[]
   liveUrl?: string
+  /** One screenshot per theme the archetype ships with; the stage flips through them. */
+  looks?: Array<{ theme: ThemeName; image: string }>
 }
 
 export interface ProjectSiteConfig {
@@ -71,8 +73,15 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       archetype: 'Dine',
       blurb: 'For restaurants, cafés, and bars. Menu, hours, story, gallery, reservations.',
       image: '/showcase/mesa.jpg',
-      themes: ['atlas', 'heritage', 'vibrant'],
+      themes: ['atlas', 'heritage', 'vibrant', 'studio', 'ironwood'],
       swatches: ['adobe-light', 'vermilion-light', 'pine-light'],
+      looks: [
+        { theme: 'atlas', image: '/showcase/mesa--atlas.jpg' },
+        { theme: 'heritage', image: '/showcase/mesa--heritage.jpg' },
+        { theme: 'vibrant', image: '/showcase/mesa--vibrant.jpg' },
+        { theme: 'studio', image: '/showcase/mesa--studio.jpg' },
+        { theme: 'ironwood', image: '/showcase/mesa--ironwood.jpg' },
+      ],
       liveUrl: 'https://archetype-mesa-ui.vercel.app',
     },
     {
@@ -81,8 +90,15 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       archetype: 'Stay',
       blurb: 'For inns, B&Bs, and small hotels. Rooms, amenities, gallery, booking.',
       image: '/showcase/hearth.jpg',
-      themes: ['heritage', 'atlas', 'studio'],
+      themes: ['heritage', 'atlas', 'studio', 'vibrant', 'ironwood'],
       swatches: ['pine-light', 'matcha-light', 'ultramarine-light'],
+      looks: [
+        { theme: 'heritage', image: '/showcase/hearth--heritage.jpg' },
+        { theme: 'atlas', image: '/showcase/hearth--atlas.jpg' },
+        { theme: 'studio', image: '/showcase/hearth--studio.jpg' },
+        { theme: 'vibrant', image: '/showcase/hearth--vibrant.jpg' },
+        { theme: 'ironwood', image: '/showcase/hearth--ironwood.jpg' },
+      ],
       liveUrl: 'https://archetype-hearth-ui.vercel.app',
     },
     {
@@ -91,8 +107,15 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       archetype: 'Shop',
       blurb: 'For retail, boutiques, and galleries. Categories, featured products, lookbook.',
       image: '/showcase/vault.jpg',
-      themes: ['vibrant', 'atlas', 'studio'],
+      themes: ['vibrant', 'atlas', 'studio', 'heritage', 'ironwood'],
       swatches: ['riot-light', 'rosewood-light', 'midnight-dark'],
+      looks: [
+        { theme: 'vibrant', image: '/showcase/vault--vibrant.jpg' },
+        { theme: 'atlas', image: '/showcase/vault--atlas.jpg' },
+        { theme: 'studio', image: '/showcase/vault--studio.jpg' },
+        { theme: 'heritage', image: '/showcase/vault--heritage.jpg' },
+        { theme: 'ironwood', image: '/showcase/vault--ironwood.jpg' },
+      ],
       liveUrl: 'https://archetype-vault-ui.vercel.app',
     },
     {
@@ -101,8 +124,15 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       archetype: 'Venue',
       blurb: 'For venues, galleries, theaters, and festivals. Events calendar, ticketing, performers, and recurring series.',
       image: '/showcase/marquee.jpg',
-      themes: ['atlas', 'heritage', 'vibrant'],
-      swatches: ['signal-dark', 'midnight-dark', 'vermilion-dark'],
+      themes: ['studio', 'atlas', 'heritage', 'vibrant', 'ironwood'],
+      swatches: ['onyx-dark', 'midnight-dark', 'fjord-light'],
+      looks: [
+        { theme: 'studio', image: '/showcase/marquee--studio.jpg' },
+        { theme: 'atlas', image: '/showcase/marquee--atlas.jpg' },
+        { theme: 'heritage', image: '/showcase/marquee--heritage.jpg' },
+        { theme: 'vibrant', image: '/showcase/marquee--vibrant.jpg' },
+        { theme: 'ironwood', image: '/showcase/marquee--ironwood.jpg' },
+      ],
       liveUrl: 'https://apotome-archetypes-archetype-marque-orpin.vercel.app',
     },
     // Keystone is last: it's the one non-tourism trade archetype (auto/welding/build).
@@ -112,8 +142,15 @@ export const siteConfig: ProjectSiteConfig = reactive(({
       archetype: 'Utility',
       blurb: 'For auto shops, contractors, welders, and mills. Services, capabilities, dispatch line, work gallery.',
       image: '/showcase/keystone.jpg',
-      themes: ['ironwood', 'atlas', 'studio'],
+      themes: ['ironwood', 'atlas', 'studio', 'heritage', 'vibrant'],
       swatches: ['ultramarine-light', 'onyx-dark', 'pine-light'],
+      looks: [
+        { theme: 'ironwood', image: '/showcase/keystone--ironwood.jpg' },
+        { theme: 'atlas', image: '/showcase/keystone--atlas.jpg' },
+        { theme: 'studio', image: '/showcase/keystone--studio.jpg' },
+        { theme: 'heritage', image: '/showcase/keystone--heritage.jpg' },
+        { theme: 'vibrant', image: '/showcase/keystone--vibrant.jpg' },
+      ],
       liveUrl: 'https://archetype-keystone-ui.vercel.app',
     },
   ],
