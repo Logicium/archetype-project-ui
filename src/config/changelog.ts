@@ -18,6 +18,59 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: 'October 29, 2026',
+    title: 'Your name in every tab, and sites built to be found',
+    summary: 'Every site now introduces itself properly to browsers, search engines and link previews, using the details you keep in your dashboard.',
+    items: [
+      { tag: 'New', text: 'Browser tabs and search results show your business, not the template. The home page reads as your name and tagline, and every other page as the page and your name, like "The full menu · Mesa Trinidad".' },
+      { tag: 'New', text: 'Search descriptions come from your blurb, shared links show your hero photo in texts and social posts, and your uploaded favicon sits in the tab.' },
+      { tag: 'New', text: 'Search engines get your business details in the format they read best: what kind of business you are, plus your phone, email, address and social profiles. It helps you show up as a local business.' },
+      { tag: 'New', text: 'Every site ships a sitemap of its public pages, and keeps the dashboard, checkout and order pages out of search results.' },
+      { tag: 'Improved', text: 'Change your name, tagline, description, contact details or favicon in the dashboard and all of the above follows. Adding a custom domain points your sitemap at it with your next site update.' },
+      { tag: 'New', text: 'Restaurants can deliver. Offer pickup, delivery or both from Ordering settings, with a delivery fee, a minimum order and your delivery area. Delivery orders take an address at checkout, print it on the kitchen ticket, and email the customer when the order is on its way.' },
+      { tag: 'Improved', text: 'Shops choose pickup, shipping or both with one setting instead of two switches, and checkout only shows the options you offer.' },
+    ],
+  },
+  {
+    date: 'October 28, 2026',
+    title: 'A real checkout, order tracking, and payments your way',
+    summary: 'Shops and restaurants got a proper checkout and an order page, owners got a fulfillment tracker that keeps customers posted, and Square joined Stripe. Apotome Archetypes is now officially in beta.',
+    items: [
+      { tag: 'New', text: 'Checkout is a real page now, on shop and restaurant sites alike: contact details, pickup or shipping with a full address form, a note, and an order summary you can still adjust, then on to payment. The old pop-up cart is gone.' },
+      { tag: 'New', text: 'Every order has its own page: what was bought, where it is going, whether it is paid, and a live tracker of where it is. The link is in every email, so a customer can check back any time.' },
+      { tag: 'New', text: 'Order fulfillment for shops. From the dashboard, move an order through Received, Label printed, Shipped and Delivered (or Ready for pickup and Picked up), add the tracking number and carrier, and leave a note. The customer gets an email at every step, with a tracking link once it ships.' },
+      { tag: 'New', text: 'Restaurant customers now hear from you too: an email when the kitchen confirms the order, when it is ready, and if it has to be cancelled.' },
+      { tag: 'New', text: 'Take payments with Square or Stripe. Already run your business on Square? Connect the account you have and online orders settle straight into it. Stripe accounts now come with a full Stripe dashboard of your own. Connect both and choose which one runs checkout.' },
+      { tag: 'New', text: 'Online payment for pickup orders. Restaurants with a connected account take payment at checkout; pay at pickup stays the fallback when payment is switched off.' },
+      { tag: 'New', text: 'A catalog menu for shops. Switch the Shop link in your header to a dropdown of your categories, each with its subcategories, and every entry opens the shop already filtered. Products can carry a category, and the shop page filters by it.' },
+      { tag: 'New', text: 'Apotome Archetypes is in beta, and now says so: a Beta badge beside the brand on this site, and a Beta page with the program, timeline and milestones through spring 2027.' },
+      { tag: 'Improved', text: 'The dashboard now tells you when a site update is waiting and lets you apply it on the spot. Words, photos and theme changes have always been instant; new features ship as site updates, and the notice makes the difference plain.' },
+      { tag: 'Improved', text: 'The theme picker fits a laptop screen, scrolls when docked, sizes itself to each tab, and the color studio reads with far less text.' },
+      { tag: 'Improved', text: 'Long menus no longer fold courses away. Every dish is on the page, with the course rail still there to jump around.' },
+      { tag: 'Fixed', text: 'Saving words or photos in the dashboard could quietly switch a site to the Atlas theme. Content saves no longer touch your look.' },
+      { tag: 'Fixed', text: 'Dashboard pages scroll with the mouse wheel again, and photo upload boxes in the menu editor are no longer squashed.' },
+    ],
+  },
+  {
+    date: 'September 21, 2026',
+    title: 'Dishes that know their sizes',
+    summary: 'Menus sold by size show as one dish, and the Portfolio tier lands correctly however it was bought.',
+    items: [
+      { tag: 'New', text: 'Dishes sold in sizes, like Cup and Bowl or 12 inch and 16 inch, now appear as one dish with a size to pick, on the menu and in online ordering. Menus set up as separate items are combined automatically; the editor shows the sizes on each dish.' },
+      { tag: 'Fixed', text: 'Sites bought with the Portfolio tier, or upgraded to it later, reliably get the Portfolio layout, gallery page and photo carousel the moment the plan applies.' },
+    ],
+  },
+  {
+    date: 'August 24, 2026',
+    title: 'Kitchen tickets from your POS, and domains that just work',
+    summary: 'Online orders print in the kitchen through Clover, and a custom domain is live the moment you save it.',
+    items: [
+      { tag: 'New', text: 'Connect a Clover point of sale from Ordering settings. Online orders land in Clover like any other order and print a kitchen ticket, and the dashboard shows whether each ticket printed, with a resend button when it did not.' },
+      { tag: 'Improved', text: 'A custom domain works the moment it is saved. Your site starts talking to its dashboard and ordering tools on the new address right away, with no wait for a restart.' },
+      { tag: 'Improved', text: 'POS failures are explained in plain words in the dashboard, including the permission fixes Clover sometimes needs, instead of a bare error.' },
+    ],
+  },
+  {
     date: 'August 2, 2026',
     title: 'Every word on your site is now yours to edit',
     summary: 'Section headings across all five templates became editable, long menus got a proper layout, and pickup times fit on one screen.',
