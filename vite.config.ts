@@ -1,31 +1,17 @@
-import { existsSync } from 'node:fs'
-import { fileURLToPath, pathToFileURL, URL } from 'node:url'
+import { fileURLToPath, URL } from 'node:url'
 
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer'
 
-
-/* Shared Vite helpers sit beside this template in the monorepo and inside
-   src/_shared on a published site; load whichever is present. Plain JS so
-   Node can run it from vite.config without a TypeScript step. */
-async function loadSeoPlugin(): Promise<(options?: Record<string, unknown>) => Plugin> {
-  const candidates = ['./src/_shared/vite/seo.mjs', '../archetype-shared/src/vite/seo.mjs']
-    .map(p => fileURLToPath(new URL(p, import.meta.url)))
-  const found = candidates.find(p => existsSync(p))
-  if (!found) return () => ({ name: 'archetype-seo-missing' })
-  const mod = (await import(pathToFileURL(found).href)) as { archetypeSeo: (options?: Record<string, unknown>) => Plugin }
-  return mod.archetypeSeo
-}
+// SEO (head, JSON-LD, sitemap, robots, llms.txt, prerendered pages) is the
+// postbuild step in scripts/prerender.ts, not a Vite plugin: see src/routes.ts.
 
 // https://vite.dev/config/
-export default defineConfig(async () => {
-  const archetypeSeo = await loadSeoPlugin()
-  return {
+export default defineConfig({
   plugins: [
     vue(),
-    archetypeSeo({ routes: ['/', '/contact', '/wizard', '/changelog', '/beta', '/privacy', '/terms', '/data-deletion'], fallback: { brand: 'Apotome Archetypes', tagline: 'Websites for Trinidad', description: 'Professional, fast websites for Trinidad businesses: restaurants, stays, shops, trades and venues. Pay once, own your site.' } }),
     vueDevTools(),
     ViteImageOptimizer({
       jpeg: { quality: 80 },
@@ -38,6 +24,9 @@ export default defineConfig(async () => {
     // Ensure VITE_SITE_SLUG is always available for this project
     'import.meta.env.VITE_SITE_SLUG': JSON.stringify(process.env.VITE_SITE_SLUG || 'apotome-projects'),
   },
+  // VERCEL_PROJECT_PRODUCTION_URL reaches the app so the runtime head claims
+  // the same origin as the prerender when VITE_SITE_URL is not set.
+  envPrefix: ['VITE_', 'VERCEL_PROJECT_PRODUCTION_URL'],
   css: {
     preprocessorOptions: {
       scss: {
@@ -59,5 +48,4 @@ export default defineConfig(async () => {
       { find: /^@apotome\/archetype-shared$/, replacement: fileURLToPath(new URL('./src/_shared/index.ts', import.meta.url)) },
     ],
   },
-  }
 })

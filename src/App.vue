@@ -5,7 +5,6 @@ import { siteConfig } from './config/site.config'
 import { PLATFORM_ENABLED } from '@apotome/archetype-shared/platform/config'
 import { useAdminAuthStore } from '@apotome/archetype-shared/platform/adminAuthStore'
 import { useSiteTheme } from '@apotome/archetype-shared/composables/useSiteTheme'
-import { useSiteSeo } from '@apotome/archetype-shared/platform/seo'
 import { useImagePreload } from '@apotome/archetype-shared/composables/useImagePreload'
 import { useApScrollbar } from '@apotome/archetype-shared/composables/useApScrollbar'
 import AppHeader from '@apotome/archetype-shared/components/layout/AppHeader.vue'
@@ -16,20 +15,8 @@ import ThemeSwitcher from '@apotome/archetype-shared/components/ThemeSwitcher.vu
 const { init } = useSiteTheme()
 
 /* Page titles and cards for the platform site itself. */
-const PAGE_SEO: Record<string, { title: string; description?: string }> = {
-  contact: { title: 'Contact', description: 'Talk to Apotome Labs about a website for your Trinidad business.' },
-  wizard: { title: 'Start a project', description: 'Pick an archetype, a theme and a palette, and launch a professional website for your business.' },
-  changelog: { title: "What's new", description: 'The latest improvements to Apotome Archetypes.' },
-  beta: { title: 'Beta program', description: 'Apotome Archetypes is in beta: the Discoverable Trinidad program, its timeline and milestones.' },
-  privacy: { title: 'Privacy policy' },
-  terms: { title: 'Terms of service' },
-  'data-deletion': { title: 'Data deletion' },
-}
-useSiteSeo({
-  site: () => ({ ...siteConfig, photos: { hero: { src: siteConfig.hero.image } } }),
-  archetype: 'project',
-  page: (route) => PAGE_SEO[String(route.name ?? '')] ?? null,
-})
+/* Title, description, cards and JSON-LD follow the route table (src/routes.ts)
+   through installSeo in main.ts; the build wrote the same tags per page. */
 const { isReady, progress, loaded, total, label, preloadCritical } = useImagePreload()
 const auth = useAdminAuthStore()
 onMounted(async () => {
